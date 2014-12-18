@@ -1,0 +1,41 @@
+use strict;
+
+my $totalb = 28647730;
+my $totalr = 0;
+
+my %lorenz;
+open IN, shift;
+while ( <IN> ){
+  #chr1    1       100     0       0
+  chomp;
+  my ($chr, $start, $end, $depth, $read) = split /\t/;
+  $lorenz{$depth}{'cov'} += 1;
+  $lorenz{$depth}{'read'} += $read;
+  $totalr += $read;
+}
+close IN;
+print STDERR "total bases (w) is $totalb\n";
+print STDERR "total reads is $totalr\n";
+
+foreach my $depth (sort {$a <=> $b} keys %lorenz){
+  my $depc = $lorenz{$depth}{'cov'};
+  my $depr = $lorenz{$depth}{'read'};
+  my $cumc = 0;
+  my $cumr = 0;
+  my $cumc2 = 0;
+  my $cumr2 = 0;
+  foreach my $depth2 (sort {$a <=> $b} keys %lorenz) {
+    if ($depth2 > $depth) {
+       $cumc += $lorenz{$depth2}{'cov'};
+       $cumr += $lorenz{$depth2}{'read'};
+    } elsif ($depth2 < $depth and $depth2 > 0) {
+       $cumc2 += $lorenz{$depth2}{'cov'};
+       $cumr2 += $lorenz{$depth2}{'read'};
+    }
+  }
+  $cumc = sprintf("%.5f", $cumc/$totalb);
+  $cumr = sprintf("%.5f", $cumr/$totalr);
+  $cumc2 = sprintf("%.5f", $cumc2/$totalb);
+  $cumr2 = sprintf("%.5f", $cumr2/$totalr);
+  print "$depth\t$depc\t$depr\t$cumc\t$cumr\t$cumc2\t$cumr2\n";
+}
