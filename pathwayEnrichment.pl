@@ -14,7 +14,8 @@ close IN;
 my $np = scalar(keys %genes);
 
 open DA, "$database";
-while ( <DA> ){
+my %pathgenes;
+while ( <DA> ) {
   next if /^pathway\t/;
   chomp;
   my ($name, $id, $source, $symbols) = split /\t/;
@@ -23,6 +24,7 @@ while ( <DA> ){
   my $nw = scalar(@symbols);
   my $pw = 0;
   foreach my $s (@symbols){
+    $pathgenes{$s} = '';
     if (exists ($genes{$s})){
        $white .= $s.',';
        $pw += 1;
@@ -31,3 +33,6 @@ while ( <DA> ){
   print "$_\t$white\t$nw\t$np\t$pw\n";
 }
 close DA;
+
+my $npathgenes = scalar(keys %pathgenes);
+print STDERR "$npathgenes\n";
