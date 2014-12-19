@@ -32,7 +32,7 @@ my %somatic;
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($task ne 'tcga' and $file =~ /(GT\d+)[^a-zA-Z0-9]/) {
+  if ($task ne 'tcga' and $file =~ /(AC\d+)[^a-zA-Z0-9]/) {
     $name = $1;
   }
   if ($task eq 'tcga') {
@@ -58,7 +58,7 @@ foreach my $file (@list) {
           if (($cols[4]+$cols[5]+$cols[6]+$cols[7]) == 0 and $cols[2] >= 10) {                       #only record for absent indels
              $recheck{$coor} = 1;
           }
-        } elsif ($type eq 'indel'){
+        } elsif ($type eq 'indel') {
           if ($cols[6] == 0 and $cols[5] >= 10) {                       #only record for absent indels
               $recheck{$coor} = 1;
           }
@@ -83,11 +83,11 @@ foreach my $file (@list) {
      next if /^#/;
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
-     if ($name eq 'GT001') {
-        my $tmp = $sample;
-        $sample = $blood;
-        $blood = $tmp;
-     }
+     #if ($name eq 'GT001') {
+     #   my $tmp = $sample;
+     #   $sample = $blood;
+     #   $blood = $tmp;
+     #}
 
      next if ($qual < 30 and $task ne 'rnaediting');
      next if ($qual < 30 and $task eq 'rnaediting');
@@ -108,7 +108,7 @@ foreach my $file (@list) {
         }
         if ($recheck ne '') {       #recheck
            my $coor = $chr.':'.$pos;
-           if (exists($recheck{$coor})){
+           if (exists($recheck{$coor})) {
               $somatic = 1;
            }
         }
@@ -130,11 +130,19 @@ foreach my $file (@list) {
      next if ($task eq 'rnaediting' and $somatic == 0);                  #for RNAediting study, only remember somatic ones
 
 
-     if ($task ne 'rnaediting' and $id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG/) {  #snp in population, is it a somatic one?
+     if ($task ne 'rnaediting' and ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP5400\=/)) {  #snp in population, is it a somatic one?
 
        my $freq = -1;
        if ($info =~ /(1KG=(.+?));/) {
-           my $kid = $1;                               #re define $id when absent
+           my $kid = $1;                               #re define $id to 1KG when absent
+           $freq = $2;
+           if ($id eq '.') {
+              $id = $kid;
+           }
+       }
+
+       if ($info =~ /(ESP5400=(.+?));/) {
+           my $kid = $1;                               #re define $id to ESP when absent
            $freq = $2;
            if ($id eq '.') {
               $id = $kid;
@@ -144,9 +152,10 @@ foreach my $file (@list) {
        if ($somatic == 0) {                      #keep somatic ones even if it is marked as a common snp
          if ($freq == -1) {
             next;
-         } elsif ($freq > 0.0005){
-            next;
          }
+         #elsif ($freq > 0) {
+         #   next;
+         #}
        }
      } #somatic common snp
 
