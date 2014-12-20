@@ -149,11 +149,11 @@ foreach my $file (@list) {
            }
        }
 
-       if ($somatic == 0) {                      #keep somatic ones even if it is marked as a common snp
+       if ($somatic == 0) {                             #keep somatic ones even if it is marked as a common snp
          if ($freq == -1) {
             next;
          }
-         elsif ($freq >= 0.6) {
+         elsif ($freq > 0 and ($id !~ /^1KG/ and $id !~ /^ESP5400/)) {   #still dbSNP ones
             next;
          }
        }
