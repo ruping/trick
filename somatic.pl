@@ -189,15 +189,15 @@ foreach my $file (@list) {
      $function = $1;
      $somatic{$coor}{'function'} = $function;
      $somatic{$coor}{'info'} = join("\t", ($id,$ref,$alt));
-     if (!defined $somatic{$coor}{'somatic'}) {
-       $somatic{$coor}{'somatic'} = 0;
-       $somatic{$coor}{'germline'} = 0;
-     }
+     #if ($somatic{$coor}{'somatic'} eq '') {
+     #  $somatic{$coor}{'somatic'} = 0;
+     #  $somatic{$coor}{'germline'} = 0;
+     #}
      if ($somatic == 1) {
-        $somatic{$coor}{'somatic'} = '' if ($somatic{$coor}{'somatic'} == 0);
+        #$somatic{$coor}{'somatic'} = '' if ($somatic{$coor}{'somatic'} == 0);
         $somatic{$coor}{'somatic'} .= $name.',';
      } else {
-        $somatic{$coor}{'germline'} = '' if ($somatic{$coor}{'germline'} == 0);
+        #$somatic{$coor}{'germline'} = '' if ($somatic{$coor}{'germline'} == 0);
         $somatic{$coor}{'germline'} .= $name.',';
      }
 
@@ -226,7 +226,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
     }
   }
   my $function = $somatic{$coor}{'function'};
-  my $somatic = $somatic{$coor}{'somatic'};
-  my $germline = $somatic{$coor}{'germline'};
+  my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
+  my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
   print "\t$function\t$somatic\t$germline\n";
 }
