@@ -8,7 +8,7 @@ use File::Basename;
 use Data::Dumper;
 
 my $cmdline=join(" ",@ARGV);
-print "@ $0 $cmdline\n";
+#print "@ $0 $cmdline\n";
 
 
 my %opt = (
