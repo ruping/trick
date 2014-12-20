@@ -153,9 +153,9 @@ foreach my $file (@list) {
          if ($freq == -1) {
             next;
          }
-         #elsif ($freq > 0) {
-         #   next;
-         #}
+         elsif ($freq >= 0.6) {
+            next;
+         }
        }
      } #somatic common snp
 
