@@ -194,10 +194,10 @@ foreach my $file (@list) {
        $somatic{$coor}{'germline'} = 0;
      }
      if ($somatic == 1) {
-        #$somatic{$coor}{'somatic'} = '' if ($somatic{$coor}{'somatic'} == 0);
+        $somatic{$coor}{'somatic'} = '' if ($somatic{$coor}{'somatic'} == 0);
         $somatic{$coor}{'somatic'} .= $name.',';
      } else {
-        #$somatic{$coor}{'germline'} = '' if ($somatic{$coor}{'germline'} == 0);
+        $somatic{$coor}{'germline'} = '' if ($somatic{$coor}{'germline'} == 0);
         $somatic{$coor}{'germline'} .= $name.',';
      }
 
