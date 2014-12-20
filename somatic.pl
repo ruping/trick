@@ -81,6 +81,7 @@ foreach my $file (@list) {
 
   open IN, "$openway";
   my $revertornot = "no";
+  my $printerror = 0;
   while ( <IN> ) {
      chomp;
      if ($_ =~ /^#/){
@@ -96,8 +97,7 @@ foreach my $file (@list) {
      }
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
-     next if ($qual < 30 and $task ne 'rnaediting');
-     next if ($qual < 30 and $task eq 'rnaediting');
+     next if ($qual ne '.' and $qual < 30);
 
      if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
@@ -110,6 +110,10 @@ foreach my $file (@list) {
      for(my $f = 0; $f <= $#formats; $f++) {
        $formindex{$formats[$f]} = $f;
      }
+     if ($printerror == 0){
+       print STDERR Dumper(\%formindex);
+       $printerror ++;
+     }
 
      my @sample = split(/\:/,$sample);
 
@@ -119,7 +123,6 @@ foreach my $file (@list) {
 
      ###########################################################################decide somatic
      my $somatic = 0;
-     print STDERR Dumper(\%formindex);
      if ($type eq 'snv') {   #for snp
         my @blood = split(/\:/,$blood);
         my @bad = split (/\,/, $blood[$formindex{'AD'}]);
