@@ -1,5 +1,6 @@
 use strict;
 use File::Glob ':glob';
+use Data::Dumper;
 
 my $list = shift;   #filename of all vcfs
 my $type = shift;
@@ -117,10 +118,11 @@ foreach my $file (@list) {
      for(my $f = 0; $f <= $#formats; $f++){
        $formindex{$formats[$f]} = $f;
      }
+     print STDERR Dumper(\%formindex);
      if ($type eq 'snv') {   #for snp
         my @blood = split(/\:/,$blood);
         my @bad = split (/\,/, $blood[$formindex{'AD'}]);
-        if (scalar(@bad) > 1){
+        if (scalar(@bad) > 1) {
            if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
              $somatic = 1;
            }
