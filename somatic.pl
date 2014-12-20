@@ -96,28 +96,29 @@ foreach my $file (@list) {
      }
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
-     if ($revertornot eq 'yes') {  #revert sample and blood
+     next if ($qual < 30 and $task ne 'rnaediting');
+     next if ($qual < 30 and $task eq 'rnaediting');
+
+     if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
         $sample = $blood;
         $blood = $tmp;
      }
 
-     next if ($qual < 30 and $task ne 'rnaediting');
-     next if ($qual < 30 and $task eq 'rnaediting');
+     my @formats = split(':', $format);
+     my %formindex;
+     for(my $f = 0; $f <= $#formats; $f++) {
+       $formindex{$formats[$f]} = $f;
+     }
 
      my @sample = split(/\:/,$sample);
 
-     if ($sample[0] eq '0/0') {   #skip some wierd thing
+     if ($sample[$formindex{'GT'}] !~ /1/) {     #skip some wierd thing
         next;
      }
 
      ###########################################################################decide somatic
      my $somatic = 0;
-     my @formats = split(':', $format);
-     my %formindex;
-     for(my $f = 0; $f <= $#formats; $f++){
-       $formindex{$formats[$f]} = $f;
-     }
      print STDERR Dumper(\%formindex);
      if ($type eq 'snv') {   #for snp
         my @blood = split(/\:/,$blood);
