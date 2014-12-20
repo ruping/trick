@@ -3,6 +3,7 @@ use File::Glob ':glob';
 
 my $list = shift;   #filename of all vcfs
 my $type = shift;
+my $normal = shift;
 my $recheck = shift;
 my $task = shift;
 
@@ -78,16 +79,27 @@ foreach my $file (@list) {
   print STDERR "$openway\n";
 
   open IN, "$openway";
+  my $revertornot = "no";
   while ( <IN> ) {
      chomp;
-     next if /^#/;
+     if ($_ =~ /^#/){
+       if ($_ =~ /^#CHROM\tPOS\tID/){
+         my @cols = split /\t/;
+         if ($cols[$#cols - 1] eq $normal){
+           $revertornot = "yes";
+         }
+         print STDERR "revert or not: $revertornot\n";
+       } else {
+         next;
+       }
+     }
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
-     #if ($name eq 'GT001') {
-     #   my $tmp = $sample;
-     #   $sample = $blood;
-     #   $blood = $tmp;
-     #}
+     if ($revertornot eq 'yes') {  #revert sample and blood
+        my $tmp = $sample;
+        $sample = $blood;
+        $blood = $tmp;
+     }
 
      next if ($qual < 30 and $task ne 'rnaediting');
      next if ($qual < 30 and $task eq 'rnaediting');
@@ -100,11 +112,22 @@ foreach my $file (@list) {
 
      ###########################################################################decide somatic
      my $somatic = 0;
+     my @formats = split(':', $format);
+     my %formindex;
+     for(my $f = 0; $f <= $#formats; $f++){
+       $formindex{$formats[$f]} = $f;
+     }
      if ($type eq 'snv') {   #for snp
         my @blood = split(/\:/,$blood);
-        my @bad = split (/\,/, $blood[2]);
-        if ($blood[0] eq '0/0' and $bad[1] == 0) {
-           $somatic = 1;
+        my @bad = split (/\,/, $blood[$formindex{'AD'}]);
+        if (scalar(@bad) > 1){
+           if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
+             $somatic = 1;
+           }
+        } else {
+           if ($blood[$formindex{'GT'}] !~ /1/) {
+             $somatic = 1;
+           }
         }
         if ($recheck ne '') {       #recheck
            my $coor = $chr.':'.$pos;
@@ -114,8 +137,15 @@ foreach my $file (@list) {
         }
      } elsif ($type eq 'indel') {
          my @blood = split(/\:/,$blood);
-         if ($blood[0] eq '0/0') {
-           $somatic = 1;
+         my @bad = split (/\,/, $blood[$formindex{'AD'}]);
+         if (scalar(@bad) > 1){
+           if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
+             $somatic = 1;
+           }
+         } else {
+           if ($blood[$formindex{'GT'}] !~ /1/) {
+             $somatic = 1;
+           }
          }
          if ($recheck ne ''){        #recheck
            my $coor = $chr.':'.$pos;
@@ -189,15 +219,10 @@ foreach my $file (@list) {
      $function = $1;
      $somatic{$coor}{'function'} = $function;
      $somatic{$coor}{'info'} = join("\t", ($id,$ref,$alt));
-     #if ($somatic{$coor}{'somatic'} eq '') {
-     #  $somatic{$coor}{'somatic'} = 0;
-     #  $somatic{$coor}{'germline'} = 0;
-     #}
+
      if ($somatic == 1) {
-        #$somatic{$coor}{'somatic'} = '' if ($somatic{$coor}{'somatic'} == 0);
         $somatic{$coor}{'somatic'} .= $name.',';
      } else {
-        #$somatic{$coor}{'germline'} = '' if ($somatic{$coor}{'germline'} == 0);
         $somatic{$coor}{'germline'} .= $name.',';
      }
 
