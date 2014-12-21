@@ -16,6 +16,7 @@ my %opt = (
            'window'       => undef,
 	   'mutation'     => undef,
            'mutationT'    => undef,
+           'normal'       => undef,
            'hetero'       => undef,
 	   'cd10'         => 1,
            'indel'        => undef,
@@ -35,6 +36,7 @@ GetOptions (
            "window|w=i"     => \$opt{window},
 	   "mutation|m=s"   => \$opt{mutation},
            "mutationT|x=s"  => \$opt{mutationT},
+           "normaln=s"      => \$opt{normal},
            "hetero|e"       => \$opt{hetero},
            "indel|i=s"      => \$opt{indel},
            "indelT|y=s"     => \$opt{indelT},
@@ -50,6 +52,7 @@ GetOptions (
 	                       print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
                                print "\t--window\tthe window size of searching variations\n";
                                print "\t--mutation[T]\tonly search for substitutions, 'T' for the already prepared mutation table\n";
+                               print "\t--normal\tthe sample id for normal or blood samples to decide somatic mutations\n";
 			       print "\t--hetero\tonly search for hetero substitutions.\n";
                                print "\t--indel[T]\t\tsearch for partial indel and depth indel, 'T' for the already prepared indel table\n";
                                print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, default, yes\n";
@@ -66,6 +69,13 @@ GetOptions (
        	                     },
            );
 
+
+my %normals;
+foreach my $normalSample (split(',', $opt{'normal'})){
+  $normals{$normalSample} = '';
+}
+print STDERR "normal samples:\n";
+print STDERR Dumper(\%normals);
 
 my %variations;
 my $winsize = $opt{window};
@@ -230,7 +240,7 @@ if ($opt{mutation}) {
 
     my %recheck;
     my $recheckN = 0;
-    if ($opt{'recheck'}){   #do recheck here
+    if ($opt{'recheck'}) {   #do recheck here
       my @rechecks = bsd_glob("$opt{recheck}/snv/compared_*/$individual");
       $recheckN = scalar(@rechecks);
       print STDERR "$recheckN\n";
@@ -249,10 +259,43 @@ if ($opt{mutation}) {
     } #do recheck
 
     open SNV, "$snv_file";
+    my $revertornot = "no";
+    my $printerror = 0;
+    my $singlecalling = "no";
     while ( <SNV> ) {
-      next if /^#/;
       chomp;
-      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $GT1, $GT2) = split /\t/;
+      if ($_ =~ /^#/) {
+        if ($_ =~ /^#CHROM\tPOS\tID/) {
+          my @cols = split /\t/;
+          if ( exists($normals{$cols[$#cols - 1]}) ) {
+            $revertornot = "yes";
+          } elsif ($cols[$#cols - 1] eq 'FORMAT') {
+            $singlecalling = "yes";
+          }
+          print STDERR "revert or not: $revertornot\n";
+          print STDERR "singlecalling: $singlecalling\n";
+        } else {
+          next;
+        }
+      }
+
+      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood) = split /\t/;
+
+      if ($revertornot eq 'yes') {   #revert sample and blood
+        my $tmp = $sample;
+        $sample = $blood;
+        $blood = $tmp;
+      }
+
+      my @formats = split(':', $FORMAT);
+      my %formindex;
+      for(my $f = 0; $f <= $#formats; $f++) {
+        $formindex{$formats[$f]} = $f;
+      }
+      if ($printerror == 0){
+        print STDERR Dumper(\%formindex);
+        $printerror ++;
+      }
 
       $CHROM =~ s/chr//;
       my $function;
@@ -263,8 +306,7 @@ if ($opt{mutation}) {
           next;                          #skip low quality calls
         }
 
-        if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/) {  #snp in population, is it a somatic one?
-          my $somatic = 0;
+        if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/ or $INFO =~ /ESP5400\=/) {  #snp in population, is it a somatic one?
 
           my $freq = -1;
           if ($INFO =~ /(1KG=(.+?));/) {
@@ -275,21 +317,23 @@ if ($opt{mutation}) {
             }
           }
 
-          if ($GT2 ne ''){
-            my @formats = split(/\:/, $FORMAT);
-            my $ADindex = -1;
-            for (my $i = 0; $i <= $#formats; $i++){
-              if ($formats[$i] eq 'AD'){
-                $ADindex = $i;
-                last;
-              }
+          if ($INFO =~ /(ESP5400=(.+?));/) {
+            my $kid = $1;       #re define $id to ESP when absent
+            $freq = $2;
+            if ($ID eq '.') {
+              $ID = $kid;
             }
-            my @blood = split(/\:/,$GT2);
+          }
+
+          #judging somatic or not
+          my $somatic = 0;
+          if ($blood ne '') {
+            my @blood = split(/\:/, $blood);
             my @bad;
-            if ($ADindex != -1) {   #AD found
-              @bad = split (/\,/, $blood[$ADindex]);
+            if (exists($formindex{'AD'})) {   #AD found
+              @bad = split (/\,/, $blood[$formindex{'AD'}]);
             }
-            if ($blood[0] eq '0/0' and $bad[1] == 0) {
+            if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
               $somatic = 1;
             }
           }
@@ -297,7 +341,7 @@ if ($opt{mutation}) {
           if ($somatic == 0) { #keep somatic ones even if it is marked as a common snp
             if ($freq == -1) {
               next;
-            } elsif ($freq > 0.0005) {
+            } elsif ($freq > 0 and ($ID !~ /^1KG/ and $ID !~ /^ESP5400/)) {
               next;
             }
           }
@@ -316,7 +360,6 @@ if ($opt{mutation}) {
           }
         }
 
-
         my $coor = $CHROM.':'.$POS;
         next if ($opt{'recheck'} and (!exists($recheck{$coor}) or $recheck{$coor} < $recheckN));
 
@@ -330,7 +373,7 @@ if ($opt{mutation}) {
         my $depth_var = $4+$5;
         next if $depth_var < 2;
         $MAF = sprintf("%.3f", $depth_var/($2+$3+$4+$5));
-        $GT1 =~ /^([01]\/[01])\:/;
+        $sample =~ /^([01]\/[01])\:/;
         if ($1 eq '0/1' or $1 eq '1/0') {
           $variations{$CHROM}{$POS}{$individual}{'SUB'}{'info'} = 'SUB_Hetero:'.$CHROM.':'.$POS.':'.$REF.'->'.$ALT.':'.$depth_record.':'.$function;
         } elsif ($1 eq '1/1') {
@@ -496,10 +539,44 @@ if ($opt{indel}) {
     } #do recheck
 
     open COHORT, "$indel_file";
+    my $revertornot = "no";
+    my $printerror = 0;
+    my $singlecalling = "no";
     while ( <COHORT> ) {
-      next if /^#/;
       chomp;
-      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $GT1, $GT2) = split /\t/;
+      if ($_ =~ /^#/) {
+        if ($_ =~ /^#CHROM\tPOS\tID/) {
+          my @cols = split /\t/;
+          if ( exists($normals{$cols[$#cols - 1]}) ) {
+            $revertornot = "yes";
+          } elsif ($cols[$#cols - 1] eq 'FORMAT') {
+            $singlecalling = "yes";
+          }
+          print STDERR "revert or not: $revertornot\n";
+          print STDERR "singlecalling: $singlecalling\n";
+        } else {
+          next;
+        }
+      }
+
+      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood) = split /\t/;
+
+      if ($revertornot eq 'yes') {   #revert sample and blood
+        my $tmp = $sample;
+        $sample = $blood;
+        $blood = $tmp;
+      }
+
+      my @formats = split(':', $FORMAT);
+      my %formindex;
+      for(my $f = 0; $f <= $#formats; $f++) {
+        $formindex{$formats[$f]} = $f;
+      }
+      if ($printerror == 0){
+        print STDERR Dumper(\%formindex);
+        $printerror ++;
+      }
+
 
       $CHROM =~ s/chr//;
       my $function;
@@ -510,8 +587,7 @@ if ($opt{indel}) {
           next;                          #skip low quality calls
         }
 
-        if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/) {  #snp in population, is it a somatic one?
-          my $somatic = 0;
+        if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/ or $INFO =~ /ESP5400\=/) {  #indel in population, is it a somatic one?
 
           my $freq = -1;
           if ($INFO =~ /(1KG=(.+?));/) {
@@ -522,26 +598,29 @@ if ($opt{indel}) {
             }
           }
 
-          if ($GT2 ne '') {
-            my @formats = split(/\:/, $FORMAT);
-            my $ADindex = -1;
-            for (my $i = 0; $i <= $#formats; $i++){
-              if ($formats[$i] eq 'AD'){
-                $ADindex = $i;
-                last;
-              }
+          if ($INFO =~ /(ESP5400=(.+?));/) {
+            my $kid = $1;       #re define $id to ESP when absent
+            $freq = $2;
+            if ($ID eq '.') {
+              $ID = $kid;
             }
-            my @blood = split(/\:/,$GT2);
+          }
+
+          #judging somatic or not
+          my $somatic = 0;
+          if ($blood ne '') {
+            my @blood = split(/\:/,$blood);
             my @bad;
-            if ($ADindex != -1) {   #AD found
-              @bad = split (/\,/, $blood[$ADindex]);
+            if (exists($formindex{'AD'})) {   #AD found
+              @bad = split (/\,/, $blood[$formindex{'AD'}]);
             }
+
             if (scalar(@bad) > 0){
-              if ($blood[0] eq '0/0' and $bad[1] == 0) {
+              if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
                 $somatic = 1;
               }
             } else {
-              if ($blood[0] eq '0/0') {
+              if ($blood[$formindex{'GT'}] !~ /1/) {
                 $somatic = 1;
               }
             }
@@ -550,7 +629,7 @@ if ($opt{indel}) {
           if ($somatic == 0) { #keep somatic ones even if it is marked as a common snp
             if ($freq == -1) {
               next;
-            } elsif ($freq > 0.0005) {
+            } elsif ($freq > 0 and ($ID !~ /^1KG/ and $ID !~ /^ESP5400/)) {
               next;
             }
           }
