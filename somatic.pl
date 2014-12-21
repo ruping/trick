@@ -215,7 +215,7 @@ foreach my $file (@list) {
         $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
      } else {
         my @sampleinfo = split(":", $sample);
-        $sampleinfo[2] =~ /^(\d+)\,(\d+)$/;
+        $sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/;
         $maf = sprintf("%.3f", $2/($1+$2));
      }
 
