@@ -186,9 +186,9 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         print "\t$somatic{$coor}{$name}";
       }
     }
-    if ($n > 0) {
+    #if ($n > 0) {
        print "\t$sumCmean\t$sumCmedian";
-    }
+    #}
     print "\n";
   }
 }
