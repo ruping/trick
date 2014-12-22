@@ -6,7 +6,7 @@ use Data::Dumper;
 my $file = shift;      #filename of all rechecked files
 my $type = shift;
 my $original = shift;
-my $task = shift;
+my $task = shift;      #only for tcga
 
 my @list;
 open IN, "$file";
@@ -25,7 +25,7 @@ $chrJumper{'original'} = getchrpos($original);
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($file =~ /(GT\d+)/) {
+  if ($file =~ /(AC\d+)/) {
     $name = $1;
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
@@ -72,7 +72,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   my %somatic;
   foreach my $file (@list) {
     my $name;
-    if ($file =~ /(GT\d+)/) {
+    if ($file =~ /(AC\d+)/) {
       $name = $1;
     } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
@@ -87,7 +87,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       chomp;
       next if /^[#@]/;
       next if /^chr\t/;
-      if ($type =~ /indel/) {   #indel
+      if ($type =~ /indel/) {       #indel
         my ($chr, $pos, $ref, $alt, $indelType, $depth, $vard, $junction, $cmean, $cmedian) = split /\t/;
         last if $chr ne $chrc;
         my $coor = $chr.':'.$pos;
@@ -97,11 +97,14 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $somatic{$coor}{$name} = 0;
         }
         $somatic{$coor}{$name} .= "\t$depth";
-        if ($junction ne '') {
+        if ($junction != 0) {  #there are some junction reads
           $somatic{$coor}{$name} .= ",$junction";
         }
         $somatic{$coor}{'info'} = join("\t", ($ref,$alt));
-      } elsif ($type =~ /snv/) {
+        $somatic{$coor}{'consecutive'} .= $cmean.','.$cmedian.';';
+
+      } elsif ($type =~ /snv/) {    #snv
+
         my ($chr, $pos, $depth, $vard, $A, $C, $G, $T, $vends, $junction, $cmean, $cmedian) = split /\t/;
         last if $chr ne $chrc;
         my $coor = $chr.':'.$pos;
@@ -134,7 +137,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $somatic{$coor}{$name} = 0;
         }
         $somatic{$coor}{$name} .= "\t$depth";
-        if ($junction ne '' and $type =~ /rnaseq/) {
+        if ($junction != 0) {    #there are some junction reads
           $somatic{$coor}{$name} .= ",$junction";
         }
         $somatic{$coor}{'info'} = join("\t", ("ref","alt"));
@@ -164,10 +167,9 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
        $n++;
     }
 
-    if ($n > 0){ #if you have cmean and cmedian information
+    if ($n > 0) {  #if you have cmean and cmedian information
        $sumCmean = sprintf("%.2f", ($sumCmean/$n));
        $sumCmedian = sprintf("%.2f", ($sumCmedian/$n));
-       #next if ($sumCmean >= 3 and $sumCmedian >= 3);
     }
 
     my @information = split(",", $OR{$coor});
