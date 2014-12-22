@@ -32,7 +32,7 @@ while ( <IN> ) {
     my $cmean = 0;                                          #consecutive mismatch mean
     my $cmedian = 0;                                        #consecutive mismatch median
     my $segdupScore = 0;
-    if (exists ($re{$coor})){
+    if (exists ($re{$coor})) {
       $cmean = $re{$coor}{'mean'};
       $cmedian = $re{$coor}{'median'};
     } else {
