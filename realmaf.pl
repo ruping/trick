@@ -13,7 +13,7 @@ open IN, "$file";
 while ( <IN> ) {
   chomp;
   next if /^#/;
-  push(@list, $_);
+  push(@list, $_) unless ($_ eq '');
 }
 close IN;
 
