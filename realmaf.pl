@@ -30,8 +30,10 @@ foreach my $file (@list) {
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
   }
-  $samples{$name} = '';
-  $chrJumper{$name} = getchrpos($file);
+  if ($name ne '') {
+    $samples{$name} = '';
+    $chrJumper{$name} = getchrpos($file);
+  }
 }
 
 print STDERR Dumper(\%chrJumper);
