@@ -53,7 +53,7 @@ while ( <IN> ){
           $cols[$i] .= 'maf';
         } elsif ($cols[$i] !~ /d$/) {
           push(@order, $i);
-          push(@order, $i+1) if ($cols[$i] =~ /^TCGA/);
+          push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^AC\d+/);
         }
       }
 
