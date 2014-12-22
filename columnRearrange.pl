@@ -12,7 +12,7 @@ while ( <IN> ){
   my @cols = split /\t/;
   if ($order ne ''){
     my $print;
-    foreach my $index (@order){
+    foreach my $index (@order) {
       $print .= $cols[$index]."\t";
     }
     $print =~ s/\t$//;
@@ -23,27 +23,27 @@ while ( <IN> ){
       my $secondstart = 0;
 
       for (my $i = 0; $i <= $#cols; $i++){
-        if ($cols[$i] eq 'germline') {
+        if ($cols[$i] eq 'bp') {
           $secondstart = $i+1;
           push(@order, $i);
           last;
         } else {
           push(@order, $i);
-          if ($cols[$i] =~ /^TCGA-.+?$/){
+          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^AC\d+/){
             $samples{$cols[$i]} = $i;
           }
         } #else
       } #for
 
       my %inserted;
-      for (my $i = $secondstart; $i <= $#cols; $i++){
+      for (my $i = $secondstart; $i <= $#cols; $i++) {
         if ( exists($samples{$cols[$i]}) ) {
           my $insertpos = $samples{$cols[$i]};
           my $offset;
-          foreach my $sample (sort {my $sa = $samples{$a}; my $sb = $samples{$b}; $sa <=> $sb} keys %samples) {
+          foreach my $sample ( sort { my $sa = $samples{$a}; my $sb = $samples{$b}; $sa <=> $sb } keys %samples) {
              my $rank = $samples{$sample};
              last if ($insertpos == $rank);
-             if ( exists($inserted{$sample}) ){
+             if ( exists($inserted{$sample}) ) {
                 $offset += 2;
              }
           }
@@ -56,8 +56,6 @@ while ( <IN> ){
           push(@order, $i+1) if ($cols[$i] =~ /^TCGA/);
         }
       }
-
-      #print Dumper(\@order);
 
     } #if it is the header
 
