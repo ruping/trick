@@ -58,7 +58,7 @@ while ( <IN> ) {
           $junc += (($segdupScore + $cols[$i]) > 0) ? 2:0;
       }
     }                           #iterator
-    if ($junc < 4.02) {
+    if ($junc < 4) {
       print "$_\t$junc\n";
     }
   }                             #else
