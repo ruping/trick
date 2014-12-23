@@ -33,7 +33,7 @@ while ( <IN> ) {
   } else {
     my $junc = 0;
     my $coor = $cols[0].':'.$cols[1];
-    my $cmean = $cols[$colnames{'cmeanav'}];                                          #consecutive mismatch mean
+    my $cmean = $cols[$colnames{'cmeanav'}];                                            #consecutive mismatch mean
     my $cmedian = $cols[$colnames{'cmedianav'}];                                        #consecutive mismatch median
     my $segdupScore = 0;
     #if (exists ($re{$coor})) {
@@ -50,7 +50,7 @@ while ( <IN> ) {
         if ($cols[$i] =~ /seg(d)?up\.score\=([\d\.]+)/) {
            $segdupScore = $2;
         }
-      } elsif ($name[$i] =~ /\.bam\.bad\.out/) {
+      } elsif ($name[$i] =~ /\.bam\.out\.bad/) {
           $junc += 4*$cols[$i];
       } elsif ($name[$i] eq 'rep') {
           $junc += 2*$cols[$i];
