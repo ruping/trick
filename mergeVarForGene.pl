@@ -54,14 +54,14 @@ foreach my $rec (@rectum){
 my %result;
 foreach my $file (@files) {
   my $type;
-  if ($file =~ /\.snv\./){
+  if ($file =~ /snv/){
     $type = 'snv';
-    if ($file =~ /\.germline\./){
+    if ($file =~ /germline/){
       $type .= '&raregermline';
     }
-  } elsif ($file =~ /\.indel\./){
+  } elsif ($file =~ /indel/){
     $type = 'indel';
-    if ($file =~ /\.germline\./){
+    if ($file =~ /germline/){
       $type .= '&raregermline';
     }
   } elsif ($file =~ /fusion/){
@@ -114,10 +114,14 @@ foreach my $gene (keys %result) {
     my $changed = 0;
     my $vars;
     foreach my $type (%{$result{$gene}{$sample}}) {
-      if ($result{$gene}{$sample}{$type} > 0){
+      if ($result{$gene}{$sample}{$type} > 0) {
          $changed = 1;
-         $vars .= $type.","
+         #$vars .= $type.","
+         $vars .= $type2int{$type};
       }
+    }
+    if ($vars eq ''){
+      $vars = 0;
     }
     $rectum += $changed;
     print "\t$vars";
@@ -128,8 +132,12 @@ foreach my $gene (keys %result) {
     foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $a <=> $b} keys %{$result{$gene}{$sample}}) {
       if ($result{$gene}{$sample}{$type} > 0){
          $changed = 1;
-         $vars .= $type.","
+         #$vars .= $type.","
+         $vars .= $type2int{$type};
       }
+    }
+    if ($vars eq ''){
+      $vars = 0;
     }
     $ileum += $changed;
     print "\t$vars";

@@ -5,19 +5,10 @@ my @name;
 my %colnames;
 my %found;
 
-#my $rechecked = shift;
-my $file =  shift;
+my $file = shift;
+my $type = "snv";
 
-#open RE, "$rechecked";
-#my %re;
-#while ( <RE> ) {
-#   chomp;
-#   my @cols = split /\t/;
-#   my $coor = $cols[0].':'.$cols[1];
-#   $re{$coor}{'mean'} = $cols[$#cols-1];
-#   $re{$coor}{'median'} = $cols[$#cols];
-#}
-#close RE;
+
 
 open IN, "$file";
 while ( <IN> ) {
@@ -35,13 +26,15 @@ while ( <IN> ) {
     my $coor = $cols[0].':'.$cols[1];
     my $cmean = $cols[$colnames{'cmeanav'}];                                            #consecutive mismatch mean
     my $cmedian = $cols[$colnames{'cmedianav'}];                                        #consecutive mismatch median
+    my $ref = $cols[$colnames{'ref'}];
+    my $alt = $cols[$colnames{'alt'}];
+    if ($ref !~ /^[ACGTN]$/ or $alt !~ /^[ACGTN]$/){                             #indel
+      $type = "indel";
+    }
+    my $rep = $cols[$colnames{'rep'}];
+    my $sc = $cols[$colnames{'sc'}];
     my $segdupScore = 0;
-    #if (exists ($re{$coor})) {
-    #  $cmean = $re{$coor}{'mean'};
-    #  $cmedian = $re{$coor}{'median'};
-    #} else {
-    #  print STDERR "not found consecutive mismatch mean and median for $coor\n";
-    #}
+
     unless ($cmean < 2 and $cmedian < 2) {
        $junc += ($cmean + $cmedian)/2;                                           #good ones
     }
@@ -57,9 +50,15 @@ while ( <IN> ) {
       } elsif ($name[$i] eq 'sc') {
           $junc += (($segdupScore + $cols[$i]) > 0) ? 2:0;
       }
-    }                           #iterator
-    if ($junc < 4) {
-      print "$_\t$junc\n";
+    } #iterator
+    if ($type eq 'indel' and $rep == 0 and $sc == 0 and $segdupScore == 0) {
+      if  ($junc < 4.3) {
+        print "$_\t$junc\n";
+      }
+    } else {
+      if  ($junc < 4) {
+        print "$_\t$junc\n";
+      }
     }
   }                             #else
 }                               #while
