@@ -211,18 +211,18 @@ if ($opt{mutation}) {
         my $MAF = 0;
         if ($snv_file =~ /type1/){
           for(my $i = 9; $i <= 42; $i = $i+3) {
-            $MAF += $cols[$i-1];
+            $MAF += $cols[$i];
           }
           $MAF = sprintf("%.3f", $MAF/12);
         } elsif ($snv_file =~ /type2/) {
-          $MAF = sprintf("%.3f", ($cols[44]+$cols[47])/2);
+          $MAF = sprintf("%.3f", ($cols[45]+$cols[48])/2);
         } else {
-          for(my $i = 9; $i <= 48; $i = $i+3){
-            $MAF += $cols[$i-1];
+          for(my $i = 9; $i <= 48; $i = $i+3) {
+            $MAF += $cols[$i];
           }
           $MAF = sprintf("%.3f", $MAF/14);
         }
-        my $function = $cols[49];
+        my $function = $cols[5];
         $variations{$CHROM}{$POS}{$individual}{'SUB'}{'info'} = $CHROM.':'.$POS.'(maf='.$MAF.';'.$function.')';
         if ($opt{'table'}) {   #generate the mutation table
            $snv{$coor}{$individual} = $MAF;
@@ -234,7 +234,8 @@ if ($opt{mutation}) {
       print STDERR "#ARJ $individual loaded.\n";
       $samples{$individual} = "";
       next;
-    }
+    } #ARJ files
+
     $snv_file =~ /(AC\d+)[^0-9a-zA-Z]/;
     $individual = $1;
 
@@ -489,19 +490,19 @@ if ($opt{indel}) {
 
         if ($indel_file =~ /type1/){
           for(my $i = 9; $i <= 42; $i = $i+3) {
-            $MAF += $cols[$i-1];
+            $MAF += $cols[$i];
           }
           $MAF = sprintf("%.3f", $MAF/12);
         } elsif ($indel_file =~ /type2/){
-          $MAF = sprintf("%.3f", ($cols[44]+$cols[47])/2);
+          $MAF = sprintf("%.3f", ($cols[45]+$cols[48])/2);
         } else {
           for(my $i = 9; $i <= 48; $i = $i+3) {
-            $MAF += $cols[$i-1];
+            $MAF += $cols[$i];
           }
           $MAF = sprintf("%.3f", $MAF/14);
         }
 
-        my $function = $cols[49];
+        my $function = $cols[5];
         $variations{$CHROM}{$POS}{$individual}{'INDEL'}{'info'} = $CHROM.':'.$POS.'(maf='.$MAF.';'.$function.')';
         $variations{$CHROM}{$POS}{$individual}{'INDEL'}{'end'} = $POS + 1;
         if ($opt{'table'}) {   #generate the mutation table
@@ -514,7 +515,8 @@ if ($opt{indel}) {
       print STDERR "#ARJ $individual loaded.\n";
       $samples{$individual} = "";
       next;
-    }
+    } #ARJ files
+
     $indel_file =~ /(AC\d+)[^0-9a-zA-Z]/;
     $individual = $1;
 
@@ -740,8 +742,6 @@ if ($opt{indelT}) {
   }
   close IND;
 }
-
-
 
 
 
