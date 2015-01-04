@@ -268,9 +268,10 @@ if ($opt{mutation}) {
       if ($_ =~ /^#/) {
         if ($_ =~ /^#CHROM\tPOS\tID/) {
           my @cols = split /\t/;
+          print STDERR "$cols[$#cols - 1]\n";
           if ( exists($normals{$cols[$#cols - 1]}) ) {
             $revertornot = "yes";
-          } elsif ($cols[$#cols - 1] eq 'FORMAT') {
+          } elsif ( $cols[$#cols - 1] eq 'FORMAT' ) {
             $singlecalling = "yes";
           }
           print STDERR "revert or not: $revertornot\n";
