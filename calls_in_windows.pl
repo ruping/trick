@@ -267,7 +267,7 @@ if ($opt{mutation}) {
       chomp;
       if ($_ =~ /^#/) {
         if ($_ =~ /^#CHROM\tPOS\tID/) {
-          my @cols = split /\t/;
+          my @cols = split (/\t/, $_);
           print STDERR "$cols[$#cols - 1]\n";
           if ( exists($normals{$cols[$#cols - 1]}) ) {
             $revertornot = "yes";
