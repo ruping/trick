@@ -84,13 +84,14 @@ foreach my $file (@list) {
   my $printerror = 0;
   while ( <IN> ) {
      chomp;
-     if ($_ =~ /^#/){
+     if ($_ =~ /^#/) {
        if ($_ =~ /^#CHROM\tPOS\tID/){
          my @cols = split /\t/;
-         if ($cols[$#cols - 1] eq $normal){
+         if ($cols[$#cols - 1] eq $normal) {
            $revertornot = "yes";
          }
          print STDERR "revert or not: $revertornot\n";
+         next;
        } else {
          next;
        }

@@ -275,6 +275,7 @@ if ($opt{mutation}) {
           }
           print STDERR "revert or not: $revertornot\n";
           print STDERR "singlecalling: $singlecalling\n";
+          next;
         } else {
           next;
         }
@@ -293,7 +294,7 @@ if ($opt{mutation}) {
       for(my $f = 0; $f <= $#formats; $f++) {
         $formindex{$formats[$f]} = $f;
       }
-      if ($printerror == 0){
+      if ($printerror == 0) {
         print STDERR Dumper(\%formindex);
         $printerror ++;
       }
@@ -556,6 +557,7 @@ if ($opt{indel}) {
           }
           print STDERR "revert or not: $revertornot\n";
           print STDERR "singlecalling: $singlecalling\n";
+          next;
         } else {
           next;
         }
