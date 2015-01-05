@@ -8,7 +8,6 @@ use File::Basename;
 use Data::Dumper;
 
 my $cmdline=join(" ",@ARGV);
-print "@ $0 $cmdline\n";
 
 
 my %opt = (
@@ -69,6 +68,8 @@ GetOptions (
        	                     },
            );
 
+
+print "@ $0 $cmdline\n" if $opt{'window'};
 
 my %normals;
 foreach my $normalSample (split(',', $opt{'normal'})){
