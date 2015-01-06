@@ -204,7 +204,7 @@ if ($opt{mutation}) {
       open ARJ, "$snv_file";
       while ( <ARJ> ) {
         chomp;
-        next if /^AC/;
+        next if /^chr\t/;
         my @cols = split /\t/;
         my $CHROM = $cols[0];
         my $POS = $cols[1];
@@ -484,7 +484,7 @@ if ($opt{indel}) {
       open ARJ, "$indel_file";
       while ( <ARJ> ) {
         chomp;
-        next if /^chr/;
+        next if /^chr\t/;
         my @cols = split /\t/;
         my $CHROM = $cols[0];
         my $POS = $cols[1];
