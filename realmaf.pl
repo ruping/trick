@@ -103,6 +103,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $somatic{$coor}{$name} .= ",$junction";
         }
         $somatic{$coor}{'info'} = join("\t", ($ref,$alt));
+        $somatic{$coor}{'vard'} = $vard;
         $somatic{$coor}{'consecutive'} .= $cmean.','.$cmedian.';';
 
       } elsif ($type =~ /snv/) {    #snv
@@ -143,6 +144,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $somatic{$coor}{$name} .= ",$junction";
         }
         $somatic{$coor}{'info'} = join("\t", ("ref","alt"));
+        $somatic{$coor}{'vard'} = $vard;
         $somatic{$coor}{'consecutive'} .= $cmean.','.$cmedian.';';
       }  #snv
     }
@@ -154,6 +156,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
     my $chrom = $1;
     my $pos = $2;
     my $info = $somatic{$coor}{'info'};
+    my $vard = $somatic{$coor}{'vard'};
     my @consecutive = split (';', $somatic{$coor}{'consecutive'});
     my $n = 0;
     my $sumCmean = 0;
@@ -164,9 +167,11 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
        my @tmp = split (',', $consecutive);
        next if $tmp[0] == 0;
        next if $tmp[1] == 0;
-       $sumCmean += $tmp[0];
-       $sumCmedian += $tmp[1];
-       $n++;
+       if ( $vard >= 3 ) {
+         $sumCmean += $tmp[0];
+         $sumCmedian += $tmp[1];
+         $n++;
+       }
     }
 
     if ($n > 0) {  #if you have cmean and cmedian information
