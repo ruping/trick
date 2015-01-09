@@ -2,11 +2,34 @@ use strict;
 use File::Glob ':glob';
 use List::Util qw[min max];
 use Data::Dumper;
+use Getopt::Long;
 
-my $file = shift;      #filename of all rechecked files
-my $type = shift;
-my $original = shift;
-my $task = shift;      #only for tcga
+my $file;      #filename of all rechecked files
+my $type;
+my $original;
+my $task;      #only for tcga
+my $prefix;
+
+GetOptions (
+           "file|f=s"       => \$file,             #filename
+           "type|t=s"       => \$type,             #snv or indel
+           "original|o=s"   => \$original,         #original big table
+           "task|k=s"       => \$task,             #task type
+           "prefix|p=s"     => \$prefix,
+           "help|h"         => sub{
+                               print "usage: $0 get all minor allele frequency for samples under recheck\n\nOptions:\n\t--file\t\tthe filename of all rechecked files\n";
+                               print "\t--type\t\tthe type of variants, snv or indel\n";
+                               print "\t--original\tthe original mutation big table\n";
+                               print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--task\t\tthe task, such as tcga\n";
+                               print "\t--help\t\tprint this help message\n";
+                               print "\n";
+                               exit 0;
+                             },
+           );
+
+
+
 
 my @list;
 open IN, "$file";
@@ -25,7 +48,7 @@ $chrJumper{'original'} = getchrpos($original);
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($file =~ /(AC\d+)/) {
+  if ($file =~ /($prefix\d+)/) {
     $name = $1;
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
@@ -74,7 +97,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   my %somatic;
   foreach my $file (@list) {
     my $name;
-    if ($file =~ /(AC\d+)/) {
+    if ($file =~ /($prefix\d+)/) {
       $name = $1;
     } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
