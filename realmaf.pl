@@ -48,7 +48,7 @@ $chrJumper{'original'} = getchrpos($original);
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($file =~ /($prefix\d+)/) {
+  if ($file =~ /($prefix\d+)$/) {
     $name = $1;
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
@@ -97,7 +97,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   my %somatic;
   foreach my $file (@list) {
     my $name;
-    if ($file =~ /($prefix\d+)/) {
+    if ($file =~ /($prefix\d+)$/) {
       $name = $1;
     } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
