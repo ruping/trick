@@ -1,12 +1,35 @@
 use strict;
 use File::Glob ':glob';
 use Data::Dumper;
+use Getopt::Long;
 
-my $list = shift;   #filename of all vcfs
-my $type = shift;
-my $normal = shift;
-my $recheck = shift;
-my $task = shift;
+my $list;   #filename of all vcfs
+my $type;
+my $normal;
+my $recheck;
+my $task;
+my $prefix;
+
+GetOptions (
+           "list|l=s"       => \$list,             #filename of all vcfs
+           "type|t=s"       => \$type,             #snv or indel
+           "normal|n=s"     => \$normal,           #comma seperated id of normal samples
+           "recheck|r=s"    => \$recheck,          #directory of rechecked files
+           "task|k=s"       => \$task,             #task type
+           "prefix|p=s"     => \$prefix,
+           "help|h"         => sub{
+                               print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
+                               print "\t--type\t\tthe type of variants, snv or indel\n";
+                               print "\t--normal\tcomma seperated id of normal samples\n";
+                               print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--task\t\tthe task, such as tcga or rnaediting\n";
+                               print "\t--recheck\tthe dir whether recheck files are located\n";
+                               print "\t--help\t\tprint this help message\n";
+                               print "\n";
+                               exit 0;
+                             },
+           );
+
 
 my @list;
 open IN, "$list";
@@ -34,7 +57,7 @@ my %somatic;
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($task ne 'tcga' and $file =~ /(AC\d+)[^a-zA-Z0-9]/) {
+  if ($task ne 'tcga' and $file =~ /($prefix\d+)[^a-zA-Z0-9]/) {
     $name = $1;
   }
   if ($task eq 'tcga') {
