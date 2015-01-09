@@ -1,8 +1,25 @@
 use strict;
 use Data::Dumper;
+use Getopt::Long;
 
-my $file = shift;
-my $order = shift;
+my $file;
+my $order;
+my $prefix;
+
+GetOptions (
+           "file|f=s"       => \$file,             #filename
+           "order|o=s"      => \$order,            #comma seperated indexes
+           "prefix|p=s"     => \$prefix,
+           "help|h"         => sub{
+                               print "usage: $0 rearrange columns according to your order or for maf rearrange\n\nOptions:\n\t--file\t\tthe filename to be reordered\n";
+                               print "\t--order\t\tcomma seperated indexes\n";
+                               print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--help\t\tprint this help message\n";
+                               print "\n";
+                               exit 0;
+                             },
+           );
+
 
 my @order = split(/\,/, $order);
 
@@ -29,7 +46,7 @@ while ( <IN> ){
           last;
         } else {
           push(@order, $i);
-          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^AC\d+/){
+          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^$prefix\d+/){
             $samples{$cols[$i]} = $i;
           }
         } #else
@@ -53,7 +70,7 @@ while ( <IN> ){
           $cols[$i] .= 'maf';
         } elsif ($cols[$i] !~ /d$/) {
           push(@order, $i);
-          push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^AC\d+/);
+          push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^$prefix\d+/);
         }
       }
 
