@@ -6,12 +6,22 @@ foreach my $id (@chrs){
 }
 
 my $file = shift;
+my $remove = shift;
 #print "#$file\n";
 
 open IN, "$file";
 while ( <IN> ){
 
-   print "$_" if /^#/;
+   if (/^#/){
+     print "$_";
+     next;
+   }
+
+   if ($remove ne ''){
+     $_ =~ s/^chr//;
+     print "$_";
+     next;
+   }
 
    $_ =~ /^(\S+)/;
    my $chr_now = $1;
