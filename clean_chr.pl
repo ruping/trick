@@ -18,9 +18,15 @@ while ( <IN> ){
    }
 
    if ($remove ne ''){
-     $_ =~ s/^chr//;
-     print "$_";
-     next;
+     if ($remove eq 'yes'){
+       $_ =~ s/^chr//;
+       print "$_";
+       next;
+     } elsif ($remove eq 'hs') {
+       $_ = 'hs'.$_;
+       print "$_";
+       next;
+     }
    }
 
    $_ =~ /^(\S+)/;
