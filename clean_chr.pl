@@ -24,7 +24,7 @@ while ( <IN> ){
        next;
      } elsif ($remove eq 'hs') {
        $_ = 'hs'.$_ if $_ !~ /^hs/;
-       $_ =~ s/\t/\s/;
+       $_ =~ s/\t/ /g;
        print "$_";
        next;
      }
