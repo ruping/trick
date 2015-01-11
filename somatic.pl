@@ -105,15 +105,19 @@ foreach my $file (@list) {
   open IN, "$openway";
   my $revertornot = "no";
   my $printerror = 0;
+  my $singlecalling = "no";
   while ( <IN> ) {
      chomp;
      if ($_ =~ /^#/) {
-       if ($_ =~ /^#CHROM\tPOS\tID/){
+       if ($_ =~ /^#CHROM\tPOS\tID/) {
          my @cols = split /\t/;
          if ($cols[$#cols - 1] eq $normal) {
            $revertornot = "yes";
+         } elsif ( $cols[$#cols - 1] eq 'FORMAT' ) {
+           $singlecalling = "yes";
          }
          print STDERR "revert or not: $revertornot\n";
+         print STDERR "singlecalling: $singlecalling\n";
          next;
        } else {
          next;
