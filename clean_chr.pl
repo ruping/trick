@@ -23,7 +23,8 @@ while ( <IN> ){
        print "$_";
        next;
      } elsif ($remove eq 'hs') {
-       $_ = 'hs'.$_;
+       $_ = 'hs'.$_ if $_ !~ /^hs/;
+       $_ =~ s/\t/\s/;
        print "$_";
        next;
      }
