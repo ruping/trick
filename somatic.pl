@@ -9,6 +9,7 @@ my $normal;
 my $recheck;
 my $task;
 my $prefix;
+my $dbsnp = "no";
 
 GetOptions (
            "list|l=s"       => \$list,             #filename of all vcfs
@@ -17,6 +18,7 @@ GetOptions (
            "recheck|r=s"    => \$recheck,          #directory of rechecked files
            "task|k=s"       => \$task,             #task type
            "prefix|p=s"     => \$prefix,
+           "dbsnp|d=s"      => \$dbsnp,
            "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -24,6 +26,7 @@ GetOptions (
                                print "\t--prefix\tthe prefix of samples' names\n";
                                print "\t--task\t\tthe task, such as tcga or rnaediting\n";
                                print "\t--recheck\tthe dir whether recheck files are located\n";
+                               print "\t--dbsnp\tyes or no, whether to keep dbsnp variants into the table\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -215,10 +218,10 @@ foreach my $file (@list) {
 
        if ($somatic == 0) {                             #keep somatic ones even if it is marked as a common snp
          if ($freq == -1) {
-            next;
+            next if $dbsnp eq "no";
          }
          elsif ($freq > 0 and ($id !~ /^1KG/ and $id !~ /^ESP5400/)) {   #still dbSNP ones
-            next;
+            next if $dbsnp eq "no";
          }
        }
      } #somatic common snp
