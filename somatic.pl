@@ -60,6 +60,7 @@ if ($clinical ne ''){
   close CLIN;
 }
 my $clinicalSites = scalar(keys %clinical);
+print STDERR "number of clinical Sites: $clinicalSites\n";
 #############-----save clinical dbSNP sites here------##############
 
 
@@ -291,7 +292,9 @@ foreach my $file (@list) {
      } else {
         $somatic{$coor}{'germline'} .= $name.',';
      }
-
+     if ($clinicalSites != 0){
+       $somatic{$coor}{'clinical'} = $clinical{$id};  #clinical id information
+     }
   }
   close IN;
   $tmpc = scalar(keys %somatic);
@@ -299,11 +302,20 @@ foreach my $file (@list) {
 
 }
 
+#######------------------print header-----------------------#####
 print "#chr\tpos\tid\tref\talt";
 foreach my $name (sort keys %samples) {
-   print "\t$name";
+  print "\t$name";
 }
-print "\tfunction\tsomatic\tgermline\n";
+print "\tfunction";
+if ($clinicalSites == 0) {
+  print "\tsomatic\tgermline\n";
+} else {
+  print "\tclinical";
+}
+print "\n";
+#################################################################
+
 
 foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /^(\w+):(\d+)$/; my $cb = $1; my $pb = $2; $ca cmp $cb || $pa <=> $pb} keys %somatic) {
   $coor =~ /^(\w+):(\d+)$/;
@@ -322,6 +334,8 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   print "\t$function";
   if ($clinicalSites == 0) {
     print "\t$somatic\t$germline";
+  } else {
+    print "\t$somatic{$coor}{'clinical'}";
   }
   print "\n";
 }
