@@ -10,6 +10,7 @@ my $recheck;
 my $task;
 my $prefix;
 my $dbsnp = "no";
+my $clinical;
 
 GetOptions (
            "list|l=s"       => \$list,             #filename of all vcfs
@@ -19,6 +20,7 @@ GetOptions (
            "task|k=s"       => \$task,             #task type
            "prefix|p=s"     => \$prefix,
            "dbsnp|d=s"      => \$dbsnp,
+           "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
            "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -27,6 +29,7 @@ GetOptions (
                                print "\t--task\t\tthe task, such as tcga or rnaediting\n";
                                print "\t--recheck\tthe dir whether recheck files are located\n";
                                print "\t--dbsnp\tyes or no, whether to keep dbsnp variants into the table\n";
+                               print "\t--clinical\tthe file containing the clinical dbSNP sites, it is a gzipped vcf file\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -42,6 +45,23 @@ while ( <IN> ) {
   push(@list, $_);
 }
 close IN;
+
+
+#############-----save clinical dbSNP sites here------##############
+my %clinical;
+if ($clinical ne ''){
+  open CLIN, "gzip -dc $clinical |";
+  while ( <CLIN> ){
+    next if /^#/;
+    chomp;
+    my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO) = split /\t/;
+    $clinical{$ID} = $INFO;
+  }
+  close CLIN;
+}
+my $clinicalSites = scalar(keys %clinical);
+#############-----save clinical dbSNP sites here------##############
+
 
 open DR, "/ifs/scratch/c2b2/ac_lab/rs3412/no1/net/dna2rna.mapping";
 my %rna2dna;
@@ -152,6 +172,14 @@ foreach my $file (@list) {
         next;
      }
 
+     if ($clinicalSites != 0){  # want to grep the clinical sites only
+       if (exists($clinical{$id})){
+         goto PRODUCE;
+       } else {
+         next;
+       }
+     }
+
      ###########################################################################decide somatic
      my $somatic = 0;
      if ($type eq 'snv') {   #for snp
@@ -226,6 +254,7 @@ foreach my $file (@list) {
        }
      } #somatic common snp
 
+   PRODUCE:
 
      if ($info =~ /MQ0Fraction=(.+?);/) {
        next if ($1 > 0.1);
@@ -233,9 +262,9 @@ foreach my $file (@list) {
      if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
        my $tailb = $4;
        if ($tailb =~ /e/) {
-          next;
-       } elsif ($tailb < 0.005){
-          next;
+         next;
+       } elsif ($tailb < 0.005) {
+         next;
        }
      }
 
@@ -290,5 +319,9 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   my $function = $somatic{$coor}{'function'};
   my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
   my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
-  print "\t$function\t$somatic\t$germline\n";
+  print "\t$function";
+  if ($clinicalSites == 0) {
+    print "\t$somatic\t$germline";
+  }
+  print "\n";
 }
