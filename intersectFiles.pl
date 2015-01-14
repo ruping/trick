@@ -353,24 +353,25 @@ sub var_processing {
      print "$original\t$nump\n" if ($count == 1 and $nonoverlap == 0 and $overlap == 0);
      print "$original\t$nump\n" if ($count == 1 and $nonoverlap == 1 and $nump == 0);
      print "$original\t$nump\n" if ($count == 1 and $overlap == 1 and $nump > 0);
-   } elsif ($column ne ''){
-     print "$original\t";
+   } elsif ($column ne '') {
      my $columnAdd;
      foreach my $printer ( @{$variant->{'printer'}} ) {
        my @tmp = split (/\t/, $printer);
        my @columnAdd;
-       foreach my $index (@columnIndex){
+       foreach my $index (@columnIndex) {
          push(@columnAdd, $tmp[$index]);
        }
-       if (scalar(@columnAdd) == 1){
+       if (scalar(@columnAdd) == 1) {
          $columnAdd = $columnAdd[0];
        } else {
          $columnAdd = join("\t", @columnAdd);
        }
      }
-     if ($columnAdd eq ''){
+     if ($columnAdd eq '') {
        $columnAdd = "NA";
      }
-     print "$columnAdd\n";
+     unless ($overlap == 1 and $columnAdd eq 'NA'){  #do not print only when it is required to be overlapped and nonthing overlap
+       print "$original\t$columnAdd\n";
+     }
    }
-}
+ }
