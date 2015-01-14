@@ -1118,3 +1118,14 @@ sub selfChainMask {
     $old_run_selfChain = $run;
     return $flag;
 }
+
+
+sub RunCommand {
+  my ($command,$noexecute,$quiet) = @_ ;
+  unless ($quiet){
+    print STDERR "$command\n\n";
+  }
+  unless ($noexecute) {
+    system($command);
+  }
+}
