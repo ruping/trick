@@ -6,6 +6,7 @@ use Getopt::Long;
 use File::Glob ':glob';
 use File::Basename;
 use Data::Dumper;
+use FindBin qw($RealBin);
 
 my $cmdline=join(" ",@ARGV);
 
@@ -28,25 +29,29 @@ my %opt = (
 	   'common'       => undef,
            'table'        => undef,
            'recheck'      => undef,
+           'clinical'     => undef,
+           'tmpdir'       => "./",
           );
 
 GetOptions (
-           "chr|c=s"        => \$opt{chr},
-           "window|w=i"     => \$opt{window},
-	   "mutation|m=s"   => \$opt{mutation},
-           "mutationT|x=s"  => \$opt{mutationT},
-           "normaln=s"      => \$opt{normal},
-           "hetero|e"       => \$opt{hetero},
-           "indel|i=s"      => \$opt{indel},
-           "indelT|y=s"     => \$opt{indelT},
-	   "nonrepeat|r"    => \$opt{nonrepeat},
-           "nonrecurrent|u" => \$opt{nonrecurrent},
-           "nonselfchain|s" => \$opt{nonselfchain},
-           "nonsnp|p"       => \$opt{nonsnp},
-	   "denovo|d"       => \$opt{denovo},
-	   "common|o=s"     => \$opt{common},
-           "table|t"        => \$opt{table},
-           "recheck|k=s"    => \$opt{recheck},
+           "chr|c=s"        => \$opt{'chr'},
+           "window|w=i"     => \$opt{'window'},
+	   "mutation|m=s"   => \$opt{'mutation'},
+           "mutationT|x=s"  => \$opt{'mutationT'},
+           "normaln=s"      => \$opt{'normal'},
+           "hetero|e"       => \$opt{'hetero'},
+           "indel|i=s"      => \$opt{'indel'},
+           "indelT|y=s"     => \$opt{'indelT'},
+	   "nonrepeat|r"    => \$opt{'nonrepeat'},
+           "nonrecurrent|u" => \$opt{'nonrecurrent'},
+           "nonselfchain|s" => \$opt{'nonselfchain'},
+           "nonsnp|p"       => \$opt{'nonsnp'},
+	   "denovo|d"       => \$opt{'denovo'},
+	   "common|o=s"     => \$opt{'common'},
+           "table|t"        => \$opt{'table'},
+           "recheck|k=s"    => \$opt{'recheck'},
+           "clinical=s"     => \$opt{'clinical'},
+           "tmpdir=s"       => \$opt{'tmpdir'},
 	   "help|h"         => sub{
 	                       print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
                                print "\t--window\tthe window size of searching variations\n";
@@ -63,12 +68,15 @@ GetOptions (
 			       print "\t--help\t\tprint this help message\n";
                                print "\t--table\t\tgenerate table of variants\n";
                                print "\t--recheck\tthe dir whether recheck files are located under ./compared_\*/\n";
+                               print "\t--clinical\tjust overlay with the clinical related variants\n";
+                               print "\t--tmpdir\tthe temporary dir to write tmp files\n";
                                print "\n";
                                exit 0;
        	                     },
            );
 
 
+my $bin = $RealBin;
 print "@ $0 $cmdline\n" if $opt{'window'};
 
 my %normals;
@@ -218,17 +226,26 @@ if ($opt{mutation}) {
         } elsif ($snv_file =~ /type2/) {
           $MAF = sprintf("%.3f", ($cols[45]+$cols[48])/2);
         } else {
-          for(my $i = 9; $i <= 48; $i = $i+3) {
+          my $startI = ($opt{'clinical'})? 5:9;
+          my $endI = ($opt{'clinical'})? 18:48;
+          my $increI = ($opt{'clinical'})? 1:3;
+          for(my $i = $startI; $i <= $endI; $i = $i+$increI) {
             $MAF += $cols[$i];
           }
           $MAF = sprintf("%.3f", $MAF/14);
         }
         my $function = $cols[5];
+        if ($opt{'clinical'}){
+          $function = $cols[19];
+        }
         $variations{$CHROM}{$POS}{$individual}{'SUB'}{'info'} = $CHROM.':'.$POS.'(maf='.$MAF.';'.$function.')';
         if ($opt{'table'}) {   #generate the mutation table
            $snv{$coor}{$individual} = $MAF;
            $snv{$coor}{'function'} = $function;
            $snv{$coor}{'info'} = join("\t", ($cols[2], $cols[3], $cols[4]));
+           if ($opt{'clinical'}){
+             $snv{$coor}{'clinical'} = $cols[20];
+           }
         }
       }
       close ARJ;
@@ -260,6 +277,12 @@ if ($opt{mutation}) {
       } #each recheck file
     } #do recheck
 
+    if ($opt{'clinical'}) { # want to grep the clinical sites only, first generate tmp intersect file
+      my $cmd = "perl $bin/intersectFiles.pl -o $snv_file -m $opt{'clinical'} -vcf -overlap -column INFO >$opt{'tmpdir'}/tmp";
+      RunCommand($cmd,0,0);
+      $snv_file = "$opt{'tmpdir'}/tmp";
+    }
+
     open SNV, "$snv_file";
     my $revertornot = "no";
     my $printerror = 0;
@@ -269,10 +292,11 @@ if ($opt{mutation}) {
       if ($_ =~ /^#/) {
         if ($_ =~ /^#CHROM\tPOS\tID/) {
           my @cols = split (/\t/, $_);
-          print STDERR "$cols[$#cols - 1]\n";
-          if ( exists($normals{$cols[$#cols - 1]}) ) {
+          my $minusI = ($opt{'clinical'})? 2:1;
+          print STDERR "$cols[$#cols]\n";
+          if ( exists($normals{$cols[$#cols - $minusI]}) ) {
             $revertornot = "yes";
-          } elsif ( $cols[$#cols - 1] eq 'FORMAT' ) {
+          } elsif ( $cols[$#cols - $minusI] eq 'FORMAT' ) {
             $singlecalling = "yes";
           }
           print STDERR "revert or not: $revertornot\n";
@@ -283,7 +307,7 @@ if ($opt{mutation}) {
         }
       }
 
-      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood) = split /\t/;
+      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood, $clinINFO) = split /\t/;
 
       if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
@@ -308,6 +332,10 @@ if ($opt{mutation}) {
 
         if ($QUAL < 30){
           next;                          #skip low quality calls
+        }
+
+        if ($opt{'clinical'}){  # want to grep the clinical sites only
+          goto PRODUCE;
         }
 
         if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/ or $INFO =~ /ESP5400\=/) {  #snp in population, is it a somatic one?
@@ -351,9 +379,10 @@ if ($opt{mutation}) {
           }
         }                       #somatic common snp
 
+      PRODUCE:
 
         if ($INFO =~ /MQ0Fraction=(.+?);/) {
-          next if ($1 > 0.1);            #skip multiple matching region
+          next if ($1 > 0.1);   #skip multiple matching region
         }
         if ($INFO =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
           my $tailb = $4;
@@ -388,6 +417,9 @@ if ($opt{mutation}) {
           $snv{$coor}{$individual} = $MAF;
           $snv{$coor}{'function'} = $function;
           $snv{$coor}{'info'} = join("\t", ($ID,$REF,$ALT));
+          if ($opt{'clinical'}) {
+            $snv{$coor}{'clinical'} = $clinINFO; #clinical id information
+          }
         }
       } #the defined chromosome
     } #each SNV file
@@ -499,19 +531,28 @@ if ($opt{indel}) {
         } elsif ($indel_file =~ /type2/){
           $MAF = sprintf("%.3f", ($cols[45]+$cols[48])/2);
         } else {
-          for(my $i = 9; $i <= 48; $i = $i+3) {
+          my $startI = ($opt{'clinical'})? 5:9;
+          my $endI = ($opt{'clinical'})? 18:48;
+          my $increI = ($opt{'clinical'})? 1:3;
+          for(my $i = $startI; $i <= $endI; $i = $i+$increI) {
             $MAF += $cols[$i];
           }
           $MAF = sprintf("%.3f", $MAF/14);
         }
 
         my $function = $cols[5];
+        if ($opt{'clinical'}){
+          $function = $cols[19];
+        }
         $variations{$CHROM}{$POS}{$individual}{'INDEL'}{'info'} = $CHROM.':'.$POS.'(maf='.$MAF.';'.$function.')';
         $variations{$CHROM}{$POS}{$individual}{'INDEL'}{'end'} = $POS + 1;
         if ($opt{'table'}) {   #generate the mutation table
            $indel{$coor}{$individual} = $MAF;
            $indel{$coor}{'function'} = $function;
            $indel{$coor}{'info'} = join("\t", ($cols[2], $cols[3], $cols[4]));
+           if ($opt{'clinical'}){
+             $snv{$coor}{'clinical'} = $cols[20];
+           }
         }
       }
       close ARJ;
@@ -543,6 +584,12 @@ if ($opt{indel}) {
       } #each recheck file
     } #do recheck
 
+    if ($opt{'clinical'}) { # want to grep the clinical sites only, first generate tmp intersect file
+      my $cmd = "perl $bin/intersectFiles.pl -o $indel_file -m $opt{'clinical'} -vcf -overlap -column INFO >$opt{'tmpdir'}/tmp";
+      RunCommand($cmd,0,0);
+      $indel_file = "$opt{'tmpdir'}/tmp";
+    }
+
     open COHORT, "$indel_file";
     my $revertornot = "no";
     my $printerror = 0;
@@ -552,10 +599,11 @@ if ($opt{indel}) {
       if ($_ =~ /^#/) {
         if ($_ =~ /^#CHROM\tPOS\tID/) {
           my @cols = split /\t/;
+          my $minusI = ($opt{'clinical'})? 2:1;
           print STDERR "$cols[$#cols - 1]\n";
-          if ( exists($normals{$cols[$#cols - 1]}) ) {
+          if ( exists($normals{$cols[$#cols - $minusI]}) ) {
             $revertornot = "yes";
-          } elsif ($cols[$#cols - 1] eq 'FORMAT') {
+          } elsif ($cols[$#cols - $minusI] eq 'FORMAT') {
             $singlecalling = "yes";
           }
           print STDERR "revert or not: $revertornot\n";
@@ -566,7 +614,7 @@ if ($opt{indel}) {
         }
       }
 
-      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood) = split /\t/;
+      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood, $clinINFO) = split /\t/;
 
       if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
@@ -593,6 +641,10 @@ if ($opt{indel}) {
         if ($QUAL < 30) {
           next;                          #skip low quality calls
         }
+
+         if ($opt{'clinical'}){  # want to grep the clinical sites only
+           goto PRODUCEINDEL;
+         }
 
         if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/ or $INFO =~ /ESP5400\=/) {  #indel in population, is it a somatic one?
 
@@ -642,6 +694,8 @@ if ($opt{indel}) {
           }
         }                       #somatic common snp
 
+      PRODUCEINDEL:
+
         if ($INFO =~ /MQ0Fraction=(.+?);/) {
           next if ($1 > 0.1);            #skip multiple matching region
         }
@@ -676,6 +730,9 @@ if ($opt{indel}) {
           $indel{$coor}{$individual} = $MAF;
           $indel{$coor}{'function'} = $function;
           $indel{$coor}{'info'} = join("\t", ($ID, $REF, $ALT));
+          if ($opt{'clinical'}) {
+            $indel{$coor}{'clinical'} = $clinINFO; #clinical id information
+          }
         }  #generate table
 
       } #the same chromosome
@@ -757,14 +814,23 @@ if ($opt{'table'} and $opt{'mutation'}){
   foreach my $name (sort keys %samples) {
     print "\t$name";
   }
-  print "\tfunction\n";
+  print "\tfunction";
+  if ($opt{'clinical'}) {
+    print "\tclinical";
+  }
+  print "\n";
 }
+
 if ($opt{'table'} and $opt{'indel'}){
   print "#chr\tpos\tid\tref\talt";
   foreach my $name (sort keys %samples) {
     print "\t$name";
   }
-  print "\tfunction\n";
+  print "\tfunction";
+  if ($opt{'clinical'}) {
+    print "\tclinical";
+  }
+  print "\n";
 }
 
 
@@ -820,7 +886,11 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
         }
       }
       my $function = $snv{$coor}{'function'};
-      print "\t$function\n";
+      print "\t$function";
+      if ($opt{'clinical'}) {
+        print "\t$snv{$coor}{'clinical'}";
+      }
+      print "\n";
     }
     goto TABLE;
   }
@@ -838,7 +908,11 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
         }
       }
       my $function = $indel{$coor}{'function'};
-      print "\t$function\n";
+      print "\t$function";
+      if ($opt{'clinical'}) {
+        print "\t$indel{$coor}{'clinical'}";
+      }
+      print "\n";
     }
     goto TABLE;
   }
