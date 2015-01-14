@@ -301,7 +301,7 @@ foreach my $name (sort keys %samples) {
   print "\t$name";
 }
 print "\tfunction";
-if ($clinical ne '') {
+if ($clinical eq '') {
   print "\tsomatic\tgermline\n";
 } else {
   print "\tclinical";
@@ -325,7 +325,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
   my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
   print "\t$function";
-  if ($clinical ne '') {
+  if ($clinical eq '') {
     print "\t$somatic\t$germline";
   } else {
     print "\t$somatic{$coor}{'clinical'}";
