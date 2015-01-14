@@ -11,7 +11,7 @@ my $maskfile;
 my $original;
 my $bgzip = 0;
 my $gzip = 0;
-my $snp = 0;
+my $vcf = 0;
 my $t=0;                                                               #tolerant
 my $count = 0;
 my $overlap = 0;
@@ -35,7 +35,7 @@ while ($ARGV[0]) {
   elsif ($arg eq '-o'){$original = shift @ARGV;}
   elsif ($arg eq '-bgz'){$bgzip = 1;}
   elsif ($arg eq '-gz'){$gzip = 1;}
-  elsif ($arg eq '-s'){$snp = 1;}
+  elsif ($arg eq '-vcf'){$vcf = 1;}
   elsif ($arg eq '-michr'){$michr = shift @ARGV;}
   elsif ($arg eq '-mistart'){$mistart = shift @ARGV;}
   elsif ($arg eq '-miend'){$miend = shift @ARGV;}
@@ -46,20 +46,10 @@ while ($ARGV[0]) {
   elsif ($arg eq '-nonoverlap'){$nonoverlap = 1;}
   elsif ($arg eq '-overlap'){$overlap = 1;}
   elsif ($arg eq '-column'){$column = shift @ARGV;}
-  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-s:snpdb]  [-gz/-bgz] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-t:tolerant]\n"; exit 0;}
-  else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-s:snpdb] [-gz/-bgz] [-t:tolerant]\n"; exit 0;}
+  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-t:tolerant]\n"; exit 0;}
+  else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
 
-
-#the original file is loaded in a hash
-my $oopen;
-if ($bgzip == 1) {
-  $oopen = "bgzip -dc $original |";
-} elsif ($gzip == 1) {
-  $oopen = "gzip -dc $original |";
-} else {
-  $oopen = "$original";
-}
 
 my @columnIndex = ();
 my @columnNames = ();
@@ -297,7 +287,7 @@ sub getchrpos {
 
       if ($_ =~ /^[\#\@]/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^FID/) {
         $jumper = tell DBFILE;
-        if ($column ne '' and ($_ =~ /^#/ or $_ =~ /^FID/)) {
+        if ($column ne '' and ((($_ =~ /^#/ or $_ =~ /^FID/) and $vcf == 0) or ($_ =~ /^#CHROM\t/ and $vcf == 1))) { #vcf header or not: 1 or 0
           $_ =~ s/^#//;
           my @colnames = split(/\t/, $_);
           if ($column =~ /^(\d+)\-(\d+)$/) {
