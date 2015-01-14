@@ -2,6 +2,7 @@ use strict;
 use File::Glob ':glob';
 use Data::Dumper;
 use Getopt::Long;
+use FindBin qw($RealBin);
 
 my $list;   #filename of all vcfs
 my $type;
@@ -11,6 +12,8 @@ my $task;
 my $prefix;
 my $dbsnp = "no";
 my $clinical;
+my $tmpdir = "./";
+my $bin = $RealBin;
 
 GetOptions (
            "list|l=s"       => \$list,             #filename of all vcfs
@@ -21,6 +24,7 @@ GetOptions (
            "prefix|p=s"     => \$prefix,
            "dbsnp|d=s"      => \$dbsnp,
            "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
+           "tmpdir|y=s"     => \$tmpdir,
            "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -30,6 +34,7 @@ GetOptions (
                                print "\t--recheck\tthe dir whether recheck files are located\n";
                                print "\t--dbsnp\tyes or no, whether to keep dbsnp variants into the table\n";
                                print "\t--clinical\tthe file containing the clinical dbSNP sites, it is a gzipped vcf file\n";
+                               print "\t--tmpdir\tthe temporary dir to write tmp files\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -45,23 +50,6 @@ while ( <IN> ) {
   push(@list, $_);
 }
 close IN;
-
-
-#############-----save clinical dbSNP sites here------##############
-my %clinical;
-if ($clinical ne ''){
-  open CLIN, "gzip -dc $clinical |";
-  while ( <CLIN> ){
-    next if /^#/;
-    chomp;
-    my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO) = split /\t/;
-    $clinical{$ID} = $INFO;
-  }
-  close CLIN;
-}
-my $clinicalSites = scalar(keys %clinical);
-print STDERR "number of clinical Sites: $clinicalSites\n";
-#############-----save clinical dbSNP sites here------##############
 
 
 open DR, "/ifs/scratch/c2b2/ac_lab/rs3412/no1/net/dna2rna.mapping";
@@ -119,6 +107,12 @@ foreach my $file (@list) {
   my $tmpc = scalar(keys %recheck);
   print STDERR "recheced somatic: $tmpc\n";
 
+  if ($clinical ne ''){        # want to grep the clinical sites only, first generate tmp intersect file
+    my $cmd = "perl $bin/intersectFiles.pl -o $file -m $clinical -vcf -overlap -column INFO >$tmpdir/tmp";
+    RunCommand($cmd,0,0);
+    $file = "$tmpdir/tmp";
+  }
+
 
   my $openway = $file;
   if ($file =~ /\.gz$/){
@@ -135,9 +129,10 @@ foreach my $file (@list) {
      if ($_ =~ /^#/) {
        if ($_ =~ /^#CHROM\tPOS\tID/) {
          my @cols = split /\t/;
-         if ($cols[$#cols - 1] eq $normal) {
+         my $minusI = ($clinical eq '')? 1:2;
+         if ($cols[$#cols - $minusI] eq $normal) {
            $revertornot = "yes";
-         } elsif ( $cols[$#cols - 1] eq 'FORMAT' ) {
+         } elsif ( $cols[$#cols - $minusI] eq 'FORMAT' ) {
            $singlecalling = "yes";
          }
          print STDERR "revert or not: $revertornot\n";
@@ -147,7 +142,7 @@ foreach my $file (@list) {
          next;
        }
      }
-     my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
+     my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood, $clinINFO) = split /\t/;
 
      next if ($qual ne '.' and $qual < 30);
 
@@ -173,12 +168,8 @@ foreach my $file (@list) {
         next;
      }
 
-     if ($clinicalSites != 0){  # want to grep the clinical sites only
-       if (exists($clinical{$id})){
-         goto PRODUCE;
-       } else {
-         next;
-       }
+     if ($clinical ne ''){  # want to grep the clinical sites only
+        goto PRODUCE;
      }
 
      ###########################################################################decide somatic
@@ -292,14 +283,16 @@ foreach my $file (@list) {
      } else {
         $somatic{$coor}{'germline'} .= $name.',';
      }
-     if ($clinicalSites != 0){
-       $somatic{$coor}{'clinical'} = $clinical{$id};  #clinical id information
+     if ($clinical ne ''){
+       $somatic{$coor}{'clinical'} = $clinINFO;  #clinical id information
      }
   }
   close IN;
   $tmpc = scalar(keys %somatic);
   print STDERR "table tmp: $tmpc\n";
 
+  my $cmd = "rm $tmpdir/tmp -f";
+  RunCommand($cmd, 0 ,0);
 }
 
 #######------------------print header-----------------------#####
@@ -308,7 +301,7 @@ foreach my $name (sort keys %samples) {
   print "\t$name";
 }
 print "\tfunction";
-if ($clinicalSites == 0) {
+if ($clinical ne '') {
   print "\tsomatic\tgermline\n";
 } else {
   print "\tclinical";
@@ -332,10 +325,21 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
   my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
   print "\t$function";
-  if ($clinicalSites == 0) {
+  if ($clinical ne '') {
     print "\t$somatic\t$germline";
   } else {
     print "\t$somatic{$coor}{'clinical'}";
   }
   print "\n";
+}
+
+
+sub RunCommand {
+  my ($command,$noexecute,$quiet) = @_ ;
+  unless ($quiet){
+    print STDERR "$command\n\n";
+  }
+  unless ($noexecute) {
+    system($command);
+  }
 }
