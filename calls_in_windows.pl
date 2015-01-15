@@ -52,7 +52,7 @@ GetOptions (
            "recheck|k=s"    => \$opt{'recheck'},
            "clinical=s"     => \$opt{'clinical'},
            "tmpdir=s"       => \$opt{'tmpdir'},
-	   "help|h"         => sub{
+	   "help|h"         => sub {
 	                       print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
                                print "\t--window\tthe window size of searching variations\n";
                                print "\t--mutation[T]\tonly search for substitutions, 'T' for the already prepared mutation table\n";
@@ -213,6 +213,7 @@ if ($opt{mutation}) {
       while ( <ARJ> ) {
         chomp;
         next if /^chr\t/;
+        next if /^#/;
         my @cols = split /\t/;
         my $CHROM = $cols[0];
         my $POS = $cols[1];
@@ -517,6 +518,7 @@ if ($opt{indel}) {
       while ( <ARJ> ) {
         chomp;
         next if /^chr\t/;
+        next if /^#/;
         my @cols = split /\t/;
         my $CHROM = $cols[0];
         my $POS = $cols[1];
@@ -809,7 +811,7 @@ if ($opt{indelT}) {
 
 ##generate big table
 
-if ($opt{'table'} and $opt{'mutation'}){
+if ($opt{'table'} and $opt{'mutation'}) {
   print "#chr\tpos\tid\tref\talt";
   foreach my $name (sort keys %samples) {
     print "\t$name";
@@ -821,7 +823,7 @@ if ($opt{'table'} and $opt{'mutation'}){
   print "\n";
 }
 
-if ($opt{'table'} and $opt{'indel'}){
+if ($opt{'table'} and $opt{'indel'}) {
   print "#chr\tpos\tid\tref\talt";
   foreach my $name (sort keys %samples) {
     print "\t$name";
