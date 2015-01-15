@@ -31,6 +31,7 @@ my %opt = (
            'recheck'      => undef,
            'clinical'     => undef,
            'tmpdir'       => "./",
+           'prefix'       => undef,
           );
 
 GetOptions (
@@ -52,6 +53,7 @@ GetOptions (
            "recheck|k=s"    => \$opt{'recheck'},
            "clinical=s"     => \$opt{'clinical'},
            "tmpdir=s"       => \$opt{'tmpdir'},
+           "prefix=s"       => \$opt{'prefix'},
 	   "help|h"         => sub {
 	                       print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
                                print "\t--window\tthe window size of searching variations\n";
@@ -70,6 +72,7 @@ GetOptions (
                                print "\t--recheck\tthe dir whether recheck files are located under ./compared_\*/\n";
                                print "\t--clinical\tjust overlay with the clinical related variants\n";
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
+                               print "\t--prefix\tthe prefix for sample IDs\n";
                                print "\n";
                                exit 0;
        	                     },
@@ -255,7 +258,7 @@ if ($opt{mutation}) {
       next;
     } #ARJ files
 
-    $snv_file =~ /(AC\d+)[^0-9a-zA-Z]/;
+    $snv_file =~ /($opt{'prefix'}\d+)[^0-9a-zA-Z]/;
     $individual = $1;
 
     my %recheck;
@@ -397,12 +400,12 @@ if ($opt{mutation}) {
         my $coor = $CHROM.':'.$POS;
         next if ($opt{'recheck'} and (!exists($recheck{$coor}) or $recheck{$coor} < $recheckN));
 
-        $INFO =~ /\;DP\=(\d+);/;
+        $INFO =~ /[\;]?DP\=(\d+)[\;]?/;
         my $dp = $1;
         next if ($dp < 10);              #skip low coverage region
         $INFO =~ /(function=.+?)$/;
         $function = $1;
-        $INFO =~ /\;DP4\=((\d+)\,(\d+)\,(\d+)\,(\d+))\;/;
+        $INFO =~ /[\;]?DP4\=((\d+)\,(\d+)\,(\d+)\,(\d+))[\;]?/;
         my $depth_record = $dp.'('.$1.')';
         my $depth_var = $4+$5;
         next if $depth_var < 2;
@@ -472,10 +475,10 @@ if ($opt{mutationT}) {
         elsif ($header{$i} eq 'func'){
           $function = $cols[$i];
         }
-        elsif ($header{$i} =~ /^AC\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
+        elsif ($header{$i} =~ /^$opt{'prefix'}\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
           my $individual = $header{$i};
-          next if ($individual eq 'AC1maf' or $individual eq 'AC3maf' or $individual eq 'AC547maf' or $individual eq 'AC581maf');
-          #next unless ($individual =~ /AC3[TU]/ or $individual eq 'AC546maf' or $individual eq 'AC580maf');
+          (my $individualWithoutMAF = $individual) =~ s/maf$//;
+          next if (exists $normals{$individualWithoutMAF});
           my $maf = $cols[$i];
           next if $maf < 0.05;  #skip where maf less than 0.05
           my $depth;
@@ -563,7 +566,7 @@ if ($opt{indel}) {
       next;
     } #ARJ files
 
-    $indel_file =~ /(AC\d+)[^0-9a-zA-Z]/;
+    $indel_file =~ /($opt{'prefix'}\d+)[^0-9a-zA-Z]/;
     $individual = $1;
 
     my %recheck;
@@ -715,12 +718,12 @@ if ($opt{indel}) {
         next if ($opt{'recheck'} and (!exists($recheck{$coor}) or $recheck{$coor} < $recheckN));   #skip the rechecked ones
 
 
-        $INFO =~ /\;DP\=(\d+);/;
+        $INFO =~ /[\;]?DP\=(\d+)[\;]?/;
         my $dp = $1;
         next if ($dp < 10);          #skip low coverage region
         $INFO =~ /(function=.+?)$/;
         $function = $1;
-        $INFO =~ /\;DP4\=((\d+)\,(\d+)\,(\d+)\,(\d+))\;/;
+        $INFO =~ /[\;]?DP4\=((\d+)\,(\d+)\,(\d+)\,(\d+))[\;]?/;
         my $depth_record = $dp.'('.$1.')';
         my $depth_var = $4+$5;
         next if $depth_var < 2;
@@ -788,10 +791,10 @@ if ($opt{indelT}) {
         elsif ($header{$i} eq 'func'){
           $function = $cols[$i];
         }
-        elsif ($header{$i} =~ /^AC\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
+        elsif ($header{$i} =~ /^$opt{'prefix'}\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
           my $individual = $header{$i};
-          next if ($individual eq 'AC1maf' or $individual eq 'AC3maf' or $individual eq 'AC547maf' or $individual eq 'AC581maf');
-          #next unless ($individual =~ /AC3[TU]/ or $individual eq 'AC546maf' or $individual eq 'AC580maf');
+          (my $individualWithoutMAF = $individual) =~ s/maf$//;
+          next if ($normals{$individualWithoutMAF});
           my $maf = $cols[$i];
           next if $maf <= 0.05;  #skip where maf less than 0.05
           my $depth;
