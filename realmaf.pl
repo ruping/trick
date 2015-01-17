@@ -187,7 +187,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
        my @tmp = split (',', $consecutive);
        next if $tmp[0] == 0;
        next if $tmp[1] == 0;
-       if ( $tmp[2] >= 3 ) {  #vard is the third value of the array
+       if ( $tmp[2] >= 3 ) {  #vard is the third value of the array, at least three vard to give weights
          $sumCmean += $tmp[0];
          $sumCmedian += $tmp[1];
          $n++;
