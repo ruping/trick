@@ -48,7 +48,7 @@ open IN, "$mutation";
 my @colnames;
 while ( <IN> ) {
   chomp;
-  if ($_ =~ /^chr/) {
+  if ($_ =~ /^[\#]?[cC]hr\t/) {
     @colnames = split /\t/;
     for(my $c = 0; $c <= $#colnames; $c++){
       if ($c == 0){
