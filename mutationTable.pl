@@ -1,5 +1,6 @@
 use strict;
 use Getopt::Long;
+use List::Util qw(min max);
 
 my $mutation;
 my $type = 'snv';
