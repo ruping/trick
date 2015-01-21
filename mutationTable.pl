@@ -1,7 +1,36 @@
 use strict;
+use Getopt::Long;
 
-my $mutation = shift;
-my $task = shift;
+my $mutation;
+my $type = 'snv';
+my $normal;
+my $task; #arj cohort or other?
+my $prefix;
+my $tmpdir = './';
+my $clinical = 0;
+
+GetOptions (
+           "mutation|m=s"   => \$mutation,          #filename of the mutation table
+           "type|t=s"       => \$type,             #snv or indel
+           "normal|n=s"     => \$normal,           #comma seperated id of normal samples
+           "task|k=s"       => \$task,             #task type
+           "prefix|p=s"     => \$prefix,
+           "tmpdir|y=s"     => \$tmpdir,
+           "clinical=i"     => \$clinical,
+           "help|h"         => sub{
+                               print "usage: $0 produce andrea wanted mutation table\n\nOptions:\n\t--mutation\tthe filename of mutation table\n";
+                               print "\t--type\t\tthe type of variants, snv or indel\n";
+                               print "\t--normal\tcomma seperated id of normal samples\n";
+                               print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--task\t\tthe task, such as tcga or rnaediting\n";
+                               print "\t--tmpdir\tthe temporary dir to write tmp files\n";
+                               print "\t--clinical\twhether (1) or not (0 default) only print clinical vars\n";
+                               print "\t--help\t\tprint this help message\n";
+                               print "\n";
+                               exit 0;
+                             },
+           );
+
 
 my @type1 = qw(AC2maf AC3maf AC4maf AC53maf AC54maf AC55maf AC56maf AC57maf AC565maf AC566maf AC567maf) if ($task eq 'arj');
 my %type1;
@@ -25,12 +54,16 @@ while ( <IN> ) {
         print "$colnames[$c]";
       } elsif ($colnames[$c] eq 'id'){
         print "\tlink\tid";
+      } elsif ($colnames[$c] =~ /function/){
+        print "\tgeneName\tgeneLoc\tfunctionalClass\tAAChange";
+      } elsif ($colnames[$c] eq 'clinical'){
+        print "\tpopFreq\t\tClinChanel\tClinAllele\tClinVariantDisease";
       } else {
         print "\t$colnames[$c]";
       }
     }
     print "\tcloneType\n" if ($task eq 'arj');
-    print "\n" if ($task eq 'cohort');
+    print "\n" if ($task eq 'cohort' or $task eq 'other');
   } else {
     my @cols = split /\t/;
     my $chr;
@@ -46,26 +79,38 @@ while ( <IN> ) {
       if ($colnames[$i] eq 'chr') {
         $chr = $cols[$i];
         print "$chr";
+
       } elsif ($colnames[$i] eq 'pos') {
         $pos = $cols[$i];
         $ucsc = "\=HYPERLINK\(\"http\:\/\/genome\.ucsc\.edu\/cgi\-bin/hgTracks\?db\=hg19\&position\=chr$chr\%3A$pos\-$pos\", \"UCSC\"\)";
         print "\t$pos\t$ucsc";
+
       } elsif ($colnames[$i] eq 'id' or $colnames[$i] eq 'ref' or $colnames[$i] eq 'alt') {
         print "\t$cols[$i]";
-      } elsif ( $colnames[$i] =~ /AC\d+maf/ ) {
+
+      } elsif ($colnames[$i] =~ /function/) { #now it is function, gene names need to be extracted
+        my $functions = &splitFunction($cols[$i]);
+        print "\t$functions->{'geneName'}\t$functions->{'loc'}\t$functions->{'functionClass'}\t$functions->{'AAChange'}";
+
+      } elsif ($colnames[$i] eq 'clinical') {
+        my $clins = &splitClinical($cols[$i]);
+        print "\t$clins->{'freq'}\t$clins->{'clinVarChanel'}\t$clins->{'clinAllele'}\t$clins->{'clinVarDisease'}";
+
+      } elsif ( $colnames[$i] =~ /$prefix\d+maf/ ) {
         print "\t$cols[$i]";
-        if (exists ($type1{$colnames[$i]})){
+        if (exists ($type1{$colnames[$i]})) {
           $nt1++ if ($cols[$i] >= 0.1);
           $nt1nz++ if ($cols[$i] > 0);
-        } elsif (exists ($type2{$colnames[$i]})){
+        } elsif (exists ($type2{$colnames[$i]})) {
           $nt2++ if ($cols[$i] >= 0.1);
           $nt2nz++ if ($cols[$i] > 0);
         }
-        if ( $colnames[$i] eq 'AC565maf' and $cols[$i] == 0 ){
+        if ( $colnames[$i] eq 'AC565maf' and $cols[$i] == 0 ) {
           $primary += 0.5;
         }
+
       } elsif ( $colnames[$i] =~ /^AC\d+d$/ ) {
-        if ( $colnames[$i] eq 'AC565d' and $cols[$i] >= 5 ){
+        if ( $colnames[$i] eq 'AC565d' and $cols[$i] >= 5 ) {
           $primary += 0.5;
         }
         print "\t$cols[$i]";
@@ -84,7 +129,56 @@ while ( <IN> ) {
       $cloneType .= '.metastasis';
     }
     print "\t$cloneType\n" if ($task eq 'arj');
-    print "\n" if ($task eq 'cohort');
+    print "\n" if ($task eq 'cohort' or $task eq 'other');
   }
 }
 close IN;
+
+
+sub splitFunction{
+  my $func = shift;
+  my %func = (
+              'loc' => 'NA',
+              'functionClass' => 'NA',
+              'geneName' => 'NA',
+              'AAchange' => 'NA',
+              );
+  if ($func =~ /function=([^\;]+)\;/){
+    $func{'loc'} = $1;
+  }
+  if ($func =~ /functionalClass=([^\;]+)\;/){
+    $func{'functionClass'} = $1;
+  }
+  if ($func =~ /geneName=([^\;]+)\;/){
+    $func{'geneName'} = $1;
+  }
+  if ($func =~ /AAChange=([^\;]+)\;/){
+    $func{'AAChange'} = $1;
+  }
+  return(\%func);
+}
+
+sub splitClinical{
+  my $clin = shift;
+  my %clin = (
+              'freq' => 'NA',
+              'clinAllele' => 'NA',
+              'clinVarChanel' => 'NA',
+              'clinVarDisease' => 'NA',
+             );
+  if ($clin =~ /CLNALLE=([01])\;/){
+    $clin{'clinAllele'} = $1;
+  }
+  if ($clin =~ /CLNSRC=([^\;]+)\;/){
+    $clin{'clinVarChanel'} = $1;
+  }
+  if ($clin =~ /CLNDBN=([^\;]+)\;/){
+    $clin{'clinVarDisease'} = $1;
+  }
+  if ($clin =~ /CAF\=\[([\d\.\,]+)\]\;/){
+    my @freqs = split (/\,/, $1);
+    shift @freqs;
+    $clin{'freq'} = max(@freqs);
+  }
+  return(\%clin);
+}
