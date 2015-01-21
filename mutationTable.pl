@@ -40,7 +40,7 @@ foreach my $sample (@type1){
 }
 my @type2 = qw(AC582maf AC583maf) if ($task eq 'arj');
 my %type2;
-foreach my $sample (@type2){
+foreach my $sample (@type2) {
   $type2{$sample} = 0;
 }
 
@@ -50,7 +50,7 @@ while ( <IN> ) {
   chomp;
   if ($_ =~ /^[\#]?[cC]hr\t/) {
     @colnames = split /\t/;
-    for(my $c = 0; $c <= $#colnames; $c++){
+    for(my $c = 0; $c <= $#colnames; $c++) {
       if ($c == 0) {
         print "$colnames[$c]";
       } elsif ($colnames[$c] eq 'id'){
@@ -63,8 +63,8 @@ while ( <IN> ) {
         print "\t$colnames[$c]";
       }
     }
-    print "\tcloneType\n" if ($task eq 'arj');
-    print "\n" if ($task eq 'cohort' or $task eq 'other');
+    #print "\tcloneType\n" if ($task eq 'arj');
+    print "\n";
   } else {
     my @cols = split /\t/;
     my @printcols;
@@ -112,18 +112,8 @@ while ( <IN> ) {
         }
 
       } elsif ( $colnames[$i] =~ /$prefix\d+maf/ ) {
-        print "\t$cols[$i]";
-        if (exists ($type1{$colnames[$i]})) {
-          $nt1++ if ($cols[$i] >= 0.1);
-          $nt1nz++ if ($cols[$i] > 0);
-        } elsif (exists ($type2{$colnames[$i]})) {
-          $nt2++ if ($cols[$i] >= 0.1);
-          $nt2nz++ if ($cols[$i] > 0);
-        }
-        if ( $colnames[$i] eq 'AC565maf' and $cols[$i] == 0 ) {
-          $primary += 0.5;
-        }
-
+        $print = $cols[$i];
+        push (@printcols, $print);
       }
 
       #elsif ( $colnames[$i] =~ /^AC\d+d$/ ) {
