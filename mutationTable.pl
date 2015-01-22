@@ -58,7 +58,7 @@ while ( <IN> ) {
       } elsif ($colnames[$c] =~ /function/){
         print "\tgeneName\tgeneLoc\tfunctionalClass\tAAChange";
       } elsif ($colnames[$c] eq 'clinical'){
-        print "\tpopFreq\t\tClinChanel\tClinAllele\tClinVariantDisease";
+        print "\tpopFreq\tClinChanel\tClinAllele\tClinVariantDisease";
       } else {
         print "\t$colnames[$c]";
       }
