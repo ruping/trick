@@ -14,6 +14,7 @@ my $dbsnp = "no";
 my $clinical;
 my $tmpdir = "./";
 my $bin = $RealBin;
+my $tolerance = 0;
 
 GetOptions (
            "list|l=s"       => \$list,             #filename of all vcfs
@@ -25,6 +26,7 @@ GetOptions (
            "dbsnp|d=s"      => \$dbsnp,
            "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
            "tmpdir|y=s"     => \$tmpdir,
+           "tolerance=i"    => \$tolerance,
            "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -108,7 +110,7 @@ foreach my $file (@list) {
   print STDERR "recheced somatic: $tmpc\n";
 
   if ($clinical ne ''){        # want to grep the clinical sites only, first generate tmp intersect file
-    my $cmd = "perl $bin/intersectFiles.pl -o $file -m $clinical -vcf -overlap -column INFO >$tmpdir/tmp";
+    my $cmd = "perl $bin/intersectFiles.pl -o $file -m $clinical -t $tolerance -vcf -overlap -column INFO >$tmpdir/tmp";
     RunCommand($cmd,0,0);
     $file = "$tmpdir/tmp";
   }
