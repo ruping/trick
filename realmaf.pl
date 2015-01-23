@@ -9,6 +9,7 @@ my $type;
 my $original;
 my $task;      #only for tcga
 my $prefix;
+my $blood;
 
 GetOptions (
            "file|f=s"       => \$file,             #filename
@@ -16,11 +17,13 @@ GetOptions (
            "original|o=s"   => \$original,         #original big table
            "task|k=s"       => \$task,             #task type
            "prefix|p=s"     => \$prefix,
+           "blood|b=s"      => \$blood,            #blood
            "help|h"         => sub{
                                print "usage: $0 get all minor allele frequency for samples under recheck\n\nOptions:\n\t--file\t\tthe filename of all rechecked files\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
                                print "\t--original\tthe original mutation big table\n";
                                print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--blood\tthe sample names of blood samples\n";
                                print "\t--task\t\tthe task, such as tcga\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
@@ -30,6 +33,10 @@ GetOptions (
 
 
 
+my %blood;
+foreach my $bl (split(/\,/, $blood)){
+  $blood{$bl} = '';
+}
 
 my @list;
 open IN, "$file";
@@ -151,25 +158,33 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               exit 22;
             }
             if ($altd > 0) {
-              my $endratio = sprintf("%.4f", $vends/$vard);
-              if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
+              if (exists $blood{$name}){ #it is blood
                 $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
-              } else {  #looks like artifact
-                $somatic{$coor}{$name} = 0;
-                $cmean = 0; #reset for artifact like stuff
-                $cmedian = 0; #reset
+              } else {  #it is tumor
+                my $endratio = sprintf("%.4f", $vends/$vard);
+                if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
+                  $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
+                } else {  #looks like artifact
+                  $somatic{$coor}{$name} = 0;
+                  $cmean = 0; #reset for artifact like stuff
+                  $cmedian = 0; #reset
+                }
               }
             } else {
               $somatic{$coor}{$name} = 0;
             }
           } else {   #coor not found
-            my $endratio = sprintf("%.4f", $vends/$vard);
-            if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
+            if (exists $blood{$name}){ #it is blood
               $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
-            } else {  #looks like artifact
-              $somatic{$coor}{$name} = 0;
-              $cmean = 0;  #reset for artifact like stuff
-              $cmedian = 0; #reset
+            } else { #it is tumor
+              my $endratio = sprintf("%.4f", $vends/$vard);
+              if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) { #limiting endsratio and mismatch stuff
+                $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+              } else {          #looks like artifact
+                $somatic{$coor}{$name} = 0;
+                $cmean = 0;     #reset for artifact like stuff
+                $cmedian = 0;   #reset
+              }
             }
           }
         } else {
