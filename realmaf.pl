@@ -151,12 +151,26 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               exit 22;
             }
             if ($altd > 0) {
-              $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
+              my $endratio = sprintf("%.4f", $vends/$vard);
+              if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
+                $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
+              } else {  #looks like artifact
+                $somatic{$coor}{$name} = 0;
+                $cmean = 0; #reset for artifact like stuff
+                $cmedian = 0; #reset
+              }
             } else {
               $somatic{$coor}{$name} = 0;
             }
-          } else {
-            $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+          } else {   #coor not found
+            my $endratio = sprintf("%.4f", $vends/$vard);
+            if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
+              $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+            } else {  #looks like artifact
+              $somatic{$coor}{$name} = 0;
+              $cmean = 0;  #reset for artifact like stuff
+              $cmedian = 0; #reset
+            }
           }
         } else {
           $somatic{$coor}{$name} = 0;
