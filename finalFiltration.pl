@@ -24,8 +24,11 @@ while ( <IN> ) {
   } else {
     my $junc = 0;
     my $coor = $cols[0].':'.$cols[1];
+
     my $cmean = $cols[$colnames{'cmeanav'}];                                            #consecutive mismatch mean
     my $cmedian = $cols[$colnames{'cmedianav'}];                                        #consecutive mismatch median
+    next if ($cmean == 0 and $cmedian == 0);                                            #skip consecutive mismatch == 0 things
+
     my $ref = $cols[$colnames{'ref'}];
     my $alt = $cols[$colnames{'alt'}];
     if ($ref !~ /^[ACGTN]$/ or $alt !~ /^[ACGTN]$/){                             #indel
