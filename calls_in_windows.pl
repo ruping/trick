@@ -494,6 +494,7 @@ if ($opt{mutationT}) {
           elsif ($individual eq 'AC3T2'){$depth = $cols[$i+3]; $samples{$individual} = "";}
           elsif ($individual eq 'AC3U'){$depth = $cols[$i+2]; $samples{$individual} = "";}
           else{$depth = $cols[$i+1]; $samples{$individual} = ""; $netcoh{$individual} = "";}
+          next if ($opt{'nonsnp'} and $id != ".");
           $variations{$chr}{$pos}{$individual}{'SUB'}{'info'} = 'SNV:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
           $variations{$chr}{$pos}{'rep'} = $rep;
           $variations{$chr}{$pos}{'sc'} = $sc;
@@ -820,6 +821,7 @@ if ($opt{indelT}) {
           elsif ($individual eq 'AC3T2'){$depth = $cols[$i+3]; $samples{$individual} = "";}
           elsif ($individual eq 'AC3U'){$depth = $cols[$i+2]; $samples{$individual} = "";}
           else{$depth = $cols[$i+1]; $samples{$individual} = ""; $netcoh{$individual} = "";}
+          next if ($opt{'nonsnp'} and $id != ".");
           $variations{$chr}{$pos}{$individual}{'INDEL'}{'info'} = 'INDEL:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
           $variations{$chr}{$pos}{'rep'} = $rep;
           $variations{$chr}{$pos}{'sc'} = $sc;
