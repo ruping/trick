@@ -442,7 +442,7 @@ if ($opt{mutationT}) {
   while ( <MUT> ){
     chomp;
     my @cols;
-    if ($_ =~ /^chr\t/){  #header line
+    if ($_ =~ /^[^#]?chr\t/){  #header line
       @cols = split /\t/;
       for (my $i = 0; $i <= $#cols; $i++){
         $header{$i} = $cols[$i];
@@ -456,6 +456,8 @@ if ($opt{mutationT}) {
       my $ref;
       my $alt;
       my $function;
+      my $rep;
+      my $sc;
       for (my $i = 0; $i <= $#cols; $i++){
         if ($header{$i} eq 'chr'){
           $chr = $cols[$i];
@@ -472,8 +474,14 @@ if ($opt{mutationT}) {
         elsif ($header{$i} eq 'alt'){
           $alt = $cols[$i];
         }
-        elsif ($header{$i} eq 'func'){
+        elsif ($header{$i} =~ /function/) {
           $function = $cols[$i];
+        }
+        elsif ($header{$i} eq 'rep') {
+          $rep = $cols[$i];
+        }
+        elsif ($header{$i} eq 'sc') {
+          $sc = $cols[$i];
         }
         elsif ($header{$i} =~ /^$opt{'prefix'}\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
           my $individual = $header{$i};
@@ -487,6 +495,8 @@ if ($opt{mutationT}) {
           elsif ($individual eq 'AC3U'){$depth = $cols[$i+2]; $samples{$individual} = "";}
           else{$depth = $cols[$i+1]; $samples{$individual} = ""; $netcoh{$individual} = "";}
           $variations{$chr}{$pos}{$individual}{'SUB'}{'info'} = 'SNV:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
+          $variations{$chr}{$pos}{'rep'} = $rep;
+          $variations{$chr}{$pos}{'sc'} = $sc;
         }
       }
     }
@@ -758,7 +768,7 @@ if ($opt{indelT}) {
   while ( <IND> ){
     chomp;
     my @cols;
-    if ($_ =~ /^chr\t/){  #header line
+    if ($_ =~ /^[#]?chr\t/){  #header line
       @cols = split /\t/;
       for (my $i = 0; $i <= $#cols; $i++){
         $header{$i} = $cols[$i];
@@ -772,6 +782,8 @@ if ($opt{indelT}) {
       my $ref;
       my $alt;
       my $function;
+      my $rep;
+      my $sc;
       for (my $i = 0; $i <= $#cols; $i++){
         if ($header{$i} eq 'chr'){
           $chr = $cols[$i];
@@ -791,6 +803,12 @@ if ($opt{indelT}) {
         elsif ($header{$i} eq 'func'){
           $function = $cols[$i];
         }
+        elsif ($header{$i} eq 'rep') {
+          $rep = $cols[$i];
+        }
+        elsif ($header{$i} eq 'sc') {
+          $sc = $cols[$i];
+        }
         elsif ($header{$i} =~ /^$opt{'prefix'}\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
           my $individual = $header{$i};
           (my $individualWithoutMAF = $individual) =~ s/maf$//;
@@ -803,6 +821,8 @@ if ($opt{indelT}) {
           elsif ($individual eq 'AC3U'){$depth = $cols[$i+2]; $samples{$individual} = "";}
           else{$depth = $cols[$i+1]; $samples{$individual} = ""; $netcoh{$individual} = "";}
           $variations{$chr}{$pos}{$individual}{'INDEL'}{'info'} = 'INDEL:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
+          $variations{$chr}{$pos}{'rep'} = $rep;
+          $variations{$chr}{$pos}{'sc'} = $sc;
         }
       }
     }
@@ -848,31 +868,35 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
 
   foreach my $start (@pre_starts) {
     my @n_individuals = keys %{$variations{$chr}{$start}};
-    my $n_individuals = scalar(@n_individuals);
+    my $n_individuals = ($opt{'mutationT'} or $opt{'indelT'})? scalar(@n_individuals)-2 : scalar(@n_individuals);
 
     if ($opt{nonrecurrent}) {
       if ($n_individuals >= 2) {                                       #skip recurrent point mutation
          my $recuflag = 0;
-         foreach my $indi (@n_individuals){
+         foreach my $indi (@n_individuals) {
             $recuflag = 1 if exists($netcoh{$indi});
          }
          next if $recuflag == 1;
       }
     }
     if ($opt{nonselfchain}) {
-      next if (selfChainMask('run1', $chr, $start) == 1);
+      if ($opt{'mutationT'} or $opt{'indelT'}){
+        next if ($variations{$chr}{$start}{'sc'} == 1);
+      } else {
+        next if (selfChainMask('run1', $chr, $start) == 1);
+      }
     }
 
-    if ($opt{nonrepeat} and $opt{nonsnp}) {
-      unless (repeatmask('run1', $chr, $start, $start) == 1 or snpmask('run1', $chr, $start, $start) == 1) {
-        push @starts, $start;
+    if ($opt{nonrepeat}) {
+      if ($opt{'mutationT'} or $opt{'indelT'}){
+        unless ($variations{$chr}{$start}{'rep'} == 1){
+          push @starts, $start;
+        }
+      } else {
+        unless (repeatmask('run1', $chr, $start, $start) == 1) {
+          push @starts, $start;
+        }
       }
-    } elsif ($opt{nonrepeat} and !$opt{nonsnp}) {
-      unless (repeatmask('run1', $chr, $start, $start) == 1){
-        push @starts, $start;
-      }
-    } elsif (!$opt{nonrepeat} and !$opt{nonsnp}) {
-      push @starts, $start;
     }
   }
 
