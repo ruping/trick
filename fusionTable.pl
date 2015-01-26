@@ -96,10 +96,10 @@ foreach my $sample (@need) {
     next if (($gene1 =~ /^IGK[JV]/ or $gene2 =~ /^IGK[JV]/) and $sc eq 'CC');                                            #IGG
     next if (($gene1 eq 'IGR' and $gene2 =~ /^RP\d+\-\d+/) or ($gene2 eq 'IGR' and $gene1 =~ /^RP\d+\-\d+/));            #lnRNA IGR junk
 
-    if ($gene1 ne ""){
+    if ($gene1 ne "" and $gene1 ne 'IGR'){
       $fusions{$gene1}{$sampleDNA} = $cov5;
     }
-    if ($gene2 ne ""){
+    if ($gene2 ne "" and $gene2 ne 'IGR'){
       $fusions{$gene2}{$sampleDNA} = $cov5;
     }
   }
