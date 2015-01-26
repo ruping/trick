@@ -32,6 +32,7 @@ my %opt = (
            'clinical'     => undef,
            'tmpdir'       => "./",
            'prefix'       => undef,
+           'tolerance'    => 0,
           );
 
 GetOptions (
@@ -54,6 +55,7 @@ GetOptions (
            "clinical=s"     => \$opt{'clinical'},
            "tmpdir=s"       => \$opt{'tmpdir'},
            "prefix=s"       => \$opt{'prefix'},
+           "tolerance=i"    => \$opt{'tolerance'},
 	   "help|h"         => sub {
 	                       print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
                                print "\t--window\tthe window size of searching variations\n";
@@ -71,6 +73,7 @@ GetOptions (
                                print "\t--table\t\tgenerate table of variants\n";
                                print "\t--recheck\tthe dir whether recheck files are located under ./compared_\*/\n";
                                print "\t--clinical\tjust overlay with the clinical related variants\n";
+                               print "\t--tolerance\tthe distance tolerance to be allowed for comparing indels for generating tables\n";
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
                                print "\t--prefix\tthe prefix for sample IDs\n";
                                print "\n";
@@ -282,7 +285,7 @@ if ($opt{mutation}) {
     } #do recheck
 
     if ($opt{'clinical'}) { # want to grep the clinical sites only, first generate tmp intersect file
-      my $cmd = "perl $bin/intersectFiles.pl -o $snv_file -m $opt{'clinical'} -vcf -overlap -column INFO >$opt{'tmpdir'}/tmp";
+      my $cmd = "perl $bin/intersectFiles.pl -o $snv_file -m $opt{'clinical'} -vcf -overlap -column INFO -t $opt{'tolerance'} >$opt{'tmpdir'}/tmp";
       RunCommand($cmd,0,0);
       $snv_file = "$opt{'tmpdir'}/tmp";
     }
@@ -601,7 +604,7 @@ if ($opt{indel}) {
     } #do recheck
 
     if ($opt{'clinical'}) { # want to grep the clinical sites only, first generate tmp intersect file
-      my $cmd = "perl $bin/intersectFiles.pl -o $indel_file -m $opt{'clinical'} -vcf -overlap -column INFO >$opt{'tmpdir'}/tmp";
+      my $cmd = "perl $bin/intersectFiles.pl -o $indel_file -m $opt{'clinical'} -vcf -overlap -column INFO -t $opt{'tolerance'} >$opt{'tmpdir'}/tmp";
       RunCommand($cmd,0,0);
       $indel_file = "$opt{'tmpdir'}/tmp";
     }
