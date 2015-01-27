@@ -96,7 +96,7 @@ foreach my $sample (@need) {
     next if ($rep =~ /R/ and $sc =~ /C/);                     #skip both rep and sc
     next if ($fusion1 =~ /KCNMB2/ and $fusion2 =~ /KCNMB2/);  #skip KCNMB2
     next if ($fusion1 =~ /TMPRSS3/ or $fusion2 =~ /TMPRSS3/); #skip TMPRSS3
-    next if ($cov5 < 1 or $cov3 < 2);                         #skip low spanning reads
+    next if ($cov5 < 1 or $cov3 < 3);                         #skip low spanning reads
     next if ($cov5 < 2 and $sc eq 'CC');                      #skip low spanning reads
     next if ($cov4/$cov5 >= 10 and $cov5 <= 3);               #high duplication
     next if ($cov4/$cov5 >= 20 and $cov5 < 10);               #high duplication
