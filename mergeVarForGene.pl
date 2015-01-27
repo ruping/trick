@@ -39,13 +39,15 @@ $type2int{'snv&raregermline'} = 3;
 $type2int{'indel'} = 4;
 $type2int{'indel&raregermline'} = 5;
 $type2int{'fusion'} = 6;
+$type2int{'cnva'} = 1;
+$type2int{'cnvd'} = -1;
 
 my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
 my %ileum;
 foreach my $il (@ileum) {
   $ileum{$il} = '';
 }
-my @rectum = qw(AC3 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580);
+my @rectum = qw(AC3 AC439 AC440 AC441 AC442 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
 my %rectum;
 foreach my $rec (@rectum){
   $rectum{$rec} = '';
@@ -66,6 +68,8 @@ foreach my $file (@files) {
     }
   } elsif ($file =~ /fusion/){
     $type = 'fusion';
+  } elsif ($file =~ /copynumber/){
+    $type = 'cnv';
   }
 
   open IN, "$file";
@@ -85,6 +89,15 @@ foreach my $file (@files) {
         }
         if ($name[$i] =~ /(AC\d+)/) {
           my $sample = $1;
+          if ($type eq 'cnv') {
+            if ($cols[$i] eq 'NA') {
+              #do nothing
+            } elsif ($cols[$i] > 1) {
+              $type = $type.'a';
+            } elsif ($cols[$i] <= 1) {
+              $type = $type.'d';
+            }
+          }
           $result{$gene}{$sample}{$type} = $cols[$i];
         }                         #it is sample
       }                           #iterator
@@ -114,7 +127,7 @@ foreach my $gene (keys %result) {
     my $changed = 0;
     my $vars;
     foreach my $type (%{$result{$gene}{$sample}}) {
-      if ($result{$gene}{$sample}{$type} > 0) {
+      if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA') {
          $changed = 1;
          #$vars .= $type.","
          $vars .= $type2int{$type};

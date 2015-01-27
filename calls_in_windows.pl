@@ -893,16 +893,15 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
     }
 
     if ($opt{nonrepeat}) {
-      if ($opt{'mutationT'} or $opt{'indelT'}){
-        unless ($variations{$chr}{$start}{'rep'} == 1){
-          push @starts, $start;
-        }
+      if ($opt{'mutationT'} or $opt{'indelT'}) {
+        next if ($variations{$chr}{$start}{'rep'} == 1);
       } else {
-        unless (repeatmask('run1', $chr, $start, $start) == 1) {
-          push @starts, $start;
-        }
+        next if (repeatmask('run1', $chr, $start, $start) == 1);
       }
     }
+
+    push @starts, $start;
+
   }
 
 

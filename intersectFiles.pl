@@ -301,6 +301,7 @@ sub getchrpos {
             }
           } else {
             for (my $i = 0; $i <= $#colnames; $i++) {
+              chomp($colnames[$i]);
               $colnames[$i] =~ s/[\s\n]$//;
               if ($colnames[$i] eq $column) {
                 push(@columnIndex, $i); #this is a global variable
