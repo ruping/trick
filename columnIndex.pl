@@ -8,7 +8,7 @@ my @colnames;
 open IN, "$file";
 while ( <IN> ){
   chomp;
-  if (/^#/ or /^chr\t/){
+  if (/^#/ or /^chr\t/ or /^gene\t/){
     @colnames = split /\t/;
     for(my $i = 0; $i <= $#colnames; $i++){
       if ($colnames[$i] eq $column){

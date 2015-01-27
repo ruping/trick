@@ -4,33 +4,72 @@ my $files = shift;
 
 my @files = split(/\,/, $files);
 
-#########################if paola table exist########################################
-my $paola = shift;
-my %paola;
-my @paolaNames;
-if ($paola ne '') {
-   open IN, "$paola";
-   while ( <IN> ) {
-    chomp;
-    next if ($_ =~ /^[\@\#]/);
-    my @cols = split /\t/;
-    if ($_ =~ /^gene\t/) {
-      @paolaNames = @cols;
-      next;
-    } else {
-      my $gene;
-      for (my $i = 0; $i <= $#cols; $i++) {
-        if ($paolaNames[$i] eq 'gene') {
-          $gene = $cols[$i];
-          next;
-        }
-        $paola{$gene}{$paolaNames[$i]} = $cols[$i];
-      }                           #iterator
-    }                             #else
-  }
-  close IN;
+my $annotationdir = "/cygdrive/h/annotation";
+my $biomart = "$annotationdir/hg19.biomart.txt";
+my $gene2loc = "$annotationdir/entrez2loc.sorted.txt";
+my $genelength = "$annotationdir/hg19.gencode_GC_Len.txt";
+my $census = "$annotationdir/Census_091214.tsv";
+my $tsg = "$annotationdir/TSGs";
+
+my %gene2ens;
+my %gene2entrez;
+my %gene2chr;
+open GL, "$gene2loc";
+while ( <GL> ){
+  chomp;
+  next if /^#/;
+  my ($ens, $symbol, $chr, $start, $end, $strand, $entrez) = split /\t/;
+  $gene2ens{$symbol} = $ens;
+  $gene2entrez{$symbol} = $entrez;
+  $gene2chr{$symbol} = $chr;
 }
-############################paola table###############################################
+close GL;
+
+my %gene2des;
+my %gene2biotype;
+open BM, "$biomart";
+while ( <BM> ){
+  chomp;
+  next if /^Ensembl/;
+  my ($ens, $name, $biotype, $des, $entrez, $WikiName, $WikiDes) = split /\t/;
+  $gene2des{$name} = $des;
+  $gene2des{$ens} = $des;
+  $gene2des{$entrez} = $des;
+  $gene2biotype{$name} = $biotype;
+  $gene2biotype{$ens} = $biotype;
+  $gene2biotype{$entrez} = $biotype;
+}
+close BM;
+
+my %gene2length;
+open LL, "$genelength";
+while ( <LL> ){
+  chomp;
+  my ($ens, $gc, $elength, $tlength, $ilength, $symbol, $entrez) = split /\t/;
+  $gene2length{$symbol} = $elength;
+  $gene2length{$ens} = $elength;
+}
+close LL;
+
+my %tsgs;
+open TSG, "$tsg";
+while ( <TSG> ){
+  chomp;
+  next if /^Gene_symbol/;
+  my @cols = split /\t/;
+  $tsgs{$cols[0]} = 1;
+}
+close TSG;
+
+my %census;
+open CEN, "$census";
+while ( <CEN> ){
+  chomp;
+  next if /^Gene Symbol/;
+  my @cols = split /\t/;
+  $census{$cols[0]} = 1;
+}
+close CEN;
 
 
 my %type2int;
@@ -49,7 +88,7 @@ foreach my $il (@ileum) {
 }
 my @rectum = qw(AC3 AC439 AC440 AC441 AC442 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
 my %rectum;
-foreach my $rec (@rectum){
+foreach my $rec (@rectum) {
   $rectum{$rec} = '';
 }
 
@@ -106,9 +145,6 @@ foreach my $file (@files) {
   close IN;
 }
 
-if ($paola ne ''){
-  goto PAOLA;
-}
 
 print "gene";
 foreach my $sample (@rectum){
@@ -117,20 +153,23 @@ foreach my $sample (@rectum){
 foreach my $sample (@ileum){
   print "\t$sample";
 }
-print "\trectum\tileum\n";
+print "\tsumRectum\tsumIleum\trectum\tileum\tentrez\tchr\telength\tbiotype\tdes\tTSG\tCensus\n";
 
 foreach my $gene (keys %result) {
   print "$gene";
   my $rectum = 0;
-  my $ileum = 0;
+  my $ileum  = 0;
+  my %sumRec;
+  my %sumIle;
   foreach my $sample (@rectum) {     #rectum
     my $changed = 0;
     my $vars;
-    foreach my $type (%{$result{$gene}{$sample}}) {
+    foreach my $type (sort {my $ta = $type2int{$a}; my $tb = $type2int{$b}; $ta <=> $tb} keys %{$result{$gene}{$sample}}) {
       if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA') {
          $changed = 1;
          #$vars .= $type.","
          $vars .= $type2int{$type};
+         $sumRec{$type2int{$type}} = '';
       }
     }
     if ($vars eq ''){
@@ -143,73 +182,62 @@ foreach my $gene (keys %result) {
     my $changed = 0;
     my $vars;
     foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $a <=> $b} keys %{$result{$gene}{$sample}}) {
-      if ($result{$gene}{$sample}{$type} > 0){
+      if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA'){
          $changed = 1;
          #$vars .= $type.","
          $vars .= $type2int{$type};
+         $sumIle{$type2int{$type}} = '';
       }
     }
-    if ($vars eq ''){
+    if ($vars eq '') {
       $vars = 0;
     }
     $ileum += $changed;
     print "\t$vars";
   }
-  print "\t$rectum\t$ileum\n";
+  my $sumRec = join("", sort {$a <=> $b} keys %sumRec);
+  my $sumIle = join("", sort {$a <=> $b} keys %sumIle);
+  $sumRec = ($sumRec eq '')? 0 : $sumRec;
+  $sumIle = ($sumIle eq '')? 0 : $sumIle;
+  print "\t$sumRec\t$sumIle\t$rectum\t$ileum";
+
+
+  #add columns
+  #entrez\tchr\telength\tbiotype\tdes\tTSG\tCensus
+  my $entrez = $gene2entrez{$gene};
+  my $chr = $gene2chr{$gene};
+
+  my $elength = '';
+  if (exists ($gene2length{$gene})){
+    $elength = $gene2length{$gene};
+  } elsif (exists ($gene2length{$gene2ens{$gene}})){
+    $elength = $gene2length{$gene2ens{$gene}};
+  }
+
+  my $biotype = '';
+  if (exists ($gene2biotype{$gene})){
+    $biotype = $gene2biotype{$gene};
+  } elsif (exists ($gene2biotype{$gene2ens{$gene}})){
+    $biotype = $gene2biotype{$gene2ens{$gene}};
+  } elsif (exists ($gene2biotype{$gene2entrez{$gene}})) {
+    $biotype = $gene2biotype{$gene2entrez{$gene}};
+  }
+
+  my $des = '';
+  if (exists ($gene2des{$gene})){
+    $des = $gene2des{$gene};
+  } elsif (exists ($gene2des{$gene2ens{$gene}})){
+    $des = $gene2des{$gene2ens{$gene}};
+  } elsif (exists ($gene2des{$gene2entrez{$gene}})) {
+    $des = $gene2des{$gene2entrez{$gene}};
+  }
+
+  my $tumorsg = (exists($tsgs{$gene}))? $tsgs{$gene} : 0;
+  my $censusg = (exists($census{$gene}))? $census{$gene} : 0;
+
+  print "\t$entrez\t$chr\t$elength\t$biotype\t$des\t$tumorsg\t$censusg\n";
+
 }
 
 exit 0;
-
-PAOLA:
-
-print "gene";
-foreach my $paolaName (@paolaNames) {
-  print "\t$paolaName" unless ($paolaName eq 'gene');
-}
-print "\n";
-
-foreach my $gene (sort {$a cmp $b} keys %paola) {
-  next if $gene =~ /\"/;
-
-  $paola{$gene}{'sumPz'} = '';
-  $paola{$gene}{'SOMMUT'} = '';
-
-  my %tmptype;
-  foreach my $paolaName (@paolaNames) {
-    if ($paolaName =~ /AC\d+/) {
-      if ($paola{$gene}{$paolaName} =~ /(-?1)/) {my $dt = $1; $tmptype{$dt}++;}
-      if ($result{$gene}{$paolaName} ne '') {
-        $paola{$gene}{$paolaName} =~ s/^0$//;
-        $paola{$gene}{$paolaName} =~ s/[23]//g;
-        foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $tia <=> $tib} keys %{$result{$gene}{$paolaName}}) {
-           $paola{$gene}{$paolaName} .= $type2int{$type} if $result{$gene}{$paolaName}{$type} > 0;
-           $tmptype{$type2int{$type}}++ if $result{$gene}{$paolaName}{$type} > 0;
-        }
-        $paola{$gene}{$paolaName} = 0 if ($paola{$gene}{$paolaName} eq '');
-      } else {   #for old stuff
-        while ($paola{$gene}{$paolaName} =~ /([23])/g) {
-           my $dt = $1;
-           $tmptype{$dt}++;
-        }
-      }
-      $paola{$gene}{'sumPz'} += ($paola{$gene}{$paolaName} == 0)? 0:1;
-    } #each sample
-
-    if ($paolaName eq 'SOMMUT') {
-      foreach my $tmpt (sort {$a <=> $b} keys %tmptype) {
-        $paola{$gene}{'SOMMUT'} .= $tmpt;
-      }
-      if ($paola{$gene}{'SOMMUT'} eq ''){
-        $paola{$gene}{'SOMMUT'} = 0;
-      }
-    }
-
-    if ($paolaName eq 'gene'){
-      print "$gene";
-    } else {
-      print "\t$paola{$gene}{$paolaName}";
-    }
-  } #paolaName [col names]
-  print "\n";
-}
 

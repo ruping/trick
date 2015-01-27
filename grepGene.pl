@@ -9,7 +9,7 @@ my %ileum;
 foreach my $il (@ileum) {
   $ileum{$il} = '';
 }
-my @rectum = qw(AC3 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580);
+my @rectum = qw(AC3 AC439 AC440 AC441 AC442 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
 my %rectum;
 foreach my $rec (@rectum) {
   $rectum{$rec} = '';
@@ -74,8 +74,8 @@ foreach my $gene (keys %result) {
    foreach my $sample (keys %{$result{$gene}}) {
      if (exists($ileum{$sample})) {
        $il++;
-     } elsif (exists($rectum{$sample})){
-       $rec++;
+     } elsif (exists($rectum{$sample})) {
+       $rec++ unless ($sample eq 'AC442'); #do not count AC442
      }
    }
    if ($cohort == 1) {
@@ -86,7 +86,7 @@ foreach my $gene (keys %result) {
           print "\t0";
        }
      }
-     foreach my $sample (@ileum){
+     foreach my $sample (@ileum) {
        if ($result{$gene}{$sample} ne ''){
           print "\t$result{$gene}{$sample}";
         } else {
@@ -95,7 +95,7 @@ foreach my $gene (keys %result) {
      }
      print "\t$rec\t$il\n";
    } else {
-     foreach my $sample (@samples){
+     foreach my $sample (@samples) {
        if ($result{$gene}{$sample} ne ''){
           print "\t$result{$gene}{$sample}";
        } else {
@@ -114,7 +114,7 @@ sub grepGene {
     my $function = $1;
     if ($type =~ /exonic/){
       &splitGene($g1);
-    } elsif ($type =~ /coding/){
+    } elsif ($type =~ /coding/) {
       if ($function =~ /^synonymous/ or $function =~ /^nonframeshift/) {
          return(@dummy);
       } else {
