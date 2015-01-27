@@ -56,17 +56,25 @@ foreach my $sample (@need) {
 
     my $gene1 = '';
     my $gene2 = '';
-    if ($fusion1 =~ /^\S+\((.+?)\)$/){
+    if ($fusion1 =~ /^\S+\((.+?)\)$/) {
       $gene1 = $1;
     } else {
       $gene1 = $fusion1;
     }
 
-    if ($fusion2 =~ /\S+\((.+?)\)/){
+    if ($fusion2 =~ /\S+\((.+?)\)/) {
       $gene2 = $1;
     } else {
       $gene2 = $fusion2;
     }
+
+    $bp1 =~ /^([\d\w]+)\:(\d+)$/;
+    my $chr1 = $1;
+    my $coor1 = $2;
+    $bp2 =~ /^([\d\w]+)\:(\d+)$/;
+    my $chr2 = $1;
+    my $coor2 = $2;
+    next if ($chr1 eq $chr2 and abs($coor1 - $coor2) < 300000);
 
     #for LRIG1#########################################
     if ($gene1 eq 'FRYL' and $gene2 eq '') {
