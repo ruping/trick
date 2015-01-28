@@ -6,7 +6,7 @@ my $change = shift;
 my @changes = split(',', $change);
 my %changes;
 for(my $i = 0; $i <= $#changes; $i = $i+2) {
-  $changes{$changes[$i]} = $changes[$i]+1;
+  $changes{$changes[$i]} = $changes[$i+1];
 }
 
 open IN, $file;
