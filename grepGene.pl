@@ -22,9 +22,9 @@ my @samples;
 
 while ( <IN> ) {
   chomp;
-  next if ($_ =~ /^[\@\#]/);
+  #next if ($_ =~ /^[\@\#]/);
   my @cols = split /\t/;
-  if ($_ =~ /^chr\t/) {
+  if ($_ =~ /^[\#]?chr\t/) {
     @name = @cols;
     next;
   } else {
