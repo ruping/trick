@@ -15,7 +15,7 @@ open IN, "$file";
 while ( <IN> ){
   chomp;
   my @cols = split /\t/;
-  if ($_ =~ /^[^#]?[cC]hr\t/){
+  if ($_ =~ /^[\#]?[cC]hr\t/){
     #now it is the header
     for(my $i = 0; $i <= $#cols; $i++){
        $colnames{$cols[$i]} = $i;
@@ -28,7 +28,7 @@ while ( <IN> ){
     #now it is the real stuff
     my $ref = $cols[$colnames{'ref'}];
     my $alt = $cols[$colnames{'alt'}];
-    print STDERR "$alt\n";
+
     my $freq = -1;
     if ($cols[$colnames{'clinical'}] =~ /\;CAF\=\[([\d\.\,]+)\]\;/){
       my @freqs = split (/\,/, $1);
