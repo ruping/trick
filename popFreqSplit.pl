@@ -56,6 +56,10 @@ while ( <IN> ){
 
       if ($index != -1){
         $freq = $freqs[$index];
+        if ($freq eq ''){
+          shift @freqs;
+          $freq = max(@freqs);
+        }
       } else {
         shift @freqs;
         $freq = max(@freqs);
