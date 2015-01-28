@@ -7,6 +7,8 @@ my $type = shift;  #snv or indel
 
 if ($type eq ''){$type = 'snv'};
 
+print STDERR "type is $type\n";
+
 my %colnames;
 
 open IN, "$file";
@@ -26,18 +28,19 @@ while ( <IN> ){
     #now it is the real stuff
     my $ref = $cols[$colnames{'ref'}];
     my $alt = $cols[$colnames{'alt'}];
+    print STDERR "$alt\n";
     my $freq = -1;
     if ($cols[$colnames{'clinical'}] =~ /\;CAF\=\[([\d\.\,]+)\]\;/){
       my @freqs = split (/\,/, $1);
 
-      $cols[$colnames{'clinical'}] =~ /REFALT\=([ACGT\-\,]+)$/;
+      $cols[$colnames{'clinical'}] =~ /\;REFALT\=([ACGT\-\,]+)$/;
       my @alleles = split(/\,/, $1);
       my $index = -1;
       my $minlengthdiff = 1000;
 
-      for (my $i = 0; $i <= $#alleles; $i++){
+      for (my $i = 0; $i <= $#alleles; $i++) {
         if ($type eq 'snv'){
-          if ($alleles[$i] eq $alt){
+          if ($alleles[$i] eq $alt) {
             $index = $i;
             last;
           }
