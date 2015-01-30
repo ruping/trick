@@ -44,10 +44,11 @@ while ( <IN> ){
             $index = $i;
             last;
           }
-        } elsif ($type eq 'indel') {
+        } elsif ($type =~ /indel/) {
           my $lengthdiff = abs(length($alt) - length($alleles[$i]));
           if ($lengthdiff <= $minlengthdiff){
             $index = $i;
+            $minlengthdiff = $lengthdiff;
           } else {
             next;
           }
@@ -66,6 +67,14 @@ while ( <IN> ){
       }
     } elsif ($cols[$colnames{'id'}] =~ /^[\dKGESP]+\=([\d\.]+)$/){
       $freq = $1;
+    }
+    if ($type eq 'indelclean') {
+      if ($freq eq $cols[$colnames{'freq'}]){
+        print "$_\n";
+      } else {
+        next;
+      }
+      next;
     }
     print "$_\t$freq\n";
   }
