@@ -36,7 +36,6 @@ while ( <IN> ){
       $cols[$colnames{'clinical'}] =~ /\;REFALT\=([ACGT\-\,]+)$/;
       my @alleles = split(/\,/, $1);
       my $index = -1;
-      my $minlengthdiff = 1000;
 
       for (my $i = 0; $i <= $#alleles; $i++) {
         if ($type eq 'snv'){
@@ -44,29 +43,39 @@ while ( <IN> ){
             $index = $i;
             last;
           }
-        } elsif ($type =~ /indel/) {
-          my $lengthdiff = abs(length($alt) - length($alleles[$i]));
-          if ($lengthdiff <= $minlengthdiff){
-            $index = $i;
-            $minlengthdiff = $lengthdiff;
-          } else {
+        }
+      } #find index
+
+      if ($type =~ /indel/) {
+        my $knownref;
+        my $knownalt;
+        if ($alleles[1] =~ /^$alleles[0]/){ #insertion
+          $knownref = '-';
+          ($knownalt = $alleles[1]) =~ s/^$alleles[0]//;
+        } elsif ($alleles[1] =~ /$alleles[0]$/) {
+          $knownref = '-';
+          ($knownalt = $alleles[1]) =~ s/$alleles[0]$//;
+        } elsif ($alleles[0] =~ /^$alleles[1]/) {
+          $knownalt = '-';
+          ($knownref = $alleles[0]) =~ s/^$alleles[1]//;
+        } elsif ($alleles[0] =~ /$alleles[1]$/) {
+          $knownalt = '-';
+          ($knownref = $alleles[0]) =~ s/$alleles[1]$//;
+        }
+        if ($knownref eq $ref and $knownalt eq $alt){
+          $index = 1;
+        } else {
+          if ($type eq 'indelclean'){
             next;
           }
         }
-      } #find index
+      }
 
       if ($index != -1){
         $freq = $freqs[$index];
         if ($freq eq ''){
           shift @freqs;
           $freq = max(@freqs);
-        }
-        if ($type eq 'indelclean'){
-          $ref =~ s/\-//;
-          $alt =~ s/\-//;
-          my $realdiff = length($alt)-length($ref);
-          my $knowndiff = length($alleles[$index]-$alleles[0]);
-          next if $realdiff ne $knowndiff;
         }
       } else {
         shift @freqs;
