@@ -61,6 +61,13 @@ while ( <IN> ){
           shift @freqs;
           $freq = max(@freqs);
         }
+        if ($type eq 'indelclean'){
+          $ref =~ s/\-//;
+          $alt =~ s/\-//;
+          my $realdiff = length($alt)-length($ref);
+          my $knowndiff = length($alleles[$index]-$alleles[0]);
+          next if $realdiff ne $knowndiff;
+        }
       } else {
         shift @freqs;
         $freq = max(@freqs);
