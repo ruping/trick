@@ -21,7 +21,7 @@ RunCommand($cmd, 0, 0);
 $cmd = "R CMD BATCH --no-save --no-restore "."\'--args path=\"$path\" file=\"$path\/ptmp\"' $bin/phyper.R $path/R\_html\.out";
 RunCommand($cmd, 0, 0);
 
-$cmd = "paste $file\.path $path/pvalues | sort -t \"\t\" -k 10,10n >$file\.path\.result";
+$cmd = "paste $file\.path $path/pvalues | sort -t \"\t\" -k 10,10 -g >$file\.path\.result";
 RunCommand($cmd, 0, 0);
 
 $cmd = "rm $path/ptmp $path/pvalues -f";
