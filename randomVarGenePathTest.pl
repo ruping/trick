@@ -99,7 +99,7 @@ for (1..5000) {  #randomization 5000 times
 }
 
 foreach my $pathway (sort {$result{$a}{'better'} <=> $result{$b}{'better'} } keys %result){
-  my $p = sprintf("%5f", $result{$pathway}{'better'}/5000);
+  my $p = sprintf("%.5f", $result{$pathway}{'better'}/5000);
   print "$pathway";
   print "\t$result{$pathway}{'genes'}";
   print "\t$result{$pathway}{'size'}";
