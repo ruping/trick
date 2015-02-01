@@ -5,6 +5,7 @@ use File::Glob ':glob';
 use File::Basename;
 use FindBin qw($RealBin);
 
+my $bin = $RealBin;
 
 my $vcf = shift;
 my $pathres = shift;
@@ -79,7 +80,7 @@ for (1..5000) {  #randomization 5000 times
   print STDERR "$outdir/rgenelist is generated.\n";
 
   #do enrichment analysis
-  my $cmd = "perl /tools/trick/runPathwayEnrichment.pl $outdir/rgenelist /cygdrive/h/annotation/CPDB_pathways_genes.tab";
+  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist /cygdrive/h/annotation/CPDB_pathways_genes.tab";
   RunCommand($cmd, 0 , 0);
 
   #save it into memory
