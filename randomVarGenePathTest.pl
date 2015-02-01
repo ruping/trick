@@ -54,7 +54,7 @@ for (1..5000) {  #randomization 5000 times
   print STDERR "$_\t$_\t$_\t$_\n";
   my $gcount;
   my %lines;
-  open OUT, "$outdir/rgenelist";
+  open OUT, ">$outdir/rgenelist";
   while (1) {  #produce gene list
     my $line = int(rand($totalV));
     while ( exists($lines{$line}) or $line == 0 ) {
@@ -94,7 +94,7 @@ for (1..5000) {  #randomization 5000 times
   }
   close PATH;
 
-  $cmd = "rm $outdir/rgenelist $outdir/rgenelist.path $outdir/rgenelist.path.result -f";
+  $cmd = "rm $outdir/rgenelist.path $outdir/rgenelist.path.result -f";
   RunCommand($cmd, 0 , 0);
 }
 

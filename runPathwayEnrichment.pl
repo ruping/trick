@@ -10,7 +10,7 @@ use FindBin qw($RealBin);
 my $file = shift;
 my $pathway = shift;
 my $path = dirname($file);
-my $bin = "/tools/trick/";
+my $bin = $RealBin;
 
 my $cmd = "perl $bin/pathwayEnrichment.pl $file $pathway >$file\.path";
 RunCommand($cmd, 0, 0);

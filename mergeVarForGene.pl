@@ -74,9 +74,9 @@ close CEN;
 
 my %type2int;
 $type2int{'snv'} = 2;
-$type2int{'snv&raregermline'} = 3;
+$type2int{'snv&somatic'} = 3;
 $type2int{'indel'} = 4;
-$type2int{'indel&raregermline'} = 5;
+$type2int{'indel&somatic'} = 5;
 $type2int{'fusion'} = 6;
 $type2int{'cnva'} = 1;
 $type2int{'cnvd'} = -1;
@@ -97,13 +97,13 @@ foreach my $file (@files) {
   my $type;
   if ($file =~ /snv/){
     $type = 'snv';
-    if ($file =~ /germline/){
-      $type .= '&raregermline';
+    if ($file =~ /somatic/){
+      $type .= '&somatic';
     }
   } elsif ($file =~ /indel/){
     $type = 'indel';
-    if ($file =~ /germline/){
-      $type .= '&raregermline';
+    if ($file =~ /somatic/){
+      $type .= '&somatic';
     }
   } elsif ($file =~ /fusion/){
     $type = 'fusion';
