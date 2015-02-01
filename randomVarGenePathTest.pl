@@ -10,6 +10,7 @@ my $bin = $RealBin;
 my $vcf = shift;
 my $pathres = shift;
 my $outdir = shift;
+my $times = shift;
 
 open IN, "$vcf";
 my $i = 1;
@@ -50,7 +51,7 @@ srand();
 my $totalG = $querysize;
 my $totalV = $i - 1;
 my %randon;
-for (1..5000) {  #randomization 5000 times
+for (1..$times) {  #randomization 5000 times
 
   print STDERR "$_\t$_\t$_\t$_\n";
   my $gcount;
