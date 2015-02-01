@@ -11,6 +11,7 @@ my $vcf = shift;
 my $pathres = shift;
 my $outdir = shift;
 my $times = shift;
+my $pathdb = shift;
 
 open IN, "$vcf";
 my $i = 1;
@@ -81,7 +82,7 @@ for (1..$times) {  #randomization 5000 times
   print STDERR "$outdir/rgenelist is generated.\n";
 
   #do enrichment analysis
-  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist /cygdrive/h/annotation/CPDB_pathways_genes.tab";
+  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist $pathdb";
   RunCommand($cmd, 0 , 0);
 
   #save it into memory
