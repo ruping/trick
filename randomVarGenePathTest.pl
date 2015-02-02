@@ -12,6 +12,7 @@ my $pathres = shift;
 my $outdir = shift;
 my $times = shift;
 my $pathdb = shift;
+my $nonexonic = shift;
 
 open IN, "$vcf";
 my $i = 1;
@@ -21,7 +22,12 @@ while ( <IN> ) {
   if (/^#/){
     next;
   } else {
-    $vcf{$i} = $_;
+    if ($nonexonic eq ''){
+      $vcf{$i} = $_;
+    } else {
+      my @cols = split /\t/;
+      $vcf{$i} = $cols[1];
+    }
     $i++;
   }
 }
@@ -66,13 +72,18 @@ for (1..$times) {  #randomization 5000 times
     $lines{$line} = '';  #remember this line
     #my @genes = &grepGene($vcf{$line});
     #$gcount += scalar(@genes);
-    my @cols = split(/\t/, $vcf{$line});
-    $cols[2] =~ /^(.+?)\:/;
-    my $genenow = $1;
+    my $genenow;
+    if ($nonexonic eq ''){
+      my @cols = split(/\t/, $vcf{$line});
+      $cols[2] =~ /^(.+?)\:/;
+      $genenow = $1;
+    } else {
+      $genenow = $vcf{$line};
+    }
     $gcount ++;
-    if ($gcount <= $totalG){
+    if ($gcount <= $totalG) {
       #foreach my $genenow (@genes) {
-        print OUT "$genenow\n";
+      print OUT "$genenow\n";
       #}
     } else {
       last;
