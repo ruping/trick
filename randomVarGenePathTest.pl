@@ -78,7 +78,8 @@ for (1..$times) {  #randomization 5000 times
       $cols[2] =~ /^(.+?)\:/;
       $genenow = $1;
     } else {
-      $genenow = $vcf{$line};
+      my @genesnow = split(/\,/, $vcf{$line});
+      $genenow = $genesnow[0];
     }
     $gcount ++;
     if ($gcount <= $totalG) {
