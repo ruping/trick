@@ -100,7 +100,7 @@ while ( <IN> ){
       }
       $trace =~ s/,$//;
       if ($trace ne ''){
-        my @trace = split(/,/ $trace);
+        my @trace = split(/\,/, $trace);
         my $ftrace = '';
         if (scalar(@trace) > 1) {
           if ($trace[0] eq 'AC3') {
