@@ -38,7 +38,7 @@ foreach my $sample (keys %data){
   }
   close OUT;
   my $cmd = "perl /ifs/home/c2b2/ac_lab/rs3412/tools/trick/intersectFiles.pl -o ./tmp -m $calling >>./result";
-  RunCommand($cmd);
+  RunCommand($cmd,0,0);
 }
 
 sub RunCommand {
