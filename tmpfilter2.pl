@@ -24,6 +24,9 @@ while  ( <IN> ){
     push (@bias, $mapqb);
     push (@bias, $tailb);
     my $bad = 0;
+    if ($cols[6] < 90){
+      $bad = 1;
+    }
     foreach my $bias (@bias) {
       if ($bias =~ /e/) {
         $bad = 1;
