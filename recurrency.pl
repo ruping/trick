@@ -111,7 +111,7 @@ while ( <IN> ){
         } else {
           $ftrace = $trace[0];
         }
-        print "$_\t$trace\n";
+        print "$_\t$ftrace\n";
       }
     }
   }
