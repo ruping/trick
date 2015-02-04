@@ -10,6 +10,7 @@ my @blood = qw(AC1maf AC547maf AC581maf AC669maf);
 my @all = ();
 push(@all, @rectum);
 push(@all, @ileum);
+push(@all, "AC442maf");
 
 
 open IN, "$file";
@@ -22,8 +23,13 @@ while ( <IN> ){
     for(my $i = 0; $i <= $#cols; $i++){
       $colnames{$cols[$i]} = $i;
     }
-    print "$_\tfounds\tfounds.rectum\tfounds.ileum\tfounds.primary\n" if $maf eq '';
-    print "$_\tmaf\n" if $maf ne '';
+    if ($maf eq ''){
+      print "$_\tfounds\tfounds.rectum\tfounds.ileum\tfounds.primary\n";
+    } elsif ($maf == 1){
+      print "$_\tmaf\n";
+    } elsif ($maf eq 'trace'){
+      print "$_\ttrace\n";
+    }
   } else {
     my @cols = split /\t/;
     if ($maf eq ''){
@@ -61,7 +67,7 @@ while ( <IN> ){
       }
 
       print "$_\t$founds\t$foundsRectum\t$foundsIleum\t$foundsPrimary\n";
-    } else {
+    } elsif ($maf == 1) {
       my $maf = 0;
       my $sampleCounts = scalar(@all);
       foreach my $sample (@all) {
@@ -74,6 +80,39 @@ while ( <IN> ){
       }
       $maf = sprintf("%.6f",$maf/$sampleCounts);
       print "$_\t$maf\n";
+    } elsif ($maf eq 'trace') {
+      my $trace = '';
+      foreach my $sample (@all) {
+        $sample =~ s/maf$// unless ($sample eq 'AC3maf');
+        if ($sample ne 'AC3maf') {
+          if ($cols[$colnames{$sample}] > 0){
+              $trace .= "$sample,"
+          }
+        } else {
+          if ($cols[$colnames{$sample}] >= 0.1) {
+            my $vard = sprintf("%.1f", $cols[$colnames{$sample}]*$cols[$colnames{$sample}+1]);
+            if ($vard >= 2) {
+              $sample =~ s/maf$//;
+              $trace .= "$sample,";
+            }
+          }
+        }
+      }
+      $trace =~ s/,$//;
+      if ($trace ne ''){
+        my @trace = split(/,/ $trace);
+        my $ftrace = '';
+        if (scalar(@trace) > 1) {
+          if ($trace[0] eq 'AC3') {
+            $ftrace = $trace[1];
+          } else {
+            $ftrace = $trace[0];
+          }
+        } else {
+          $ftrace = $trace[0];
+        }
+        print "$_\t$trace\n";
+      }
     }
   }
 }
