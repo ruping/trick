@@ -238,11 +238,11 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
     foreach my $name (sort keys %samples) {
       if ($somatic{$coor}{$name} ne '') {
         print "\t$somatic{$coor}{$name}";
+      } elsif ($blood eq 'yes') {
+        print "\t0\t0";
       }
     }
-    #if ($n > 0) {
-       print "\t$sumCmean\t$sumCmedian";
-    #}
+    print "\t$sumCmean\t$sumCmedian";
     print "\n";
   }
 }
