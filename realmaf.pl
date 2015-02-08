@@ -158,7 +158,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               exit 22;
             }
             if ($altd > 0) {
-              if (exists $blood{$name}){ #it is blood
+              if (exists($blood{$name}) or $blood eq 'yes'){ #it is blood
                 $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
               } else {  #it is tumor
                 my $endratio = sprintf("%.4f", $vends/$vard);
@@ -174,7 +174,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               $somatic{$coor}{$name} = 0;
             }
           } else {   #coor not found
-            if (exists $blood{$name}){ #it is blood
+            if (exists($blood{$name}) or $blood eq 'yes'){ #it is blood
               $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
             } else { #it is tumor
               my $endratio = sprintf("%.4f", $vends/$vard);
