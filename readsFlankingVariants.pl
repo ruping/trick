@@ -37,7 +37,7 @@ while ( <IN> ) {
   my $realref = substr($seq, 50, 1);
   if ($realref ne $ref and $type eq 'snv') {
      print STDERR "shit_not_same_ref\t$chr\t$pos\t$ref\t$realref\n";
-     exit 22;
+     #exit 22;
   }
 
   my $oldseq = $seq;
