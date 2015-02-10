@@ -3,6 +3,7 @@ use strict;
 my $file = shift;
 my $maf = shift;
 
+
 my @rectum = qw(AC3maf AC439maf AC440maf AC441maf AC443maf AC447maf AC525maf AC526maf AC527maf AC528maf AC529maf AC530maf AC531maf AC532maf AC533maf AC546maf AC548maf AC580maf AC637maf AC653maf AC668maf);
 my @ileum = qw(AC444maf AC445maf AC446maf AC516maf AC517maf AC518maf AC519maf);
 my @primary = qw(AC532maf AC533maf AC546maf AC580maf AC668maf);
@@ -15,6 +16,7 @@ push(@all, "AC442maf");
 
 open IN, "$file";
 my %colnames;
+my %colindex;
 while ( <IN> ){
   chomp;
   if (/^[\#]?chr\t/){
@@ -22,6 +24,7 @@ while ( <IN> ){
     my @cols = split /\t/;
     for(my $i = 0; $i <= $#cols; $i++){
       $colnames{$cols[$i]} = $i;
+      $colindex{$i} = $cols[$i];
     }
     if ($maf eq ''){
       print "$_\tfounds\tfounds.rectum\tfounds.ileum\tfounds.primary\n";
@@ -29,6 +32,8 @@ while ( <IN> ){
       print "$_\tmaf\n";
     } elsif ($maf eq 'trace'){
       print "$_\ttrace\n";
+    } elsif ($maf eq 'founds'){
+      print "$_\tfounds\n";
     }
   } else {
     my @cols = split /\t/;
@@ -37,7 +42,7 @@ while ( <IN> ){
       my $foundsRectum = 0;
       my $foundsIleum = 0;
       my $foundsPrimary = 0;
-      foreach my $rec (@rectum) {
+      foreach my $rec ( @rectum ) {
         if ($cols[$colnames{$rec}] >= 0.1) {
           my $vard = sprintf("%.1f", $cols[$colnames{$rec}]*$cols[$colnames{$rec}+1]);
           if ($vard >= 2) {
@@ -47,7 +52,7 @@ while ( <IN> ){
         }
       }
 
-      foreach my $ile (@ileum) {
+      foreach my $ile ( @ileum ) {
         if ($cols[$colnames{$ile}] >= 0.1) {
           my $vard = sprintf("%.1f", $cols[$colnames{$ile}]*$cols[$colnames{$ile}+1]);
           if ($vard >= 2) {
@@ -113,7 +118,20 @@ while ( <IN> ){
         }
         print "$_\t$ftrace\n";
       }
-    }
+    } elsif ($maf eq 'founds') {
+      my $founds = 0;
+      for (my $i = 0; $i <= $#cols; $i++){
+        if ($colindex{$i} =~ /maf$/) {
+          if ($cols[$i] >= 0.1){
+            my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
+            if ($vard >= 2) {
+              $founds++;
+            }
+          }
+        } #maf
+      } #each column
+      print "$_\t$founds\n";
+    } #get founds
   }
 }
 close IN;
