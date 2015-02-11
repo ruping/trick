@@ -5,7 +5,6 @@ use strict;
 #print "$int\n";
 my $blood = shift;
 my $tumor = shift;
-my 
 
 
 open IN, "$blood";
