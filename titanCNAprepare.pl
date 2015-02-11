@@ -6,7 +6,7 @@ use strict;
 my $data = shift;
 my $split = shift;
 
-my $outdir = "./";
+my $outdir = "./titan/";
 
 unless ($split == 1){
   open IN, "$data";
@@ -26,7 +26,7 @@ unless ($split == 1){
   close IN;
 }
 
-if ($split == 1){
+if ($split == 1) {
   my %colnames;
   open IN, "$data";
   while (<IN>){
