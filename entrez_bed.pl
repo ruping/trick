@@ -10,7 +10,7 @@ while ( <IN> ){
   chomp;
   my ($ens, $ensName, $ensType, $ensDes, $entrez, $wikiName, $wikiDes) = split /\t/;
   if ($entrez != ''){
-    $mapping{$ens}{$entrez} = '';
+    $mapping{$ens}{$entrez} = $ensName;
   }
 }
 close IN;
@@ -20,11 +20,12 @@ while ( <IN2> ){
    chomp;
    my @cols = split /\t/;
    my $ens = $cols[3];
+   my $length = $cols[8];
    $ens =~ s/\.\d+$//;
    my $count = round($cols[7]);
    if (exists ($mapping{$ens})){
      foreach my $entrez (keys %{$mapping{$ens}}){
-         print "$ens\t$entrez\t$count\n";
+         print "$ens\t$entrez\t$mapping{$ens}{$entrez}\t$count\t$length\n";
      }
    }
 }
