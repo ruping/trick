@@ -59,9 +59,6 @@ if ($split == 1) {
     } #each non header
   } #each line
   close IN;
-  foreach my $sample (keys %fhs){
-    close {$fhs{$sample}};
-  }
 } #split samples
 
 
