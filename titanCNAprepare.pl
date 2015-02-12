@@ -43,7 +43,7 @@ if ($split == 1) {
           my $sample = $1;
           my $fh = $sample;
           unless (-e "$outdir/$sample\_titan") {
-            open (my $fh,">>","$outdir/$sample\_titan" )  || die $!;
+            open ( my $fh, ">>", "$outdir/$sample\_titan" )  || die $!;
             $fhs{$sample} = $fh;
             #open $sample, ">>$outdir/$sample\_titan";
           }
@@ -59,6 +59,9 @@ if ($split == 1) {
     } #each non header
   } #each line
   close IN;
+  foreach my $sample (keys %fhs){
+    close {$fhs{$sample}};
+  }
 } #split samples
 
 
