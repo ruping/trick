@@ -25,6 +25,7 @@ unless ($split == 1) {
 
 if ($split == 1) {
   my %colnames;
+  my %fh;
   open IN, "$data";
   while (<IN>) {
     chomp;
@@ -40,14 +41,16 @@ if ($split == 1) {
         if ($colnames{$i} =~ /^(.+?)maf$/){  #now it is maf
           my $sample = $1;
           unless (-e "$outdir/$sample\_titan") {
-            open $sample, ">>$outdir/$sample\_titan";
+            open ($sample,">>","$outdir/$sample\_titan" )  || die $!;
+            $fh{$sample} = $sample;
+            #open $sample, ">>$outdir/$sample\_titan";
           }
           my $refCount = 0;
           my $NrefCount = 0;
           $refCount = round($cols[$i]*$cols[$i+1]);
           $NrefCount = $cols[$i+1] - $refCount;
           if (($refCount +$NrefCount) >= 3) {
-            print $sample "$cols[0]\t$cols[1]\t$cols[3]\t$refCount\t$cols[4]\t$NrefCount\n";
+            print {$fh{$sample}} "$cols[0]\t$cols[1]\t$cols[3]\t$refCount\t$cols[4]\t$NrefCount\n";
           }
         } #maf
       } #each col
