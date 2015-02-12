@@ -1,14 +1,11 @@
 use strict;
 
-#my $num = shift;
-#my $int = round($num);
-#print "$int\n";
 my $data = shift;
 my $split = shift;
 
 my $outdir = "./titan/";
 
-unless ($split == 1){
+unless ($split == 1) {
   open IN, "$data";
   while ( <IN> ) {
     chomp;
@@ -29,7 +26,7 @@ unless ($split == 1){
 if ($split == 1) {
   my %colnames;
   open IN, "$data";
-  while (<IN>){
+  while (<IN>) {
     chomp;
     my @cols = split /\t/;
     if ($_ =~ /^[\#]?chr\t/) {
@@ -48,7 +45,7 @@ if ($split == 1) {
           $refCount = round($cols[$i]*$cols[$i+1]);
           $NrefCount = $cols[$i+1] - $refCount;
           if (($refCount +$NrefCount) >= 3) {
-            print OUT "$cols[$colnames{'chr'}]\t$cols[$colnames{'pos'}]\t$cols[$colnames{'ref'}]\t$refCount\t$cols[$colnames{'alt'}]\t$NrefCount\n";
+            print OUT "$cols[0]\t$cols[1]\t$cols[3]\t$refCount\t$cols[4]\t$NrefCount\n";
           }
           close OUT;
         } #maf
