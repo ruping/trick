@@ -322,7 +322,7 @@ foreach my $name (sort keys %samples) {
 }
 print "\tfunction";
 if ($clinical eq '') {
-  print "\tsomatic\tgermline\n";
+  print "\tsomatic\tgermline";
 } else {
   print "\tclinical";
 }
