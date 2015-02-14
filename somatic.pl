@@ -207,9 +207,9 @@ foreach my $file (@list) {
              $somatic = 1;
            }
          }
-         if ($recheck ne ''){        #recheck
+         if ($recheck ne '') {        #recheck
            my $coor = $chr.':'.$pos;
-           if (exists($recheck{$coor})){
+           if (exists($recheck{$coor})) {
               $somatic = 1;
            }
          }
@@ -255,11 +255,28 @@ foreach my $file (@list) {
        next if ($1 > 0.1);
      }
      if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
+       my $strandb = $1;
+       my $baseqb = $2;
+       my $mapqb = $3;
        my $tailb = $4;
-       if ($tailb =~ /e/) {
+       if ($strandb =~ /e/) {             #strand bias
          next;
-       } elsif ($tailb < 0.005) {
+       } elsif ($strandb < 0.005) {       #strand bias
          next;
+       } elsif ($baseqb =~ /e/) {         #basequality bias
+         next;
+       } elsif ($baseqb < 0.0005) {       #basequality bias
+         next;
+       } elsif ($mapqb =~ /e/) {          #mapquality bias
+         next;
+       } elsif ($mapqb < 0.0001) {        #mapquality bias
+         next;
+       } elsif ($tailb =~ /e/) {          #tailbias
+         next;
+       } elsif ($tailb < 0.005) {         #tailbias
+         next;
+       } else {
+         #pass
        }
      }
 
