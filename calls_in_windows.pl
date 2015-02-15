@@ -392,13 +392,31 @@ if ($opt{mutation}) {
           next if ($1 > 0.1);   #skip multiple matching region
         }
         if ($INFO =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
+          my $strandb = $1;
+          my $baseqb = $2;
+          my $mapqb = $3;
           my $tailb = $4;
-          if ($tailb =~ /e/) {
-            next;                        #skip tail bias region
-          } elsif ($tailb < 0.005){
+          if ($strandb =~ /e/) { #strand bias
             next;
+          } elsif ($strandb < 0.005) { #strand bias
+            next;
+          } elsif ($baseqb =~ /e/) { #basequality bias
+            next;
+          } elsif ($baseqb < 0.0005) { #basequality bias
+            next;
+          } elsif ($mapqb =~ /e/) { #mapquality bias
+            next;
+          } elsif ($mapqb < 0.0001) { #mapquality bias
+            next;
+          } elsif ($tailb =~ /e/) { #tailbias
+            next;
+          } elsif ($tailb < 0.005) { #tailbias
+            next;
+          } else {
+            #pass
           }
         }
+
 
         my $coor = $CHROM.':'.$POS;
         next if ($opt{'recheck'} and (!exists($recheck{$coor}) or $recheck{$coor} < $recheckN));
@@ -719,11 +737,28 @@ if ($opt{indel}) {
           next if ($1 > 0.1);            #skip multiple matching region
         }
         if ($INFO =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
+          my $strandb = $1;
+          my $baseqb = $2;
+          my $mapqb = $3;
           my $tailb = $4;
-          if ($tailb =~ /e/) {
-            next;                        #skip tail bias region
-          } elsif ($tailb < 0.005){
+          if ($strandb =~ /e/) { #strand bias
             next;
+          } elsif ($strandb < 0.005) { #strand bias
+            next;
+          } elsif ($baseqb =~ /e/) { #basequality bias
+            next;
+          } elsif ($baseqb < 0.0005) { #basequality bias
+            next;
+          } elsif ($mapqb =~ /e/) { #mapquality bias
+            next;
+          } elsif ($mapqb < 0.0001) { #mapquality bias
+            next;
+          } elsif ($tailb =~ /e/) { #tailbias
+            next;
+          } elsif ($tailb < 0.005) { #tailbias
+            next;
+          } else {
+            #pass
           }
         }
 
