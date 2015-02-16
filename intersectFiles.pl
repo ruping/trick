@@ -25,6 +25,8 @@ my $oichr = 0;
 my $oistart = 1;
 my $oiend = 1;
 
+my $NAvalue = 'NA';
+
 
 my %printer;
 
@@ -46,6 +48,7 @@ while ($ARGV[0]) {
   elsif ($arg eq '-nonoverlap'){$nonoverlap = 1;}
   elsif ($arg eq '-overlap'){$overlap = 1;}
   elsif ($arg eq '-column'){$column = shift @ARGV;}
+  elsif ($arg eq '-na'){$NAvalue = shift @ARGV;}
   elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-t:tolerant]\n"; exit 0;}
   else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
@@ -370,9 +373,9 @@ sub var_processing {
        }
      }
      if ($columnAdd eq '') {
-       $columnAdd = "NA";
+       $columnAdd = $NAvalue;
      }
-     unless ($overlap == 1 and $columnAdd eq 'NA'){  #do not print only when it is required to be overlapped and nonthing overlap
+     unless ($overlap == 1 and $columnAdd == $NAvalue){  #do not print only when it is required to be overlapped and nonthing overlap
        print "$original\t$columnAdd\n";
      }
    }
