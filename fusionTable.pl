@@ -5,6 +5,10 @@ my $need = shift;
 
 my $dir = shift;
 
+my $mapping = shift;
+
+my $raw = shift;
+
 my @need = split(",", $need);
 
 
@@ -15,7 +19,7 @@ foreach my $arj (@arj) {
   $arj{$arj} = '';
 }
 
-open IN, "/ifs/scratch/c2b2/ac_lab/rs3412/no1/net/dna2rna.mapping";
+open IN, "$mapping";
 while ( <IN> ) {
   chomp;
   next if /^dna\t/;
@@ -101,19 +105,30 @@ foreach my $sample (@need) {
     next if ($cov4/$cov5 >= 10 and $cov5 <= 3);               #high duplication
     next if ($cov4/$cov5 >= 20 and $cov5 < 10);               #high duplication
     next if ((($gene2 ne 'IGR' and $gene1 =~ /^$gene2/) or ($gene1 ne 'IGR' and $gene2 =~ /^$gene1/)) and $sc eq 'CC');  #remaining family
-    next if (($gene1 =~ /^IGK[JV]/ or $gene2 =~ /^IGK[JV]/) and $sc eq 'CC');                                            #IGG
+    next if (($gene1 =~ /^IG[KL][JV]/ or $gene2 =~ /^IGK[KL][JV]/) and $sc eq 'CC');                                            #IGG
     next if (($gene1 eq 'IGR' and $gene2 =~ /^RP\d+\-\d+/) or ($gene2 eq 'IGR' and $gene1 =~ /^RP\d+\-\d+/));            #lnRNA IGR junk
 
-    if ($gene1 ne "" and $gene1 ne 'IGR'){
+    my $keep = 0;
+    if ($gene1 ne "" and $gene1 ne 'IGR') {
       $fusions{$gene1}{$sampleDNA} = $cov5;
+      $keep++;
     }
-    if ($gene2 ne "" and $gene2 ne 'IGR'){
+    if ($gene2 ne "" and $gene2 ne 'IGR') {
       $fusions{$gene2}{$sampleDNA} = $cov5;
+      $keep++;
+    }
+
+    if ( $keep == 2 and $raw == 1 ) {
+      print "$sampleName\t$sampleDNA\t$_\n";
     }
   }
 
   close FF;
 
+}
+
+if ($raw == 1){
+  exit 0;
 }
 
 my %dna;

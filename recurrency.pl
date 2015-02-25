@@ -22,17 +22,17 @@ while ( <IN> ){
   if (/^[\#]?chr\t/){
     #it is header
     my @cols = split /\t/;
-    for(my $i = 0; $i <= $#cols; $i++){
+    for(my $i = 0; $i <= $#cols; $i++) {
       $colnames{$cols[$i]} = $i;
       $colindex{$i} = $cols[$i];
     }
-    if ($maf eq ''){
+    if ($maf eq '') {
       print "$_\tfounds\tfounds.rectum\tfounds.ileum\tfounds.primary\n";
-    } elsif ($maf == 1){
+    } elsif ($maf == 1) {
       print "$_\tmaf\n";
-    } elsif ($maf eq 'trace'){
+    } elsif ($maf eq 'trace') {
       print "$_\ttrace\n";
-    } elsif ($maf eq 'founds'){
+    } elsif ($maf eq 'founds') {
       print "$_\tfounds\n";
     }
   } else {
