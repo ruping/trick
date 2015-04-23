@@ -16,7 +16,7 @@ print STDERR "genome loaded\n";
 open IN, "$file";
 while ( <IN> ){
   chomp;
-  next if /^chr\t/;
+  next if /^[\#]?chr\t/;
   my @cols = split /\t/;
   (my $chrom = $cols[0]) =~ s/^chr//;
   my $start = $cols[1];
