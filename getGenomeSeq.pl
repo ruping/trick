@@ -23,6 +23,10 @@ while ( <IN> ){
   my $end   = $cols[2];
   my $id = $chrom.':'.$start.'-'.$end;
   my $seq = substr($genome{$chrom}, ($start-1), ($end-$start+1));
-  print ">$id\n$seq\n";
+  print ">$id\n";
+  my @seq;
+  while ($seq =~ /([ACGT]{1,60})/g){
+    print "$1\n";
+  }
 }
 close IN;
