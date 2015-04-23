@@ -30,7 +30,7 @@ while ( <IN> ){
       print "$_\tfounds\tfounds.rectum\tfounds.ileum\tfounds.primary\n";
     } elsif ($maf == 1) {
       print "$_\tmaf\n";
-    } elsif ($maf eq 'trace') {
+    } elsif ($maf =~ /trace/) {
       print "$_\ttrace\n";
     } elsif ($maf eq 'founds') {
       print "$_\tfounds\n";
@@ -85,26 +85,27 @@ while ( <IN> ){
       }
       $maf = sprintf("%.6f",$maf/$sampleCounts);
       print "$_\t$maf\n";
-    } elsif ($maf eq 'trace') {
+    } elsif ($maf =~ /trace/) {
       my $trace = '';
       foreach my $sample (@all) {
-        $sample =~ s/maf$// unless ($sample eq 'AC3maf');
-        if ($sample ne 'AC3maf') {
-          if ($cols[$colnames{$sample}] > 0){
-              $trace .= "$sample,"
+        my $samp = $sample;
+        if ($samp ne 'AC3maf') {
+          $samp =~ s/maf$//;
+          if ($cols[$colnames{$samp}] > 0){
+              $trace .= "$samp,"
           }
-        } else {
-          if ($cols[$colnames{$sample}] >= 0.1) {
-            my $vard = sprintf("%.1f", $cols[$colnames{$sample}]*$cols[$colnames{$sample}+1]);
+        } else {  #AC3maf
+          if ($cols[$colnames{$samp}] >= 0.1) {
+            my $vard = sprintf("%.1f", $cols[$colnames{$samp}]*$cols[$colnames{$samp}+1]);
             if ($vard >= 2) {
-              $sample =~ s/maf$//;
-              $trace .= "$sample,";
+              $samp =~ s/maf$//;
+              $trace .= "$samp,";
             }
           }
         }
       }
       $trace =~ s/,$//;
-      if ($trace ne ''){
+      if ($trace ne '') {
         my @trace = split(/\,/, $trace);
         my $ftrace = '';
         if (scalar(@trace) > 1) {
@@ -116,7 +117,8 @@ while ( <IN> ){
         } else {
           $ftrace = $trace[0];
         }
-        print "$_\t$ftrace\n";
+        print "$_\t$ftrace\n" if ($maf eq 'trace');
+        print "$_\t$trace\n" if ($maf eq 'traceall');
       }
     } elsif ($maf eq 'founds') {
       my $founds = 0;
