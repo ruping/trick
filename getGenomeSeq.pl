@@ -22,7 +22,7 @@ while ( <IN> ){
   my $start = $cols[1];
   my $end   = $cols[2];
   my $id = $chrom.':'.$start.'-'.$end;
-  my $seq = substr($genome{$chr}, ($start-1), ($end-$start+1));
+  my $seq = substr($genome{$chrom}, ($start-1), ($end-$start+1));
   print ">$id\n$seq\n";
 }
 close IN;
