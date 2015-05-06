@@ -34,7 +34,7 @@ GetOptions (
                                print "\t--prefix\tthe prefix of samples' names\n";
                                print "\t--task\t\tthe task, such as tcga or rnaediting\n";
                                print "\t--recheck\tthe dir whether recheck files are located\n";
-                               print "\t--dbsnp\tyes or no, whether to keep dbsnp variants into the table\n";
+                               print "\t--dbsnp\t\tyes or no, whether to keep dbsnp variants into the table\n";
                                print "\t--clinical\tthe file containing the clinical dbSNP sites, it is a gzipped vcf file\n";
                                print "\t--tolerance\tthe tolerance for comparing indels with certain distance shift\n";
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
