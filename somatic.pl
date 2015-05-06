@@ -17,17 +17,17 @@ my $bin = $RealBin;
 my $tolerance = 0;
 
 GetOptions (
-           "list|l=s"       => \$list,             #filename of all vcfs
-           "type|t=s"       => \$type,             #snv or indel
-           "normal|n=s"     => \$normal,           #comma seperated id of normal samples
-           "recheck|r=s"    => \$recheck,          #directory of rechecked files
-           "task|k=s"       => \$task,             #task type
-           "prefix|p=s"     => \$prefix,
-           "dbsnp|d=s"      => \$dbsnp,
-           "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
-           "tmpdir|y=s"     => \$tmpdir,
-           "tolerance=i"    => \$tolerance,
-           "help|h"         => sub{
+            "list|l=s"       => \$list,             #filename of all vcfs
+            "type|t=s"       => \$type,             #snv or indel
+            "normal|n=s"     => \$normal,           #comma seperated id of normal samples
+            "recheck|r=s"    => \$recheck,          #directory of rechecked files
+            "task|k=s"       => \$task,             #task type
+            "prefix|p=s"     => \$prefix,
+            "dbsnp|d=s"      => \$dbsnp,
+            "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
+            "tmpdir|y=s"     => \$tmpdir,
+            "tolerance=i"    => \$tolerance,
+            "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
                                print "\t--normal\tcomma seperated id of normal samples\n";
