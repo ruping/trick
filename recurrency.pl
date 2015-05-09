@@ -1,7 +1,28 @@
 use strict;
+use Data::Dumper;
 
 my $file = shift;
 my $maf = shift;
+my $somaticInfo = shift; #if for somatic judgement
+
+my %somatic;
+if ($somaticInfo ne '' and -s "$somaticInfo"){
+  open IN, "$somaticInfo";
+  while ( <IN> ){
+    chomp;
+    my ($id, $type) = split /\t/;
+    if ($type eq 'T'){
+      $_ = <IN>;
+      chomp($_);
+      my @cols = split(/\t/, $_);
+      if ($cols[1] eq 'N'){
+        $somatic{$id} = $cols[0];
+      }
+    }
+  }
+  close IN;
+  print STDERR Dumper (\%somatic);
+}
 
 
 my @rectum = qw(AC3maf AC439maf AC440maf AC441maf AC443maf AC447maf AC525maf AC526maf AC527maf AC528maf AC529maf AC530maf AC531maf AC532maf AC533maf AC546maf AC548maf AC580maf AC637maf AC653maf AC668maf);
@@ -72,7 +93,7 @@ while ( <IN> ){
       }
 
       print "$_\t$founds\t$foundsRectum\t$foundsIleum\t$foundsPrimary\n";
-    } elsif ($maf == 1) {
+    } elsif ($maf == 1) {    #get real maf
       my $maf = 0;
       my $sampleCounts = scalar(@all);
       foreach my $sample (@all) {
@@ -85,7 +106,7 @@ while ( <IN> ){
       }
       $maf = sprintf("%.6f",$maf/$sampleCounts);
       print "$_\t$maf\n";
-    } elsif ($maf =~ /trace/) {
+    } elsif ($maf =~ /trace/) {  #trace sample
       my $trace = '';
       foreach my $sample (@all) {
         my $samp = $sample;
@@ -120,7 +141,7 @@ while ( <IN> ){
         print "$_\t$ftrace\n" if ($maf eq 'trace');
         print "$_\t$trace\n" if ($maf eq 'traceall');
       }
-    } elsif ($maf eq 'founds') {
+    } elsif ($maf eq 'founds') {  #trace all samples
       my $founds = 0;
       for (my $i = 0; $i <= $#cols; $i++){
         if ($colindex{$i} =~ /maf$/) {
@@ -133,7 +154,10 @@ while ( <IN> ){
         } #maf
       } #each column
       print "$_\t$founds\n";
-    } #get founds
+    } elsif ($maf eq 'somatic'){  #find somatic ones
+      
+      
+    }
   }
 }
 close IN;

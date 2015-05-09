@@ -303,7 +303,7 @@ foreach my $file (@list) {
      } else {
         $somatic{$coor}{'germline'} .= $name.',';
      }
-     if ($clinical ne ''){
+     if ($clinical ne '') {
        $somatic{$coor}{'clinical'} = $clinINFO;  #clinical id information
      }
   }
