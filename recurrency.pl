@@ -6,14 +6,16 @@ my $maf = shift;
 my $somaticInfo = shift; #if for somatic judgement
 
 my %somatic;
-if ($somaticInfo ne '' and -s "$somaticInfo"){
+if ($somaticInfo ne '' and -s "$somaticInfo") {
   open IN, "$somaticInfo";
   while ( <IN> ){
     chomp;
+    s/[\s\n]$//;
     my ($id, $type) = split /\t/;
     if ($type eq 'T'){
       $_ = <IN>;
       chomp($_);
+      s/[\s\n]$//;
       my @cols = split(/\t/, $_);
       if ($cols[1] eq 'N'){
         $somatic{$id} = $cols[0];
