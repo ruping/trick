@@ -6,6 +6,7 @@ my $maf = shift;
 my $somaticInfo = shift; #if for somatic judgement
 
 my %somatic;
+my %germline;
 if ($somaticInfo ne '' and -s "$somaticInfo") {
   open IN, "$somaticInfo";
   while ( <IN> ){
@@ -19,11 +20,13 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
       my @cols = split(/\t/, $_);
       if ($cols[1] eq 'N'){
         $somatic{$id} = $cols[0];
+        $germline{$cols[0]} = $id;
       }
     }
   }
   close IN;
-  print STDERR Dumper (\%somatic);
+  #print STDERR Dumper (\%somatic);
+  #print STDERR Dumper (\%germline);
 }
 
 
@@ -57,6 +60,8 @@ while ( <IN> ){
       print "$_\ttrace\n";
     } elsif ($maf eq 'founds') {
       print "$_\tfounds\n";
+    } elsif ($maf eq 'somatic'){
+      print "$_\tsoma\tgerm\n";
     }
   } else {
     my @cols = split /\t/;
@@ -157,9 +162,42 @@ while ( <IN> ){
       } #each column
       print "$_\t$founds\n";
     } elsif ($maf eq 'somatic'){  #find somatic ones
-      
-      
-    }
+      my %tumor;
+      my %blood;
+      my %nonblood;
+      my %unknown;
+      for (my $i = 0; $i <= $#cols; $i++) {
+        if ($colindex{$i} =~ /^(.+?)maf$/) {
+          my $samp = $1;
+          my $maf = $cols[$i];
+          my $depth = $cols[$i+1];
+          my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
+          if (exists $somatic{$samp}) { #it is tumor
+             $tumor{$samp} = '' if ($vard >= 2);
+          } elsif (exists $germline{$samp}) { #it is blood
+            my $ct = $germline{$samp};
+            if ($maf == 0 and $depth >= 10){
+              $nonblood{$ct} = '';
+            } elsif ($maf == 0 and $depth < 10){
+              $unknown{$ct} = '';
+            } elsif ($vard >= 2) {
+              $blood{$ct} = '';
+            }
+          } #it is blood
+        } #maf
+      } #each column
+
+      my $soma = 'NA';
+      my $germ = 'NA';
+      foreach my $tumorSamp (keys %tumor){
+        if (exists $nonblood{$tumorSamp}){
+          $soma = ($soma eq 'NA')? $tumorSamp.',':$soma.$tumorSamp.',';
+        } elsif (exists $blood{$tumorSamp}){
+          $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
+        }
+      }
+      print "$_\t$soma\t$germ\n";
+    } #somatic
   }
 }
 close IN;
