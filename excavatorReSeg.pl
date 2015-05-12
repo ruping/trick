@@ -25,7 +25,7 @@ foreach my $file (@files) {
   while ( <IN> ){
     chomp;
     next if /^Chromosome/;
-    my ($chr, $start, $end, $logR, $CN, $Call, $ProbCall) = split /\t/;
+    my ($chr, $start, $end, $logR, $CN, $call, $probCall) = split /\t/;
     next if ($chr =~ /[XY]/);
     printf("%s\n", join("\t",$sample,$chr,$start,$end,$call));
   }
