@@ -267,10 +267,10 @@ foreach my $file (@list) {
          next;
        } elsif ($baseqb < 0.0005) {       #basequality bias
          next;
-       } elsif ($mapqb =~ /e/) {          #mapquality bias
-         next;
-       } elsif ($mapqb < 0.0001) {        #mapquality bias
-         next;
+       #} elsif ($mapqb =~ /e/) {          #mapquality bias   #mask it for sid's data
+       #  next;
+       #} elsif ($mapqb < 0.0001) {        #mapquality bias   #mask it for sid's data
+       #  next;
        } elsif ($tailb =~ /e/) {          #tailbias
          next;
        } elsif ($tailb < 0.005) {         #tailbias
