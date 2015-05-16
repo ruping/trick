@@ -121,6 +121,9 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if /^chr\t/;
       if ($type =~ /indel/) {       #indel
         my ($chr, $pos, $ref, $alt, $indelType, $depth, $vard, $junction, $cmean, $cmedian) = split /\t/;
+        if ($cmean =~ /e/){
+          $cmean = 0;
+        }
         last if $chr ne $chrc;
         my $coor = $chr.':'.$pos;
         if ($vard > 0 and $depth > 0) {
@@ -138,6 +141,9 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       } elsif ($type =~ /snv/) {    #snv
 
         my ($chr, $pos, $depth, $vard, $A, $C, $G, $T, $vends, $junction, $cmean, $cmedian) = split /\t/;
+        if ($cmean =~ /e/) {
+          $cmean = 0;
+        }
         last if $chr ne $chrc;
         my $coor = $chr.':'.$pos;
         if ( $vard > 0 and $depth > 0 ) {
