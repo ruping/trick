@@ -295,8 +295,9 @@ foreach my $file (@list) {
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
-     $somatic{$coor}{'function'} = $function;
-     $somatic{$coor}{'info'} = join("\t", ($id,$ref,$alt));
+     #$somatic{$coor}{'function'} = $function;
+     my $idrefalt = join("\t", ($id,$ref,$alt));
+     $somatic{$coor}{'info'}{$idrefalt} = $function;  #not necessarily just one!
 
      if ($somatic == 1) {
         $somatic{$coor}{'somatic'} .= $name.',';
@@ -332,25 +333,28 @@ print "\n";
 
 foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /^(\w+):(\d+)$/; my $cb = $1; my $pb = $2; $ca cmp $cb || $pa <=> $pb} keys %somatic) {
   $coor =~ /^(\w+):(\d+)$/;
-  my $info = $somatic{$coor}{'info'};
-  print "$1\t$2\t$info";
-  foreach my $name (sort keys %samples) {
-    if ($somatic{$coor}{$name} ne '') {
-       print "\t$somatic{$coor}{$name}";
-    } else {
-       print "\t0";
+  my $chrom = $1;
+  my $position = $2;
+  foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
+    print "$chrom\t$position\t$info";
+    foreach my $name (sort keys %samples) {
+      if ($somatic{$coor}{$name} ne '') {
+        print "\t$somatic{$coor}{$name}";
+      } else {
+        print "\t0";
+      }
     }
-  }
-  my $function = $somatic{$coor}{'function'};
-  my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
-  my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
-  print "\t$function";
-  if ($clinical eq '') {
-    print "\t$somatic\t$germline";
-  } else {
-    print "\t$somatic{$coor}{'clinical'}";
-  }
-  print "\n";
+    my $function = $somatic{$coor}{'info'}{$info};
+    my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
+    my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
+    print "\t$function";
+    if ($clinical eq '') {
+      print "\t$somatic\t$germline";
+    } else {
+      print "\t$somatic{$coor}{'clinical'}";
+    }
+    print "\n";
+  } #for each different variant in this coordinate
 }
 
 
