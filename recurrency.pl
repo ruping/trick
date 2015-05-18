@@ -43,7 +43,7 @@ push(@all, "AC442maf");
 open IN, "$file";
 my %colnames;
 my %colindex;
-while ( <IN> ){
+while ( <IN> ) {
   chomp;
   if (/^[\#]?chr\t/){
     #it is header
@@ -60,8 +60,8 @@ while ( <IN> ){
       print "$_\ttrace\n";
     } elsif ($maf eq 'founds') {
       print "$_\tfounds\n";
-    } elsif ($maf eq 'somatic'){
-      print "$_\tsoma\tgerm\n";
+    } elsif ($maf eq 'somatic') {
+      print "$_\tsomatic\tgermline\n";
     }
   } else {
     my @cols = split /\t/;
@@ -173,15 +173,15 @@ while ( <IN> ){
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
           if (exists $somatic{$samp}) { #it is tumor
-             $tumor{$samp} = '' if ($vard >= 2 and $maf >= 0.05);
+             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.05);
           } elsif (exists $germline{$samp}) { #it is blood
             my $ct = $germline{$samp};
-            if ($maf == 0 and $depth >= 10){
+            if ($maf == 0 and $depth >= 10) {
               $nonblood{$ct} = '';
             } elsif ($maf == 0 and $depth < 10){
               $unknown{$ct} = '';
             } elsif ($vard >= 2) {
-              $blood{$ct} = '';
+              $blood{$ct} = $maf;
             }
           } #it is blood
         } #maf
@@ -189,11 +189,21 @@ while ( <IN> ){
 
       my $soma = 'NA';
       my $germ = 'NA';
-      foreach my $tumorSamp (keys %tumor){
+      foreach my $tumorSamp (keys %tumor) {
+        my $stype = 'NA';
         if (exists $nonblood{$tumorSamp}){
-          $soma = ($soma eq 'NA')? $tumorSamp.',':$soma.$tumorSamp.',';
-        } elsif (exists $blood{$tumorSamp}){
-          $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
+          $stype = 'good';
+          $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
+        } elsif (exists($blood{$tumorSamp})) {
+          if (($blood{$tumorSamp} < 0.05 and $tumor{tumorSamp} >= 0.25) or ($tumor{tumorSamp}/$blood{$tumorSamp} >= 8)) {
+            $stype = 'doubt';
+            $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
+          } elsif (exists($unknown{$tumorSamp})) {
+            $stype = 'undef';
+            $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
+          } else {
+            $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
+          }
         }
       }
       print "$_\t$soma\t$germ\n";
