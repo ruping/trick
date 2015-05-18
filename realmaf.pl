@@ -82,6 +82,8 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   open OR, "$original";
   seek(OR, $jumperO, 0);
   my %OR;
+  my $diji = 1;
+  my $oldCoor = 'SRP';
   while ( <OR> ) {
     next if /^[@#]/;
     chomp;
@@ -93,9 +95,17 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
     my $pos = $cols[1];
     my $id  = $cols[2];
     my $coor = $chr.':'.$pos;
+    if ($coor eq $oldCoor) {
+      $diji += 1;
+    } else {
+      $diji = 1;
+    }
     my $ref = $cols[3];
     my $alt = $cols[4];
-    $OR{$coor} = $id.','.$ref.','.$alt;
+    $OR{$coor}{$diji} = $id.','.$ref.','.$alt;
+
+    #redefine
+    $oldCoor = $coor;
   }
   close OR;
   print STDERR "$original $chrc loaded\n";
@@ -113,6 +123,8 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
     print STDERR "$name\n";
 
     my $jumperI = $chrJumper{$name}->{$chrc};
+    my $djindex = 1;
+    my $prevCoor = 'SRP';
     open IN, "$file";
     seek(IN, $jumperI, 0);
     while ( <IN> ) {
@@ -125,18 +137,28 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $cmean = 0;
         }
         last if $chr ne $chrc;
+
         my $coor = $chr.':'.$pos;
-        if ($vard > 0 and $depth > 0) {
-          $somatic{$coor}{$name} = sprintf("%.3f", $vard/$depth);
+        if ($coor eq $prevCoor) {
+          $djindex += 1;
         } else {
-          $somatic{$coor}{$name} = 0;
+          $djindex = 1;
         }
-        $somatic{$coor}{$name} .= "\t$depth";
+
+        if ($vard > 0 and $depth > 0) {
+          $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $vard/$depth);
+        } else {
+          $somatic{$coor}{$djindex}{$name} = 0;
+        }
+        $somatic{$coor}{$djindex}{$name} .= "\t$depth";
         if ($junction != 0) {  #there are some junction reads
-          $somatic{$coor}{$name} .= ",$junction";
+          $somatic{$coor}{$djindex}{$name} .= ",$junction";
         }
-        $somatic{$coor}{'info'} = join("\t", ($ref,$alt));
-        $somatic{$coor}{'consecutive'} .= $cmean.','.$cmedian.','.$vard.';';
+        $somatic{$coor}{$djindex}{'info'} = join("\t", ($ref,$alt));
+        $somatic{$coor}{$djindex}{'consecutive'} .= $cmean.','.$cmedian.','.$vard.';';
+
+        #redefine
+        $prevCoor = $coor;
 
       } elsif ($type =~ /snv/) {    #snv
 
@@ -145,10 +167,17 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $cmean = 0;
         }
         last if $chr ne $chrc;
+
         my $coor = $chr.':'.$pos;
+        if ($coor eq $prevCoor) {
+          $djindex += 1;
+        } else {
+          $djindex = 1;
+        }
+
         if ( $vard > 0 and $depth > 0 ) {
-          if ( exists( $OR{$coor} ) ) {
-            my @information = split(",", $OR{$coor});
+          if ( $OR{$coor}{$djindex} ne '' ) {
+            my @information = split(",", $OR{$coor}{$djindex});
             my $alt = $information[2];
             my $altd;
             if ($alt eq 'A') {
@@ -165,44 +194,47 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
             }
             if ($altd > 0) {
               if (exists($blood{$name}) or $blood eq 'yes'){ #it is blood
-                $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
+                $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
               } else {  #it is tumor
                 my $endratio = sprintf("%.4f", $vends/$vard);
                 if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
-                  $somatic{$coor}{$name} = sprintf("%.3f", $altd/$depth);
+                  $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
                 } else {  #looks like artifact
-                  $somatic{$coor}{$name} = 0;
+                  $somatic{$coor}{$djindex}{$name} = 0;
                   $cmean = 0; #reset for artifact like stuff
                   $cmedian = 0; #reset
                 }
               }
             } else {
-              $somatic{$coor}{$name} = 0;
+              $somatic{$coor}{$djindex}{$name} = 0;
             }
           } else {   #coor not found
             if (exists($blood{$name}) or $blood eq 'yes'){ #it is blood
-              $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+              $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
             } else { #it is tumor
               my $endratio = sprintf("%.4f", $vends/$vard);
               if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) { #limiting endsratio and mismatch stuff
-                $somatic{$coor}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+                $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
               } else {          #looks like artifact
-                $somatic{$coor}{$name} = 0;
+                $somatic{$coor}{$djindex}{$name} = 0;
                 $cmean = 0;     #reset for artifact like stuff
                 $cmedian = 0;   #reset
               }
             }
           }
         } else {
-          $somatic{$coor}{$name} = 0;
+          $somatic{$coor}{$djindex}{$name} = 0;
         }
-        $somatic{$coor}{$name} .= "\t$depth";
+        $somatic{$coor}{$djindex}{$name} .= "\t$depth";
         if ($junction != 0) {    #there are some junction reads
-          $somatic{$coor}{$name} .= ",$junction";
+          $somatic{$coor}{$djindex}{$name} .= ",$junction";
         }
-        $somatic{$coor}{'info'} = join("\t", ("ref","alt"));
-        $somatic{$coor}{'consecutive'} .= $cmean.','.$cmedian.','.$vard.';';
-      }  #snv
+        $somatic{$coor}{$djindex}{'info'} = join("\t", ("ref","alt"));
+        $somatic{$coor}{$djindex}{'consecutive'} .= $cmean.','.$cmedian.','.$vard.';';
+
+        #redefine
+        $prevCoor = $coor;
+      } #snv
     }
     close IN;
   }
@@ -211,47 +243,51 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
     $coor =~ /^(\w+):(\d+)$/;
     my $chrom = $1;
     my $pos = $2;
-    my $info = $somatic{$coor}{'info'};
-    my @consecutive = split (';', $somatic{$coor}{'consecutive'});
-    my $n = 0;
-    my $sumCmean = 0;
-    my $sumCmedian = 0;
 
-    foreach my $consecutive (@consecutive) {
-       next if $consecutive eq '';
-       my @tmp = split (',', $consecutive);
-       next if $tmp[0] == 0;
-       next if $tmp[1] == 0;
-       if ( $tmp[2] >= 3 ) {  #vard is the third value of the array, at least three vard to give weights
-         $sumCmean += $tmp[0];
-         $sumCmedian += $tmp[1];
-         $n++;
-       }
-    }
+    foreach my $djindex (sort {$a <=> $b} keys %{$somatic{$coor}}) { #each identical coordinates
+      my $info = $somatic{$coor}{$djindex}{'info'};
+      my @consecutive = split (';', $somatic{$coor}{$djindex}{'consecutive'});
+      my $n = 0;
+      my $sumCmean = 0;
+      my $sumCmedian = 0;
 
-    if ($n > 0) {  #if you have cmean and cmedian information
-       $sumCmean = sprintf("%.2f", ($sumCmean/$n));
-       $sumCmedian = sprintf("%.2f", ($sumCmedian/$n));
-    }
-
-    my @information = split(",", $OR{$coor});
-    my $id = $information[0];
-    if ($type =~ 'snv') {
-       $info = $information[1]."\t".$information[2];
-    }
-    next if ($id eq '');
-    print "$chrom\t$pos\t$id\t$info";
-    foreach my $name (sort keys %samples) {
-      if ($somatic{$coor}{$name} ne '') {
-        print "\t$somatic{$coor}{$name}";
-      } elsif ($blood eq 'yes') {
-        print "\t0\t0";
+      foreach my $consecutive (@consecutive) {
+        next if $consecutive eq '';
+        my @tmp = split (',', $consecutive);
+        next if $tmp[0] == 0;
+        next if $tmp[1] == 0;
+        if ( $tmp[2] >= 3 ) { #vard is the third value of the array, at least three vard to give weights
+          $sumCmean += $tmp[0];
+          $sumCmedian += $tmp[1];
+          $n++;
+        }
       }
-    }
-    print "\t$sumCmean\t$sumCmedian";
-    print "\n";
-  }
-}
+
+      if ($n > 0) {         #if you have cmean and cmedian information
+        $sumCmean = sprintf("%.2f", ($sumCmean/$n));
+        $sumCmedian = sprintf("%.2f", ($sumCmedian/$n));
+      }
+
+      my @information = split(",", $OR{$coor}{$djindex});
+      my $id = $information[0];
+      if ($type =~ 'snv') {
+        $info = $information[1]."\t".$information[2];
+      }
+      next if ($id eq '');
+
+      print "$chrom\t$pos\t$id\t$info";
+      foreach my $name (sort keys %samples) {
+        if ($somatic{$coor}{$djindex}{$name} ne '') {
+          print "\t$somatic{$coor}{$djindex}{$name}";
+        } elsif ($blood eq 'yes') {
+          print "\t0\t0";
+        }
+      }
+      print "\t$sumCmean\t$sumCmedian";
+      print "\n";
+    } #each identical coordinates
+  } #each coor
+} #each chr
 
 exit 0;
 
