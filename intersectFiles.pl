@@ -17,6 +17,7 @@ my $count = 0;
 my $overlap = 0;
 my $nonoverlap = 0;
 my $column='';
+my $extraOM = '';
 
 my $michr = 0;
 my $mistart = 1;
@@ -48,11 +49,16 @@ while ($ARGV[0]) {
   elsif ($arg eq '-nonoverlap'){$nonoverlap = 1;}
   elsif ($arg eq '-overlap'){$overlap = 1;}
   elsif ($arg eq '-column'){$column = shift @ARGV;}
+  elsif ($arg eq '-extraOM'){$extraOM = shift @ARGV;}  #extra constrain to identify lines with the same coordinates, in the order of oringal,mask
   elsif ($arg eq '-na'){$NAvalue = shift @ARGV;}
   elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-t:tolerant]\n"; exit 0;}
   else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
 
+my @extraOM;
+if ($extraOM ne ''){
+  @extraOM = split(',', $extraOM);
+}
 
 my @columnIndex = ();
 my @columnNames = ();
@@ -195,7 +201,13 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
 
         if ( $variants[$iter]->{'end'} >= $dbStart and $variants[$iter]->{'start'} <= $dbEnd ) {  #overlapping, should take action
 
-           push(@{$variants[$iter]->{'printer'}}, $_);
+          if ($extraOM ne ''){ #check the additional O-M mapping identifier, for matching items only, e.g., snv matching
+            my @originalItems = split (/\t/, $variants[$iter]->{'info'});
+            my @maskItems = split (/\t/, $_);
+            push(@{$variants[$iter]->{'printer'}}, $_) if ($originalItems[$extraOM[0]] eq $maskItems[$extraOM[1]]);
+          } else {
+            push(@{$variants[$iter]->{'printer'}}, $_);
+          }
 
         }                                                              # overlapping take action!
 
