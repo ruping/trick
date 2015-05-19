@@ -195,7 +195,7 @@ while ( <IN> ) {
           $stype = 'good';
           $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
         } elsif (exists($blood{$tumorSamp})) {
-          if ($blood{$tumorSamp} < 0.08 and $tumor{tumorSamp}/$blood{$tumorSamp} >= 5) {
+          if ($blood{$tumorSamp} < 0.08 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 5) {
             $stype = 'doubt';
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
           } elsif (exists($unknown{$tumorSamp})) {
