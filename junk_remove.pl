@@ -125,6 +125,7 @@ while ( <IN> ){
    }
    my @cols = split /\t/;
    my $chr = $cols[0];
+   $chr =~ s/^chr(\w+)$/$1/;
    my $coor = $cols[1];
    my $repeatflag = $opt{'nonrepeat'}? repeatmask("run1", $chr, $coor, $coor):0;
    my $selfchainflag = $opt{'nonselfchain'}? selfChainMask("run1", $chr, $coor):0;
