@@ -12,7 +12,9 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
   while ( <IN> ){
     chomp;
     s/[\s\n]$//;
-    my ($id, $type) = split /\t/;
+    my @columns = split /\t/;
+    my $id = $columns[0];
+    my $type = $columns[1];
     if ($type eq 'T'){
       $_ = <IN>;
       chomp($_);
