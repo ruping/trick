@@ -24,10 +24,10 @@ GetOptions (
 my @order = split(/\,/, $order);
 
 open IN, "$file";
-while ( <IN> ){
+while ( <IN> ) {
   chomp;
   my @cols = split /\t/;
-  if ($order ne ''){
+  if ($order ne ''){ #order
     my $print;
     foreach my $index (@order) {
       $print .= $cols[$index]."\t";

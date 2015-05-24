@@ -318,7 +318,7 @@ foreach my $file (@list) {
 
 #######------------------print header-----------------------#####
 print "#chr\tpos\tid\tref\talt";
-foreach my $name (sort keys %samples) {
+foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
   print "\t$name";
 }
 print "\tfunction";
@@ -337,7 +337,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   my $position = $2;
   foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
     print "$chrom\t$position\t$info";
-    foreach my $name (sort keys %samples) {
+    foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
       if ($somatic{$coor}{$name} ne '') {
         print "\t$somatic{$coor}{$name}";
       } else {

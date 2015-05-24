@@ -71,7 +71,7 @@ print STDERR Dumper(\%chrJumper);
 
 
 print "#chr\tpos\tid\tref\talt";
-foreach my $name (sort keys %samples) {
+foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
    print "\t$name\t$name".'d';
 }
 print "\tcmeanav\tcmedianav\n";
@@ -276,7 +276,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if ($id eq '');
 
       print "$chrom\t$pos\t$id\t$info";
-      foreach my $name (sort keys %samples) {
+      foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
         if ($somatic{$coor}{$djindex}{$name} ne '') {
           print "\t$somatic{$coor}{$djindex}{$name}";
         } elsif ($blood eq 'yes') {
