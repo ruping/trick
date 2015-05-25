@@ -57,7 +57,7 @@ while ( <IN> ) {
         if ( exists($samples{$cols[$i]}) ) {
           my $insertpos = $samples{$cols[$i]};
           my $offset;
-          foreach my $sample ( sort { my $sa = $samples{$a}; my $sb = $samples{$b}; $sa <=> $sb } keys %samples) {
+          foreach my $sample ( sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples ) {
              my $rank = $samples{$sample};
              last if ($insertpos == $rank);
              if ( exists($inserted{$sample}) ) {
@@ -68,7 +68,7 @@ while ( <IN> ) {
           splice(@order, $insertpos, 0, $i, $i+1);
           $inserted{$cols[$i]} = '';
           $cols[$i] .= 'maf';
-        } elsif ($cols[$i] !~ /d$/) {
+        } elsif ( $cols[$i] !~ /d$/ ) {
           push(@order, $i);
           push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^$prefix\d+/);
         }
