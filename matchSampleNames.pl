@@ -1,4 +1,5 @@
 use strict;
+use Data::Dumper;
 
 my $nameMapping = shift;
 my $file = shift;
@@ -10,6 +11,7 @@ my %needc;
 foreach my $col (@columns){
   $needc{$col} = '';
 }
+print STDERR Dumper (\%needc);
 
 open MAP, "$nameMapping";
 my %mapping;
@@ -26,9 +28,11 @@ while ( <IN> ) {
   my @cols = split /\t/;
   if (/^[\#]?chr\t/){  #header
     for (my $i = 0; $i <= $#cols; $i++){
-      if (exists ($mapping{$cols[$i]})){
-        my $newName = $mapping{$cols[$i]};
-        $cols[$i] = $newName;
+      $cols[$i] =~ /^($prefix\d+)/;
+      my $sampleID = $1;
+      if (exists ( $mapping{$sampleID} )){
+        my $newName = $mapping{$sampleID};
+        $cols[$i] =~ s/^$sampleID/$newName/;
       }
     }
   }
@@ -36,7 +40,7 @@ while ( <IN> ) {
   else{ #normal lines
     for (my $i = 0; $i <= $#cols; $i++) {
 
-      next if (!exists($needc{$cols[$i]}));
+      next if (!exists($needc{$i}));
 
       my @names = split(',', $cols[$i]);
       foreach my $name (@names){
