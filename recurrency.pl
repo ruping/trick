@@ -6,7 +6,7 @@ my $maf = shift;
 my $somaticInfo = shift; #if for somatic judgement
 
 my %somatic;
-my %germline;
+my %germline;  #may have multiple tumors
 if ($somaticInfo ne '' and -s "$somaticInfo") {
 
   open IN, "$somaticInfo";
@@ -14,18 +14,21 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
     chomp;
     s/[\s\n]$//;
     my @columns = split /\t/;
-    my $id = $columns[0];
-    my $type = $columns[1];
-    if ($type eq 'T'){
-      $_ = <IN>;
-      chomp($_);
-      s/[\s\n]$//;
-      my @cols = split(/\t/, $_);
-      if ($cols[1] eq 'N'){
-        $somatic{$id} = $cols[0];
-        $germline{$cols[0]} = $id;
-      }
-    }
+    my $tumor = $columns[0];
+    my $normal = $columns[1];
+    #if ($type eq 'T'){
+    #  $_ = <IN>;
+    #  chomp($_);
+    #  s/[\s\n]$//;
+    #  my @cols = split(/\t/, $_);
+    #  if ($cols[1] eq 'N'){
+    #    $somatic{$id} = $cols[0];
+    #    $germline{$cols[0]} = $id;
+    #  }
+    #}
+
+    $somatic{$tumor} = $normal;
+    push(@{$germline{$normal}}, $tumor);
   }
   close IN;
   #print STDERR Dumper (\%somatic);
@@ -169,22 +172,23 @@ while ( <IN> ) {
       my %blood;
       my %nonblood;
       my %unknown;
-      for (my $i = 0; $i <= $#cols; $i++) {
+      for ( my $i = 0; $i <= $#cols; $i++ ) {
         if ($colindex{$i} =~ /^(.+?)maf$/) {
           my $samp = $1;
           my $maf = $cols[$i];
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
           if (exists $somatic{$samp}) { #it is tumor
-             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.05);
+             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.1);
           } elsif (exists $germline{$samp}) { #it is blood
-            my $ct = $germline{$samp};
-            if ($maf == 0 and $depth >= 10) {
-              $nonblood{$ct} = '';
-            } elsif ($maf == 0 and $depth < 10){
-              $unknown{$ct} = '';
-            } elsif ($vard >= 2) {
-              $blood{$ct} = $maf;
+            foreach my $ct (@{$germline{$samp}}) {
+              if ($maf == 0 and $depth >= 10) {
+                $nonblood{$ct} = '';
+              } elsif ($maf == 0 and $depth < 10) {
+                $unknown{$ct} = '';
+              } elsif ($vard >= 2) {
+                $blood{$ct} = $maf;
+              }
             }
           } #it is blood
         } #maf
