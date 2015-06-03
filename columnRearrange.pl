@@ -5,15 +5,18 @@ use Getopt::Long;
 my $file;
 my $order;
 my $prefix;
+my $sep;
 
 GetOptions (
            "file|f=s"       => \$file,             #filename
            "order|o=s"      => \$order,            #comma seperated indexes
            "prefix|p=s"     => \$prefix,
+           "sep|s=s"        => \$sep,
            "help|h"         => sub{
                                print "usage: $0 rearrange columns according to your order or for maf rearrange\n\nOptions:\n\t--file\t\tthe filename to be reordered\n";
                                print "\t--order\t\tcomma seperated indexes\n";
                                print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--sep\tthe seperator to rearrange columns\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -40,7 +43,7 @@ while ( <IN> ) {
       my $secondstart = 0;
 
       for (my $i = 0; $i <= $#cols; $i++){
-        if ($cols[$i] eq 'bp') {
+        if ($cols[$i] eq $sep) {
           $secondstart = $i+1;
           push(@order, $i);
           last;

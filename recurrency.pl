@@ -16,19 +16,9 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
     my @columns = split /\t/;
     my $tumor = $columns[0];
     my $normal = $columns[1];
-    #if ($type eq 'T'){
-    #  $_ = <IN>;
-    #  chomp($_);
-    #  s/[\s\n]$//;
-    #  my @cols = split(/\t/, $_);
-    #  if ($cols[1] eq 'N'){
-    #    $somatic{$id} = $cols[0];
-    #    $germline{$cols[0]} = $id;
-    #  }
-    #}
 
     $somatic{$tumor} = $normal;
-    push(@{$germline{$normal}}, $tumor);
+    push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
   }
   close IN;
   #print STDERR Dumper (\%somatic);
@@ -36,7 +26,7 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
 }
 
 
-my @rectum = qw(AC3maf AC439maf AC440maf AC441maf AC443maf AC447maf AC525maf AC526maf AC527maf AC528maf AC529maf AC530maf AC531maf AC532maf AC533maf AC546maf AC548maf AC580maf AC637maf AC653maf AC668maf);
+my @rectum = qw(AC57maf AC439maf AC440maf AC441maf AC443maf AC447maf AC525maf AC526maf AC527maf AC528maf AC529maf AC530maf AC531maf AC532maf AC533maf AC546maf AC548maf AC580maf AC637maf AC653maf AC668maf);
 my @ileum = qw(AC444maf AC445maf AC446maf AC516maf AC517maf AC518maf AC519maf);
 my @primary = qw(AC532maf AC533maf AC546maf AC580maf AC668maf);
 my @blood = qw(AC1maf AC547maf AC581maf AC669maf);
@@ -198,7 +188,7 @@ while ( <IN> ) {
       my $germ = 'NA';
       foreach my $tumorSamp (keys %tumor) {
         my $stype = 'NA';
-        if (exists $nonblood{$tumorSamp}){
+        if (exists $nonblood{$tumorSamp}) {
           $stype = 'good';
           $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
         } elsif (exists($blood{$tumorSamp})) {
@@ -211,6 +201,8 @@ while ( <IN> ) {
           } else {
             $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
           }
+        } else { #unknown ones, all germ
+          $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
         }
       }
       print "$_\t$soma\t$germ\n";
