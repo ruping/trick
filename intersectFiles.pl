@@ -17,6 +17,7 @@ my $count = 0;
 my $overlap = 0;
 my $nonoverlap = 0;
 my $column='';
+my $csplit='';
 my $extraOM = '';
 
 my $michr = 0;
@@ -49,9 +50,10 @@ while ($ARGV[0]) {
   elsif ($arg eq '-nonoverlap'){$nonoverlap = 1;}
   elsif ($arg eq '-overlap'){$overlap = 1;}
   elsif ($arg eq '-column'){$column = shift @ARGV;}
+  elsif ($arg eq '-csplit'){$csplit = shift @ARGV;}
   elsif ($arg eq '-extraOM'){$extraOM = shift @ARGV;}  #extra constrain to identify lines with the same coordinates, in the order of oringal,mask
   elsif ($arg eq '-na'){$NAvalue = shift @ARGV;}
-  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-t:tolerant]\n"; exit 0;}
+  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-csplit: split tags for the column] [-t:tolerant]\n"; exit 0;}
   else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
 
@@ -90,7 +92,8 @@ while ($isComment == 1) {
      chomp($line);
      my $maskadd = basename($maskfile);
      if (scalar(@columnIndex) == 1){
-       print "$line\t$maskadd\.$column\n";
+       print "$line\t$maskadd\.$column\n" if $csplit eq '';
+       print "$line\t$maskadd\.$column\.$csplit\n" if $csplit ne '';
      } else {
        chomp($columnNames[$#columnNames]);
        $maskadd = join("\t", @columnNames);
@@ -379,7 +382,21 @@ sub var_processing {
          push(@columnAdd, $tmp[$index]);
        }
        if (scalar(@columnAdd) == 1) {
-         $columnAdd = $columnAdd[0];
+         if ($csplit eq ''){
+           $columnAdd = $columnAdd[0];
+         } else {
+           $columnAdd[0] =~ /$csplit\=(.+?);/; #vcf tags
+           my $tag = $1;
+           if ($tag eq '') {  #tag not found
+             if ($columnAdd[0] =~ /^RS\=(.+?);/){ #RS found
+               $columnAdd = 'rs'.$1;
+             } else {  #RS not found
+               $columnAdd = $columnAdd[0];
+             }
+           } else {  #tag found
+             $columnAdd = $tag;
+           }
+         }
        } else {
          $columnAdd = join("\t", @columnAdd);
        }
