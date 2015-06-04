@@ -46,14 +46,14 @@ while ( <IN> ) {
     }
 
     # known ESP rare ones
-    #my $freqESP = 22;
-    #if ($esp ne 'NA') {
-    #  my @espf = split(",", $esp);
-    #  $freqESP = $espf[$#espf] * 0.01;
-    #  if ($freqESP < 0.005){
-    #    $keep = 1;
-    #  }
-    #}
+    my $freqESP = 22;
+    if ($freqDBsnp == 22 and $esp ne 'NA') {
+      my @espf = split(",", $esp);
+      $freqESP = $espf[$#espf] * 0.01;
+      if ($freqESP < 0.005) {
+        $keep = 1;
+      }
+    }
 
     if ($freqDBsnp != 22) {
       $freq = $freqDBsnp;
