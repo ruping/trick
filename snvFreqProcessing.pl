@@ -25,13 +25,15 @@ while ( <IN> ) {
     }
 
     #unkonwn ones
-    if ($id eq '.' and $dbsnp eq 'NA' && $esp eq 'NA'){
+    if ($id eq '.' and $dbsnp eq 'NA' && $esp eq 'NA') {
       $keep = 1;
-    } else { #known ones but rare
-      if ($founds <= 2){
-        $keep = 1;
-      }
     }
+
+    #else { #known ones but rare
+    #  if ($founds <= 2){
+    #    $keep = 1;
+    #  }
+    #}
 
     # known DBsnp rare ones
     my $freqDBsnp = 22;
