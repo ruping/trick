@@ -40,26 +40,27 @@ while ( <IN> ) {
     if ($dbsnp =~ /^\[(.+?)\]$/) {
       my @dbf = split(",", $1);
       $freqDBsnp = $dbf[$#dbf];
-      if ($freqDBsnp < 0.005){
+      if ($freqDBsnp < 0.005) {
         $keep = 1;
       }
     }
 
     # known ESP rare ones
-    my $freqESP = 22;
-    if ($esp ne 'NA') {
-      my @espf = split(",", $esp);
-      $freqESP = $espf[$#espf] * 0.01;
-      if ($freqESP < 0.005){
-        $keep = 1;
-      }
-    }
+    #my $freqESP = 22;
+    #if ($esp ne 'NA') {
+    #  my @espf = split(",", $esp);
+    #  $freqESP = $espf[$#espf] * 0.01;
+    #  if ($freqESP < 0.005){
+    #    $keep = 1;
+    #  }
+    #}
 
     if ($freqDBsnp != 22) {
       $freq = $freqDBsnp;
-    } elsif ($freqESP != 22) {
-      $freq = $freqESP;
     }
+    #elsif ($freqESP != 22) {
+    #  $freq = $freqESP;
+    #}
 
     if ($keep == 1){
       print "$_\t$freq\n";
