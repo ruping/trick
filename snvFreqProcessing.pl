@@ -49,7 +49,7 @@ while ( <IN> ) {
     my $freqESP = 22;
     if ($esp ne 'NA') {
       my @espf = split(",", $esp);
-      $freqESP = $espf[$#espf];
+      $freqESP = $espf[$#espf] * 0.01;
       if ($freqESP < 0.005){
         $keep = 1;
       }
