@@ -167,14 +167,22 @@ while ( <IN> ) {
           my $samp = $1;
           my $maf = $cols[$i];
           my $depth = $cols[$i+1];
-          my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
+          my $vard = sprintf("%.1f", $maf*$depth);
+
+          if ($cols[$colnames{'coor'}] == 55545257) {
+            print STDERR "$samp\t";
+            print STDERR "$maf\t";
+            print STDERR "$depth\t";
+            print STDERR "$vard\n";
+          }
+
           if (exists $somatic{$samp}) { #it is tumor
              $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.1);
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
-              if ($maf == 0 and $depth >= 10) {
+              if ( $maf == 0 and $depth >= 10 ) {
                 $nonblood{$ct} = '';
-              } elsif ($maf == 0 and $depth < 10) {
+              } elsif ( $maf == 0 and $depth < 10 ) {
                 $unknown{$ct} = '';
               } elsif ($vard >= 2) {
                 $blood{$ct} = $maf;
@@ -183,6 +191,13 @@ while ( <IN> ) {
           } #it is blood
         } #maf
       } #each column
+
+      if ($cols[$colnames{'coor'}] == 55545257){
+        print STDERR Dumper (\%tumor);
+        print STDERR Dumper (\%blood);
+        print STDERR Dumper (\%nonblood);
+        print STDERR Dumper (\%unknown);
+      }
 
       my $soma = 'NA';
       my $germ = 'NA';
