@@ -169,7 +169,7 @@ while ( <IN> ) {
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if ($cols[$colnames{'coor'}] == 55545257) {
+          if ($cols[$colnames{'pos'}] == 55545257) {
             print STDERR "$samp\t";
             print STDERR "$maf\t";
             print STDERR "$depth\t";
@@ -192,7 +192,7 @@ while ( <IN> ) {
         } #maf
       } #each column
 
-      if ($cols[$colnames{'coor'}] == 55545257){
+      if ($cols[$colnames{'pos'}] == 55545257){
         print STDERR Dumper (\%tumor);
         print STDERR Dumper (\%blood);
         print STDERR Dumper (\%nonblood);
