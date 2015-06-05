@@ -184,7 +184,7 @@ while ( <IN> ) {
                 $nonblood{$ct} = '';
               } elsif ( $maf == 0 and $depth < 10 ) {
                 $unknown{$ct} = '';
-              } elsif ($vard >= 2) {
+              } else {                          #maf != 0
                 $blood{$ct} = $maf;
               }
             }
