@@ -251,7 +251,7 @@ foreach my $file (@list) {
 
    PRODUCE:
 
-     if ($info =~ /MQ0Fraction=(.+?);/) {
+     if ($info =~ /MQ0F=(.+?);/) {
        next if ($1 > 0.1);
      }
      if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
@@ -261,7 +261,7 @@ foreach my $file (@list) {
        my $tailb = $4;
        if ($strandb =~ /e/) {             #strand bias
          next;
-       } elsif ($strandb < 0.005) {       #strand bias
+       } elsif ($strandb < 0.05) {       #strand bias make it very stringent! for net data
          next;
        } elsif ($baseqb =~ /e/) {         #basequality bias
          next;
