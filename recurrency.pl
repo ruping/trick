@@ -21,8 +21,8 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
     push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
   }
   close IN;
-  #print STDERR Dumper (\%somatic);
-  #print STDERR Dumper (\%germline);
+  print STDERR Dumper (\%somatic);
+  print STDERR Dumper (\%germline);
 }
 
 
