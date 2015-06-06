@@ -32,7 +32,7 @@ while ( <TS> ){
   push(@blockStarts, 0);
   &ParseCigar(\@cigarData, \@blockStarts, \@blockLengths, $cigarEnd, \%insertions, \%deletions, $softClip);
 
-  #print STDERR Dumper(\@cigarData);
+  print STDERR Dumper(\@cigarData);
   print STDERR Dumper(\@blockLengths);
   print STDERR Dumper(\@blockStarts);
   print STDERR Dumper(\%insertions);
