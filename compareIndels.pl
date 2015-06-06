@@ -5,6 +5,7 @@ my $tumorSam = shift;
 my $normalSam = shift;
 
 open TS, "$tumorSam";
+my %tumorIndels;         #save the tumor indel data
 while ( <TS> ){
   next if /^@/;
   chomp;
@@ -13,6 +14,7 @@ while ( <TS> ){
   my $id = $1;
 
   my $chr = $cols[2];
+  $chr = 'chr'.$chr if ($chr !~ /^[cC]hr/);
   my $cigar = $cols[5];
   my @cigarData;
   my $alignmentStart = $cols[3];
@@ -64,15 +66,82 @@ while ( <TS> ){
     }
   }
 
-  print "$id\t$chr\t$alignmentStart\t$alignmentEnd\t$cigar\t$indelType\t$indelSite\t$indelLength\n";
+  #print "$id\t$chr\t$alignmentStart\t$alignmentEnd\t$cigar\t$indelType\t$indelSite\t$indelLength\n";
+  if ($indelType ne '') {
+    push (@{$tumorIndels{$id}}, {'chr'=>$chr, 'site'=>$indelSite, 'type'=>$indelType, 'length'=>$indelLength, 'germline'=>0});
+  }
 
 }
 close TS;
 
 
 open NS, "$normalSam";
+while ( <NS> ){
+  next if /^@/;
+  chomp;
+  my @cols = split /\t/;
+  $cols[0] =~ /id\_(\d+)$/;
+  my $id = $1;
+
+  my $chr = $cols[2];
+  $chr = 'chr'.$chr if ($chr !~ /^[cC]hr/);
+  my $cigar = $cols[5];
+  my @cigarData;
+  my $alignmentStart = $cols[3];
+
+  while ($cigar =~ /(\d+)([MIDNSHPX=])/g){
+    my $clen = $1;
+    my $ctype = $2;
+    push(@cigarData, {"Length"=>$clen, "Type"=>$ctype});
+  }
+
+  my $cigarEnd;
+  my @blockLengths;
+  my @blockStarts;
+  my %insertions;       # for insertions
+  my %deletions;        # for deletions
+  my $softClip = 0;     # for soft clipping
+  push(@blockStarts, 0);
+  &ParseCigar(\@cigarData, \@blockStarts, \@blockLengths, \$cigarEnd, \%insertions, \%deletions, \$softClip);
+  my $alignmentEnd = $alignmentStart + $cigarEnd - 1;
+
+  my $indelType;
+  my $indelSite;
+  my $indelLength = 0;
+  foreach my $insStart (sort {$a <=> $b} keys %insertions) {
+    my $insPos = $alignmentStart + $insStart - 1;
+    my $insLen = $insertions{$insStart};
+    if ($insLen > $indelLength){
+      $indelType = 'I';
+      $indelSite = $insPos;
+      $indelLength = $insLen;
+    }
+  }
+
+  foreach my $delStart (sort {$a <=> $b} keys %deletions) {
+    my $delPos = $alignmentStart + $delStart - 1;
+    my $delLen = $deletions{$delStart};
+    if ($delLen > $indelLength){
+      $indelType = 'D';
+      $indelSite = $delPos;
+      $indelLength = $delLen;
+    }
+  }
+
+  foreach my $tumorIndel (@{$tumorIndels{$id}}) {
+    my $tichr = $tumorIndel->{'chr'};
+    my $titype = $tumorIndel->{'type'};
+    my $tisite = $tumorIndel->{'site'};
+    my $tilength = $tumorIndel->{'length'};
+    if ( ($chr eq $tichr) and ($indelType eq $titype ) and ($indelSite eq $tisite) and ($indelLength eq $tilength) ){
+      $tumorIndel->{'germline'} = 1;
+    }
+  }
+
+}
 close NS;
 
+print Dumper (\%tumorIndels);
 
 sub ParseCigar {  #process cigar string
 
