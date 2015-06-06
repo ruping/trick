@@ -32,7 +32,7 @@ while ( <TS> ){
   push(@blockStarts, 0);
   &ParseCigar(\@cigarData, \@blockStarts, \@blockLengths, $cigarEnd, \%insertions, \%deletions, $softClip);
 
-  print STDERR Dumper(\@cigarData);
+  #print STDERR Dumper(\@cigarData);
   print STDERR Dumper(\@blockLengths);
   print STDERR Dumper(\@blockStarts);
   print STDERR Dumper(\%insertions);
@@ -73,7 +73,7 @@ close NS;
 
 sub ParseCigar {  #process cigar string
 
-  my ($cigar, $blockStarts, $blockLengths, $alignmentEnd, $insertions, $deletions, $softClip) = shift;
+  my ($cigar, $blockStarts, $blockLengths, $alignmentEnd, $insertions, $deletions, $softClip) = @_;
 
   my $currPosition = 0;
   my $blockLength  = 0;
