@@ -145,8 +145,18 @@ while ( <NS> ){
 close NS;
 #look at the normal sample#####################################################################################
 
-
-print Dumper (\%tumorIndels);
+foreach my $id (sort {$a <=> $b} keys %tumorIndels) {
+  foreach my $tumorIndel (@{$tumorIndels{$id}}) {
+    my $tichr = $tumorIndel->{'chr'};
+    my $titype = $tumorIndel->{'type'};
+    my $tisite = $tumorIndel->{'site'};
+    my $tilength = $tumorIndel->{'length'};
+    my $germline = $tumorIndel->{'germline'};
+    if ($germline == 0){
+      printf("%s\n",join("\t", $id, $tichr, $titype, $tisite, $tilength, $germline));
+    }
+  }
+}
 
 sub ParseCigar {  #process cigar string
 
