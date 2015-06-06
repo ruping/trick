@@ -136,7 +136,7 @@ while ( <NS> ){
       my $titype = $tumorIndel->{'type'};
       my $tisite = $tumorIndel->{'site'};
       my $tilength = $tumorIndel->{'length'};
-      if ( ($chr eq $tichr) and ($indelType eq $titype ) and (abs($indelSite-$tisite) <= 3) and ($indelLength eq $tilength) ) {
+      if ( ($chr eq $tichr) and ($indelType eq $titype ) and (abs($indelSite-$tisite) <= 10) and ($indelLength eq $tilength) ) {
         $tumorIndel->{'germline'} = 1;
       }
     }
