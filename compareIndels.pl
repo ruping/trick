@@ -75,6 +75,8 @@ while ( <TS> ){
 close TS;
 
 
+#look at the normal sample#####################################################################################
+
 open NS, "$normalSam";
 while ( <NS> ){
   next if /^@/;
@@ -128,18 +130,21 @@ while ( <NS> ){
     }
   }
 
-  foreach my $tumorIndel (@{$tumorIndels{$id}}) {
-    my $tichr = $tumorIndel->{'chr'};
-    my $titype = $tumorIndel->{'type'};
-    my $tisite = $tumorIndel->{'site'};
-    my $tilength = $tumorIndel->{'length'};
-    if ( ($chr eq $tichr) and ($indelType eq $titype ) and ($indelSite eq $tisite) and ($indelLength eq $tilength) ){
-      $tumorIndel->{'germline'} = 1;
+  if (exists ($tumorIndels{$id})){
+    foreach my $tumorIndel (@{$tumorIndels{$id}}) {
+      my $tichr = $tumorIndel->{'chr'};
+      my $titype = $tumorIndel->{'type'};
+      my $tisite = $tumorIndel->{'site'};
+      my $tilength = $tumorIndel->{'length'};
+      if ( ($chr eq $tichr) and ($indelType eq $titype ) and ($indelSite eq $tisite) and ($indelLength eq $tilength) ) {
+        $tumorIndel->{'germline'} = 1;
+      }
     }
   }
-
 }
 close NS;
+#look at the normal sample#####################################################################################
+
 
 print Dumper (\%tumorIndels);
 
