@@ -64,7 +64,7 @@ while ( <TS> ){
     }
   }
 
-  print "$id\t$chr\t$alignmentStart\t$alignmentEnd\t$cigar\t$indelType\t$indelSite\t$indelLengtqh\n";
+  print "$id\t$chr\t$alignmentStart\t$alignmentEnd\t$cigar\t$indelType\t$indelSite\t$indelLength\n";
 
 }
 close TS;
