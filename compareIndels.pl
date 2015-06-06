@@ -136,8 +136,10 @@ while ( <NS> ){
       my $titype = $tumorIndel->{'type'};
       my $tisite = $tumorIndel->{'site'};
       my $tilength = $tumorIndel->{'length'};
-      if ( ($chr eq $tichr) and ($indelType eq $titype ) and (abs($indelSite-$tisite) <= 10) and ($indelLength eq $tilength) ) {
+      if ( ($chr eq $tichr) and ($indelType eq $titype ) and (abs($indelSite-$tisite) <= 10) and (abs($indelLength-$tilength) <= 3)) {
         $tumorIndel->{'germline'} = 1;
+      } elsif ($indelLength == 0){
+        $tumorIndel->{'germline'} = -1;
       }
     }
   }
@@ -152,7 +154,7 @@ foreach my $id (sort {$a <=> $b} keys %tumorIndels) {
     my $tisite = $tumorIndel->{'site'};
     my $tilength = $tumorIndel->{'length'};
     my $germline = $tumorIndel->{'germline'};
-    if ($germline == 0){
+    if ($germline == -1){
       printf("%s\n",join("\t", $id, $tichr, $titype, $tisite, $tilength, $germline));
     }
   }
