@@ -37,7 +37,8 @@ while ( <TS> ){
   print STDERR Dumper(\@blockStarts);
   print STDERR Dumper(\%insertions);
   print STDERR Dumper(\%deletions);
-
+  print STDERR "$cigarEnd\t$softClip\n";
+  
   my $indelType;
   my $indelSite;
   my $indelLength = 0;
