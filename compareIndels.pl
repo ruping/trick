@@ -1,4 +1,5 @@
 use strict;
+use Data::Dumper;
 
 my $tumorSam = shift;
 my $normalSam = shift;
@@ -30,6 +31,12 @@ while ( <TS> ){
   my $softClip = 0;     # for soft clipping
   push(@blockStarts, 0);
   &ParseCigar(\@cigarData, \@blockStarts, \@blockLengths, $cigarEnd, \%insertions, \%deletions, $softClip);
+
+  print STDERR Dumper(\@cigarData);
+  print STDERR Dumper(\@blockLengths);
+  print STDERR Dumper(\@blockStarts);
+  print STDERR Dumper(\%insertions);
+  print STDERR Dumper(\%deletions);
 
   my $indelType;
   my $indelSite;
