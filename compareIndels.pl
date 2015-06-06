@@ -33,12 +33,13 @@ while ( <TS> ){
   &ParseCigar(\@cigarData, \@blockStarts, \@blockLengths, \$cigarEnd, \%insertions, \%deletions, \$softClip);
   my $alignmentEnd = $alignmentStart + $cigarEnd - 1;
 
-  print STDERR Dumper(\@cigarData);
-  print STDERR Dumper(\@blockLengths);
-  print STDERR Dumper(\@blockStarts);
-  print STDERR Dumper(\%insertions);
-  print STDERR Dumper(\%deletions);
-  print STDERR "$cigarEnd\t$alignmentEnd\t$softClip\n";
+  #debug###########################
+  #print STDERR Dumper(\@cigarData);
+  #print STDERR Dumper(\@blockLengths);
+  #print STDERR Dumper(\@blockStarts);
+  #print STDERR Dumper(\%insertions);
+  #print STDERR Dumper(\%deletions);
+  #print STDERR "$cigarEnd\t$alignmentEnd\t$softClip\n";
 
   my $indelType;
   my $indelSite;
@@ -63,7 +64,7 @@ while ( <TS> ){
     }
   }
 
-  print "$id\t$chr\t$alignmentStart\t$cigar\t$indelType\t$indelSite\t$indelLength\n";
+  print "$id\t$chr\t$alignmentStart\t$alignmentEnd\t$cigar\t$indelType\t$indelSite\t$indelLengtqh\n";
 
 }
 close TS;
