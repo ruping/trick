@@ -31,14 +31,15 @@ while ( <TS> ){
   my $softClip = 0;     # for soft clipping
   push(@blockStarts, 0);
   &ParseCigar(\@cigarData, \@blockStarts, \@blockLengths, \$cigarEnd, \%insertions, \%deletions, \$softClip);
+  my $alignmentEnd = $alignmentStart + $cigarEnd - 1;
 
   print STDERR Dumper(\@cigarData);
   print STDERR Dumper(\@blockLengths);
   print STDERR Dumper(\@blockStarts);
   print STDERR Dumper(\%insertions);
   print STDERR Dumper(\%deletions);
-  print STDERR "$cigarEnd\t$softClip\n";
-  
+  print STDERR "$cigarEnd\t$alignmentEnd\t$softClip\n";
+
   my $indelType;
   my $indelSite;
   my $indelLength = 0;
@@ -74,7 +75,7 @@ close NS;
 
 sub ParseCigar {  #process cigar string
 
-  my ($cigar, $blockStarts, $blockLengths, $alignmentEnd, $insertions, $deletions, $softClip) = @_;
+  my ($cigar, $blockStarts, $blockLengths, $cigarEnd, $insertions, $deletions, $softClip) = @_;
 
   my $currPosition = 0;
   my $blockLength  = 0;
@@ -120,6 +121,6 @@ sub ParseCigar {  #process cigar string
   # add the kast block and set the
   # alignment end (i.e., relative to the start)
   push(@{$blockLengths}, $blockLength);
-  $$alignmentEnd = $currPosition;
+  $$cigarEnd = $currPosition;
 
 }
