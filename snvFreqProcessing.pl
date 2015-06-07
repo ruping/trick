@@ -60,7 +60,7 @@ while ( <IN> ) {
     }
 
     my $freqESP5400 = 22;
-    if ($freqDBsnp == 22 and $freqESP == 22 and $id =~ /ESP5400=(.+?)/) {
+    if ($freqDBsnp == 22 and $freqESP == 22 and $id =~ /ESP5400\=(.+)/) {
       $freqESP5400 = $1;
       if ($freqESP5400 < 0.005) {
         $keep = 1;
