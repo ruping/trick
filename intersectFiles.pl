@@ -402,7 +402,9 @@ sub var_processing {
        }
      }
      if ($columnAdd eq '') {
-       $columnAdd = $NAvalue;
+       my $colneed = scalar(@columnIndex);
+       $columnAdd = ($NAvalue."\t")x$colneed;
+       $columnAdd =~ s/\t$//;
      }
      unless ($overlap == 1 and $columnAdd eq $NAvalue){  #do not print only when it is required to be overlapped and nonthing overlap
        print "$original\t$columnAdd\n";
