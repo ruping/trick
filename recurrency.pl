@@ -41,7 +41,7 @@ my %colnames;
 my %colindex;
 while ( <IN> ) {
   chomp;
-  if (/^[\#]?chr\t/){
+  if (/^[\#]?chr\t/) {
     #it is header
     my @cols = split /\t/;
     for(my $i = 0; $i <= $#cols; $i++) {
@@ -58,6 +58,8 @@ while ( <IN> ) {
       print "$_\tfounds\n";
     } elsif ($maf eq 'somatic') {
       print "$_\tsomatic\tgermline\n";
+    } elsif ($maf eq 'depth'){
+      print "$_\tdepthav\n";
     }
   } else {
     my @cols = split /\t/;
@@ -157,6 +159,22 @@ while ( <IN> ) {
         } #maf
       } #each column
       print "$_\t$founds\n";
+    } elsif ($maf eq 'depth') {   #find av depth
+      my $dep = 0;
+      my $Ndep = 0;
+      for (my $i = 0; $i <= $#cols; $i++){
+        if ($colindex{$i} =~ /maf$/) {
+          if ($cols[$i] >= 0.1){
+            my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
+            if ($vard >= 2) {
+              $Ndep++;
+              $dep += $cols[$i+1];
+            }
+          }
+        } #maf
+      } #each column
+      my $depav = sprintf("%.1f", $dep/$Ndep);
+      print "$_\t$depav\n";
     } elsif ($maf eq 'somatic'){  #find somatic ones
       my %tumor;
       my %blood;
