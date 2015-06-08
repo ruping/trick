@@ -173,7 +173,7 @@ while ( <IN> ) {
           }
         } #maf
       } #each column
-      my $depav = sprintf("%.1f", $dep/$Ndep);
+      my $depav = ($Ndep > 0)? sprintf("%.1f", $dep/$Ndep):0;
       print "$_\t$depav\n";
     } elsif ($maf eq 'somatic'){  #find somatic ones
       my %tumor;
