@@ -60,6 +60,8 @@ while ( <IN> ) {
       print "$_\tsomatic\tgermline\n";
     } elsif ($maf eq 'depth'){
       print "$_\tdepthav\n";
+    } elsif ($maf eq 'samfounds'){
+      print "$_\tsamfounds\n";
     }
   } else {
     my @cols = split /\t/;
@@ -159,6 +161,16 @@ while ( <IN> ) {
         } #maf
       } #each column
       print "$_\t$founds\n";
+    } elsif ($maf eq 'samfounds') {
+      my $samfounds = 0;
+      for (my $i = 0; $i <= $#cols; $i++){
+        if ($colindex{$i} =~ /AC\d+$/) {
+          if ($cols[$i] > 0){
+            $samfounds++;
+          }
+        } #samaf
+      } #each column
+      print "$_\t$samfounds\n";
     } elsif ($maf eq 'depth') {   #find av depth
       my $dep = 0;
       my $Ndep = 0;
