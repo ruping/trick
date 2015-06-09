@@ -1,5 +1,6 @@
 use strict;
 
+my $bin = shift;
 my $transfac = shift;
 my $fasta = shift;
 
@@ -26,7 +27,7 @@ while ( <IN> ) {
     open OUT, ">transfacTmp";
     print OUT "$_";
     close OUT;
-    my $cmd = "/tools/trap transfacTmp $fasta >resultTmp";
+    my $cmd = "$bin/trap transfacTmp $fasta >resultTmp";
     RunCommand($cmd, 0, 0);
 
     open RES, "<resultTmp";
