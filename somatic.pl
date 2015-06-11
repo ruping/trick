@@ -15,6 +15,8 @@ my $clinical;
 my $tmpdir = "./";
 my $bin = $RealBin;
 my $tolerance = 0;
+my $strandBiasTh = 0.005;
+my $tailDisBiasTh = 0.005;
 
 GetOptions (
             "list|l=s"       => \$list,             #filename of all vcfs
@@ -27,6 +29,8 @@ GetOptions (
             "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
             "tmpdir|y=s"     => \$tmpdir,
             "tolerance=i"    => \$tolerance,
+            "strandBiasTh=f" => \$strandBiasTh,
+            "tailDisBiasTh=f"=> \$tailDisBiasTh,
             "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -38,6 +42,8 @@ GetOptions (
                                print "\t--clinical\tthe file containing the clinical dbSNP sites, it is a gzipped vcf file\n";
                                print "\t--tolerance\tthe tolerance for comparing indels with certain distance shift\n";
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
+                               print "\t--strandBiasTh\tthe p value threshold for filtering out vars with strand bias <0.005>\n";
+                               print "\t--tailDisBiasTh\tthe p value threshold for filtering out vars with Tail distance bias <0.005>\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -251,34 +257,39 @@ foreach my $file (@list) {
 
    PRODUCE:
 
-     if ($info =~ /MQ0F=(.+?);/) {
-       next if ($1 > 0.1);
-     }
-     if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
-       my $strandb = $1;
-       my $baseqb = $2;
-       my $mapqb = $3;
-       my $tailb = $4;
-       if ($strandb =~ /e/) {             #strand bias
-         next;
-       } elsif ($strandb < 0.05) {       #strand bias make it very stringent! for net data
-         next;
-       } elsif ($baseqb =~ /e/) {         #basequality bias
-         next;
-       } elsif ($baseqb < 0.0005) {       #basequality bias
-         next;
-       #} elsif ($mapqb =~ /e/) {          #mapquality bias   #mask it for sid's data
-       #  next;
-       #} elsif ($mapqb < 0.0001) {        #mapquality bias   #mask it for sid's data
-       #  next;
-       } elsif ($tailb =~ /e/) {          #tailbias
-         next;
-       } elsif ($tailb < 0.005) {         #tailbias
-         next;
-       } else {
-         #pass
+     unless ($qual ne '.' and $qual > 90) { #unless very high quality
+
+       if ($info =~ /MQ0F=(.+?);/) {
+         next if ($1 > 0.1);
        }
-     }
+
+       if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
+         my $strandb = $1;
+         my $baseqb = $2;
+         my $mapqb = $3;
+         my $tailb = $4;
+         if ($strandb =~ /e/) { #strand bias
+           next;
+         } elsif ($strandb < $strandBiasTh) { #strand bias make it very stringent! for net data
+           next;
+         } elsif ($baseqb =~ /e/) { #basequality bias
+           next;
+         } elsif ($baseqb < 0.0005) { #basequality bias
+           next;
+           #} elsif ($mapqb =~ /e/) {          #mapquality bias   #mask it for sid's data
+           #  next;
+           #} elsif ($mapqb < 0.0001) {        #mapquality bias   #mask it for sid's data
+           #  next;
+         } elsif ($tailb =~ /e/) { #tailbias
+           next;
+         } elsif ($tailb < $tailDisBiasTh) { #tailbias
+           next;
+         } else {
+           #pass
+         }
+       }
+
+     }  #unless very high quality
 
      my $coor = $chr.':'.$pos;
 
