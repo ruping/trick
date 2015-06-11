@@ -302,7 +302,7 @@ foreach my $file (@list) {
         $maf = sprintf("%.3f", $2/($1+$2));
      }
 
-     $somatic{$coor}{$name} = $maf;
+     $somatic{$coor}{$name} = $maf.'|'.$qual;
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
