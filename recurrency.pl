@@ -151,12 +151,19 @@ while ( <IN> ) {
     } elsif ($maf eq 'founds') {  #trace all samples
       my $founds = 0;
       for (my $i = 0; $i <= $#cols; $i++){
-        if ($colindex{$i} =~ /maf$/) {
-          if ($cols[$i] >= 0.1){
+        if ($colindex{$i} =~ /^(.+?)maf$/) {
+          my $samp = $1;
+          if ($cols[$i] >= 0.1) {
             my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
             if ($vard >= 2) {
-              $founds++;
-            }
+              if ($somaticInfo ne ''){  #count only tumor
+                if ( exists($somatic{$samp}) ){
+                  $founds++;
+                }
+              } else {
+                $founds++;              #count all samples
+              }
+            } #vard >= 2
           }
         } #maf
       } #each column
