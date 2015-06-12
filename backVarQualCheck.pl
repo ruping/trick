@@ -60,7 +60,7 @@ while ( <IN> ) {
         if ($oriCall =~ /^(.+?)\|(.+?)$/) {
           my $oriMaf = $1;
           my $oriQual = $2;
-          if ( $oriQual > 40 ) {
+          if ( $oriQual > 30 ) {
             $gfounds += 1;
           }                     #good qual
         }                       #original call
