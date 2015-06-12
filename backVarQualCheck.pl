@@ -47,7 +47,8 @@ while ( <IN> ) {
       } #foreach somatic sample
                              #### common ####     #################### possible common #################     ### only somatic ###
       if ( $skeep == 0 and ( $colFreq > 0.005 or ($colId ne '.' and $colFreq eq 'NA' and $colFounds >= 3) or $colGermline eq 'NA' ) ) {
-        next;
+        #next;
+        printf("%s\n", join("\t", @cols));
       }
     } #check somatic ones
 
@@ -67,12 +68,13 @@ while ( <IN> ) {
       if ( $colFounds >= $foundTh ) {
         my $gfoundRatio = sprintf("%.2f", $gfounds/$colFounds);
         if ($gfoundRatio < 0.5){
-          next;
+          #next;
+          printf("%s\n", join("\t", @cols));
         }
       }
     }  #check germline ones
 
-    printf("%s\n", join("\t", @cols));
+    #printf("%s\n", join("\t", @cols));
 
   } #normal lines
 
