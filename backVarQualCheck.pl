@@ -44,7 +44,7 @@ while ( <IN> ) {
         if ($oriCall =~ /^(.+?)\|(.+?)$/) {
           my $oriMaf = $1;
           my $oriQual = $2;
-          if ( $oriQual > 40 ) {
+          if ( $oriQual > 30 ) {
             $skeep = 1;
           } #good qual
         } #called samtools
