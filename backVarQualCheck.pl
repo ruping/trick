@@ -3,9 +3,13 @@ use Data::Dumper;
 
 my $file = shift;
 my $foundTh = shift;
+my $ratioTh = shift;
 
 if ($foundTh eq ''){
   $foundTh = 5;
+}
+if ($ratioTh eq ''){
+  $ratioTh = 0.5;
 }
 
 open IN, "$file";
@@ -47,8 +51,8 @@ while ( <IN> ) {
       } #foreach somatic sample
                              #### common ####     #################### possible common #################     ### only somatic ###
       if ( $skeep == 0 and ( $colFreq > 0.005 or ($colId ne '.' and $colFreq eq 'NA' and $colFounds >= 3) or $colGermline eq 'NA' ) ) {
-        #next;
-        printf("%s\n", join("\t", @cols));
+        next;
+        #printf("%s\n", join("\t", @cols));
       }
     } #check somatic ones
 
@@ -67,14 +71,14 @@ while ( <IN> ) {
       }                         #check germline ones
       if ( $colFounds >= $foundTh ) {
         my $gfoundRatio = sprintf("%.2f", $gfounds/$colFounds);
-        if ($gfoundRatio < 0.5){
-          #next;
-          printf("%s\n", join("\t", @cols));
+        if ($gfoundRatio < $ratioTh) {
+          next;
+          #printf("%s\n", join("\t", @cols));
         }
       }
     }  #check germline ones
 
-    #printf("%s\n", join("\t", @cols));
+    printf("%s\n", join("\t", @cols));
 
   } #normal lines
 
