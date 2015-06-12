@@ -54,7 +54,7 @@ while ( <IN> ) {
         next;
         #printf("%s\n", join("\t", @cols));
                                   ### common ###      #################### possible common #################
-      } elsif ( $skeep == 1 and ( $colFreq > 0.01 or ($colFreq eq 'NA' and $colId ne '.' and $colFounds >= 3) ) {
+      } elsif ( $skeep == 1 and ( $colFreq > 0.01 or ($colFreq eq 'NA' and $colId ne '.' and $colFounds >= 3) ) ) {
         next;
       }
     } #check somatic ones
