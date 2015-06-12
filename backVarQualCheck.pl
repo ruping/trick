@@ -53,6 +53,9 @@ while ( <IN> ) {
       if ( $skeep == 0 and ( $colFreq > 0.005 or ($colId ne '.' and $colFreq eq 'NA' and $colFounds >= 3) or $colGermline eq 'NA' ) ) {
         next;
         #printf("%s\n", join("\t", @cols));
+                                  ### common ###      #################### possible common #################
+      } elsif ( $skeep == 1 and ( $colFreq > 0.01 or ($colFreq eq 'NA' and $colId ne '.' and $colFounds >= 3) ) {
+        next;
       }
     } #check somatic ones
 
