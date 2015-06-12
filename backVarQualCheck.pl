@@ -9,7 +9,7 @@ if ($foundTh eq ''){
   $foundTh = 5;
 }
 if ($ratioTh eq ''){
-  $ratioTh = 0.5;
+  $ratioTh = 0.333;
 }
 
 open IN, "$file";
