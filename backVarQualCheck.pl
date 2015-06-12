@@ -9,7 +9,7 @@ if ($foundTh eq ''){
   $foundTh = 5;
 }
 if ($ratioTh eq ''){
-  $ratioTh = 0.333;
+  $ratioTh = 0.33;
 }
 
 open IN, "$file";
@@ -73,7 +73,7 @@ while ( <IN> ) {
         }                       #original call
       }                         #check germline ones
       if ( $colFounds >= $foundTh ) {
-        my $gfoundRatio = sprintf("%.2f", $gfounds/$colFounds);
+        my $gfoundRatio = sprintf("%.3f", $gfounds/$colFounds);
         if ($gfoundRatio < $ratioTh) {
           next;
           #printf("%s\n", join("\t", @cols));
