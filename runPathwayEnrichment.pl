@@ -15,7 +15,7 @@ my $bin = $RealBin;
 my $cmd = "perl $bin/pathwayEnrichment.pl $file $pathway >$file\.path";
 RunCommand($cmd, 0, 0);
 
-$cmd = "cut -f 6,7,8 $file\.path >ptmp";
+$cmd = "cut -f 6,7,8 $file\.path >$path/ptmp";
 RunCommand($cmd, 0, 0);
 
 $cmd = "R CMD BATCH --no-save --no-restore "."\'--args path=\"$path\" file=\"$path\/ptmp\"' $bin/phyper.R $path/R\_html\.out";
