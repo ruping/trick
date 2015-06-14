@@ -18,6 +18,9 @@ while ( <IN> ) {
   if ($_ =~ /^VV.+?\nXX\n$/) {
     next;
   }
+  if ($_ eq ''){
+    next;
+  }
 
   if ($_ =~ /\nID\s+(\S+)\n/) {
     $tf = $1;
