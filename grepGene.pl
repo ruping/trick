@@ -9,7 +9,7 @@ my %ileum;
 foreach my $il (@ileum) {
   $ileum{$il} = '';
 }
-my @rectum = qw(AC3 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
+my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
 my %rectum;
 foreach my $rec (@rectum) {
   $rectum{$rec} = '';
