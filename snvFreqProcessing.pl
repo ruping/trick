@@ -116,7 +116,7 @@ if ($commonAsSomatic eq 'cs'){
       #} else {
       #  $frac = sprintf("%.3f", $commonAsSomatic{$freq}{$ssamp}/$somaticTotal{$ssamp});
       #}
-      my $printInfo = ($commonAsSomatic{$freq}{$ssamp} eq '')? 0:$commonAsSomatic{$freq}{$ssamp}:
+      my $printInfo = ($commonAsSomatic{$freq}{$ssamp} eq '')? 0:$commonAsSomatic{$freq}{$ssamp};
       print "\t$printInfo";
     }
     print "\n";
