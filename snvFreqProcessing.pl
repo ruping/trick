@@ -14,7 +14,7 @@ while ( <IN> ) {
     for (my $i = 0; $i <= $#cols; $i++) {
       $colindex{$cols[$i]} = $i;
     }
-    print "$_\tfreq\n";
+    print "$_\tfreq\n" if ($commonAsSomatic eq '');
   } else {  #data rows
     my $id = $cols[$colindex{'id'}];
     my $esp = $cols[$colindex{'ESP6500SI.snv.vcf.INFO.MAF'}];
@@ -113,6 +113,6 @@ if ($commonAsSomatic eq 'cs'){
       my $frac = ($somaticTotal{$ssamp} == 0)? 0:sprintf("%.3f", $commonAsSomatic{$freq}{$ssamp}/$somaticTotal{$ssamp});
       print "\t$frac";
     }
+    print "\n";
   }
-  print "\n";
 }
