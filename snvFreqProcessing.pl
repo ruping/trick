@@ -1,6 +1,11 @@
 use strict;
 
-open IN, shift;
+my $file = shift;
+my $commonAsSomatic = shift;
+my %commonAsSomatic;
+my %somaticTotal;
+
+open IN, "$file";
 my %colindex;
 while ( <IN> ) {
   chomp;
@@ -29,12 +34,6 @@ while ( <IN> ) {
     if ($id eq '.' and $dbsnp eq 'NA' && $esp eq 'NA') {
       $keep = 1;
     }
-
-    #else { #known ones but rare
-    #  if ($founds <= 2){
-    #    $keep = 1;
-    #  }
-    #}
 
     # known DBsnp rare ones
     my $freqDBsnp = 22;
@@ -76,9 +75,44 @@ while ( <IN> ) {
       $freq = $freqESP5400;
     }
 
+    if ($commonAsSomatic eq 'cs') { #commonAsSomatic
+      next if ($somatic eq 'NA');
+      my @somatic = split(",", $somatic);
+      foreach my $ssamp (@somatic) {
+        $ssamp =~ /^(.+?)\[/;
+        my $ss = $1;
+        $somaticTotal{$ss}++;
+      }
+      next if ($freq eq 'NA' or $freq < 0.005);
+      #now only the somatic ones with MAF > 0.005 are retained
+      foreach my $ssamp (@somatic) {
+        $ssamp =~ /^(.+?)\[/;
+        my $ss = $1;
+        $commonAsSomatic{$freq}{$ss}++;
+      }
+      next;
+    }
+
     if ($keep == 1){
       print "$_\t$freq\n";
     }
   }
 }
 close IN;
+
+
+if ($commonAsSomatic eq 'cs'){
+  print "freq";
+  foreach my $ssamp (sort {$a =~ /(\d+)/; my $da = $1; $b =~ /(\d+)/; my $db = $1; $da <=> $db} keys %somaticTotal){
+    print "\t$ssamp";
+  }
+  print "\n";
+  foreach my $freq (sort {$a <=> $b} keys %commonAsSomatic) {
+    print "$freq";
+    foreach my $ssamp (sort {$a =~ /(\d+)/; my $da = $1; $b =~ /(\d+)/; my $db = $1; $da <=> $db} keys %{$commonAsSomatic{$freq}}) {
+      my $frac = ($somaticTotal{$ssamp} == 0)? 0:sprintf("%.3f", $commonAsSomatic{$freq}{$ssamp}/$somaticTotal{$ssamp});
+      print "\t$frac";
+    }
+  }
+  print "\n";
+}
