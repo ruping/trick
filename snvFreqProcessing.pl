@@ -111,7 +111,7 @@ if ($commonAsSomatic eq 'cs'){
     print "$freq";
     foreach my $ssamp (sort {$a =~ /(\d+)/; my $da = $1; $b =~ /(\d+)/; my $db = $1; $da <=> $db} keys %somaticTotal) {
       my $frac;
-      if ($commonAsSomatic{$freq}{$ssamp} eq '' or $somaticTotal == 0){
+      if ($commonAsSomatic{$freq}{$ssamp} eq '' or $somaticTotal{$ssamp} == 0){
         $frac = 0;
       } else {
         $frac = sprintf("%.3f", $commonAsSomatic{$freq}{$ssamp}/$somaticTotal{$ssamp});
