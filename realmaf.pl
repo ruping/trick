@@ -22,7 +22,7 @@ GetOptions (
                                print "usage: $0 get all minor allele frequency for samples under recheck\n\nOptions:\n\t--file\t\tthe filename of all rechecked files\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
                                print "\t--original\tthe original mutation big table\n";
-                               print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--prefix\tthe prefix of samples' names, comma separated\n";
                                print "\t--blood\t\tthe sample names of blood samples\n";
                                print "\t--task\t\tthe task, such as tcga\n";
                                print "\t--help\t\tprint this help message\n";
@@ -37,6 +37,10 @@ my %blood;
 foreach my $bl (split(/\,/, $blood)){
   $blood{$bl} = '';
 }
+
+my @prefix = split(',', $prefix);
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
 
 my @list;
 open IN, "$file";
@@ -55,7 +59,7 @@ $chrJumper{'original'} = getchrpos($original);
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($prefix ne '' and $file =~ /($prefix\w+)$/) {
+  if ($prefix ne '' and $file =~ /(($prefixReg)\w+)$/) {
     $name = $1;
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
@@ -71,7 +75,7 @@ print STDERR Dumper(\%chrJumper);
 
 
 print "#chr\tpos\tid\tref\talt";
-foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
+foreach my $name (sort {$a =~ /($prefixReg)(\d+)/; my $ia = $2; $b =~ /($prefixReg)(\d+)/; my $ib = $2; $ia <=> $ib} keys %samples) {
    print "\t$name\t$name".'d';
 }
 print "\tcmeanav\tcmedianav\n";
@@ -114,7 +118,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   my %somatic;
   foreach my $file (@list) {
     my $name;
-    if ($prefix ne '' and $file =~ /($prefix\w+)$/) {
+    if ($prefix ne '' and $file =~ /(($prefixReg)\w+)$/) {
       $name = $1;
     } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
@@ -286,7 +290,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if ($id eq '');
 
       print "$chrom\t$pos\t$id\t$info";
-      foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)/; my $ia = $2; $b =~ /($prefixReg)(\d+)/; my $ib = $2; $ia <=> $ib} keys %samples) {
         if ($somatic{$coor}{$djindex}{$name} ne '') {
           print "\t$somatic{$coor}{$djindex}{$name}";
         } elsif ($blood eq 'yes') {
