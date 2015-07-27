@@ -75,7 +75,7 @@ print STDERR Dumper(\%chrJumper);
 
 
 print "#chr\tpos\tid\tref\talt";
-foreach my $name (sort {$a =~ /($prefixReg)(\d+)/; my $ia = $2; $b =~ /($prefixReg)(\d+)/; my $ib = $2; $ia <=> $ib} keys %samples) {
+foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
    print "\t$name\t$name".'d';
 }
 print "\tcmeanav\tcmedianav\n";
@@ -290,7 +290,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if ($id eq '');
 
       print "$chrom\t$pos\t$id\t$info";
-      foreach my $name (sort {$a =~ /($prefixReg)(\d+)/; my $ia = $2; $b =~ /($prefixReg)(\d+)/; my $ib = $2; $ia <=> $ib} keys %samples) {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
         if ($somatic{$coor}{$djindex}{$name} ne '') {
           print "\t$somatic{$coor}{$djindex}{$name}";
         } elsif ($blood eq 'yes') {
