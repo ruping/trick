@@ -25,6 +25,10 @@ GetOptions (
 
 
 my @order = split(/\,/, $order);
+my @prefix = split(',', $prefix);
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
+
 
 open IN, "$file";
 while ( <IN> ) {
@@ -49,7 +53,7 @@ while ( <IN> ) {
           last;
         } else {
           push(@order, $i);
-          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^$prefix\d+/){
+          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^($prefixReg)\w+$/) {
             $samples{$cols[$i]} = $i;
           }
         } #else
@@ -60,7 +64,7 @@ while ( <IN> ) {
         if ( exists($samples{$cols[$i]}) ) {
           my $insertpos = $samples{$cols[$i]};
           my $offset;
-          foreach my $sample ( sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples ) {
+          foreach my $sample ( sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples ) {
              my $rank = $samples{$sample};
              last if ($insertpos == $rank);
              if ( exists($inserted{$sample}) ) {
@@ -71,16 +75,21 @@ while ( <IN> ) {
           splice(@order, $insertpos, 0, $i, $i+1);
           $inserted{$cols[$i]} = '';
           $cols[$i] .= 'maf';
-        } elsif ( $cols[$i] !~ /d$/ ) {
-          push(@order, $i);
-          push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^$prefix\d+/);
+        } elsif ( $cols[$i] !~ /d$/ ) { #not depth
+          if ($cols[$i] =~ /^($prefixReg)\w+/) {
+            $cols[$i] .= 'maf';
+            push(@order, $i);
+            push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^($prefixReg)\w+/);
+          } else {
+            push(@order, $i);
+          }
         }
       }
 
     } #if it is the header
 
     my $print;
-    foreach my $index (@order){
+    foreach my $index (@order) {
       $print .= $cols[$index]."\t";
     }
     $print =~ s/\t$//;
