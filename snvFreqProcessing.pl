@@ -26,7 +26,7 @@ while ( <IN> ) {
 
     my $keep = 0;
     # somatic Ones
-    if ($somatic ne 'NA'){
+    if ($somatic ne 'NA') {
       $keep = 1;
     }
 
@@ -71,7 +71,7 @@ while ( <IN> ) {
       $freq = $freqDBsnp;
     } elsif ($freqESP != 22) {
       $freq = $freqESP;
-    } elsif ($freqESP5400 != 22){
+    } elsif ($freqESP5400 != 22) {
       $freq = $freqESP5400;
     }
 

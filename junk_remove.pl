@@ -19,18 +19,18 @@ my %opt = (
           );
 
 GetOptions (
-	   "nonrepeat"    => \$opt{nonrepeat},
-           "nonselfchain" => \$opt{nonselfchain},
-           "file=s"       => \$opt{file},
-           "bpfile=s"     => \$opt{bpfile},
-	   "help"         => sub{
-                               print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, default no\n";
-                               print "\t--nonselfchain\toptionally choose whether allow variations in selfchain regions to be searched, default no\n";
-			       print "\t--file\twhat is the file to be checked?\n";
-                               print "\t--bpfile\tbreakpointer file\n";
-                               print "\t--help\t\tprint this help message\n";
-                               print "\n";
-       	                     },
+	   "nonrepeat=s"    => \$opt{nonrepeat},
+           "nonselfchain=s" => \$opt{nonselfchain},
+           "file=s"         => \$opt{file},
+           "bpfile=s"       => \$opt{bpfile},
+	   "help"           => sub{
+                                 print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, repeatmask file\n";
+                                 print "\t--nonselfchain\toptionally choose whether allow variations in selfchain regions to be searched, selfchain file\n";
+			         print "\t--file\twhat is the file to be checked?\n";
+                                 print "\t--bpfile\tbreakpointer file\n";
+                                 print "\t--help\t\tprint this help message\n";
+                                 print "\n";
+       	                       },
            );
 
 
@@ -43,7 +43,7 @@ my $ptr_rm;                     #pointer for repeatmask sub
 my $old_run_rm;
 
 if ($opt{nonrepeat}) {
-  open REP, "/ifs/data/c2b2/ac_lab/rs3412/annotation/hg19/hg19.repeats_UCSC.gff";
+  open REP, "$opt{nonrepeat}";
   while (<REP>) {
     next if /^#/;
     chomp;
@@ -66,7 +66,7 @@ my $ptr_selfChain;
 my $old_run_selfChain;
 
 if ($opt{nonselfchain}) {
-  open SELFCHAIN, "/ifs/data/c2b2/ac_lab/rs3412/annotation/hg19/hg19.SelfChain_UCSC.txt";
+  open SELFCHAIN, "$opt{nonselfchain}";
   while ( <SELFCHAIN> ) {
     next if /^#/;
     chomp;

@@ -22,7 +22,7 @@ while ( <IN> ) {
   if (/^#/){
     next;
   } else {
-    if ($nonexonic eq ''){
+    if ($nonexonic eq '') {
       $vcf{$i} = $_;
     } else {
       my @cols = split /\t/;
@@ -35,22 +35,24 @@ close IN;
 print STDERR "$vcf loaded\n";
 
 
-open P, "$pathres";
 my %result;
 my $querysize = 0;
-while ( <P> ){
-  chomp;
-  my @cols = split /\t/;
-  my $pathway = join("\t", $cols[0],$cols[1],$cols[2],$cols[3]);
-  $result{$pathway}{'genes'} = $cols[4];
-  $result{$pathway}{'size'} = $cols[5];
-  $result{$pathway}{'mapsize'} = $cols[7];
-  $result{$pathway}{'qsize'} = $cols[6];
-  $querysize = $result{$pathway}{'qsize'} if ($querysize == 0);
-  $result{$pathway}{'better'} = 0;
+if (-e "$pathres") {
+  open P, "$pathres";
+  while ( <P> ) {
+    chomp;
+    my @cols = split /\t/;
+    my $pathway = join("\t", $cols[0],$cols[1],$cols[2],$cols[3]);
+    $result{$pathway}{'genes'} = $cols[4];
+    $result{$pathway}{'size'} = $cols[5];
+    $result{$pathway}{'mapsize'} = $cols[7];
+    $result{$pathway}{'qsize'} = $cols[6];
+    $querysize = $result{$pathway}{'qsize'} if ($querysize == 0);
+    $result{$pathway}{'better'} = 0;
+  }
+  close P;
+  print STDERR "$pathres loaded\n";
 }
-close P;
-print STDERR "$pathres loaded\n";
 
 
 srand();
