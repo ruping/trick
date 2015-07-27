@@ -23,7 +23,7 @@ GetOptions (
                                print "\t--type\t\tthe type of variants, snv or indel\n";
                                print "\t--original\tthe original mutation big table\n";
                                print "\t--prefix\tthe prefix of samples' names\n";
-                               print "\t--blood\tthe sample names of blood samples\n";
+                               print "\t--blood\t\tthe sample names of blood samples\n";
                                print "\t--task\t\tthe task, such as tcga\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
@@ -55,7 +55,7 @@ $chrJumper{'original'} = getchrpos($original);
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($prefix ne '' and $file =~ /($prefix\d+)$/) {
+  if ($prefix ne '' and $file =~ /($prefix\w+)$/) {
     $name = $1;
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
@@ -114,7 +114,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   my %somatic;
   foreach my $file (@list) {
     my $name;
-    if ($prefix ne '' and $file =~ /($prefix\d+)$/) {
+    if ($prefix ne '' and $file =~ /($prefix\w+)$/) {
       $name = $1;
     } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
@@ -147,8 +147,10 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
 
         if ($vard > 0 and $depth > 0) {
           $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $vard/$depth);
+          $somatic{$coor}{$djindex}{$name} .= '|'.$cmean.','.$cmedian;
         } else {
           $somatic{$coor}{$djindex}{$name} = 0;
+          $somatic{$coor}{$djindex}{$name} .= '|'.$cmean.','.$cmedian;
         }
         $somatic{$coor}{$djindex}{$name} .= "\t$depth";
         if ($junction != 0) {  #there are some junction reads
@@ -193,14 +195,18 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               exit 22;
             }
             if ($altd > 0) {
-              if (exists($blood{$name}) or $blood eq 'yes'){ #it is blood
+              if (exists($blood{$name}) or $blood eq 'yes') { #it is blood
+                my $endratio = sprintf("%.4f", $vends/$vard);
                 $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
+                $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
               } else {  #it is tumor
                 my $endratio = sprintf("%.4f", $vends/$vard);
                 if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
                   $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
+                  $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                 } else {  #looks like artifact
                   $somatic{$coor}{$djindex}{$name} = 0;
+                  $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                   $cmean = 0; #reset for artifact like stuff
                   $cmedian = 0; #reset
                 }
@@ -210,13 +216,17 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
             }
           } else {   #coor not found
             if (exists($blood{$name}) or $blood eq 'yes'){ #it is blood
+              my $endratio = sprintf("%.4f", $vends/$vard);
               $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+              $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
             } else { #it is tumor
               my $endratio = sprintf("%.4f", $vends/$vard);
               if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) { #limiting endsratio and mismatch stuff
                 $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
+                $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
               } else {          #looks like artifact
                 $somatic{$coor}{$djindex}{$name} = 0;
+                $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                 $cmean = 0;     #reset for artifact like stuff
                 $cmedian = 0;   #reset
               }
