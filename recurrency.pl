@@ -238,9 +238,9 @@ while ( <IN> ) {
       my $status;
       print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\tendsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1){
-        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 5.5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5.5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       }
       print "$_\t$status\n";
     } elsif ($maf =~ /somatic/) {  #find somatic ones
@@ -267,7 +267,7 @@ while ( <IN> ) {
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.8 or ((1-$endsratio)*$vard >= 2)) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))){  #true event
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))){  #true event
             $maf = $maf;
           } else {
             $maf = 0;   #not reliable somatic
