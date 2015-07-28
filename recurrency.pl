@@ -56,6 +56,8 @@ while ( <IN> ) {
       print "$_\ttrace\n";
     } elsif ($maf eq 'founds') {
       print "$_\tfounds\n";
+    } elsif ($maf =~ /filter/) {
+      print "$_\tfilter\n";
     } elsif ($maf =~ /somatic/) {
       print "$_\tsomatic\tgermline\n";
     } elsif ($maf eq 'depth'){
@@ -194,6 +196,30 @@ while ( <IN> ) {
       } #each column
       my $depav = ($Ndep > 0)? sprintf("%.1f", $dep/$Ndep):0;
       print "$_\t$depav\n";
+    } elsif ($maf =~ /filter/){
+      my @detectedSample;
+      for ( my $i = 0; $i <= $#cols; $i++ ) {
+        if ($colindex{$i} eq 'sample') {
+          @detectedSample = split(',', $cols[$i]);
+        } elsif ($colindex{$i} =~ /^(.+?)maf$/) {
+          my $samp = $1;
+          next if ($samp !~ /^$detectedSample[0]\D/);
+          my $maf = $cols[$i];
+          my $endsratio = 0;
+          my $cmean = 0;
+          my $cmedian = 0;
+
+          if ($cols[$i] =~ /\|/) {  #split the var surrounding information
+            my @infos = split(/\|/, $cols[$i]);
+            $maf = $infos[0];
+            $endsratio = $infos[1];
+            ($cmean, $cmedian) = split(',', $infos[2]);
+          }
+
+          my $status = ($endsratio < 0.8 and $cmean < 2.5 and $cmedian < 2.5)?'PASS':'FOUT';
+          print "$_\t$status\n";
+        } #maf sample
+      } #each column
     } elsif ($maf =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
@@ -208,7 +234,7 @@ while ( <IN> ) {
           my $cmean = 0;
           my $cmedian = 0;
 
-          if ($cols[$i] =~ /\|/) {
+          if ($cols[$i] =~ /\|/) {  #split the var surrounding information
             my @infos = split(/\|/, $cols[$i]);
             $maf = $infos[0];
             $endsratio = $infos[1];
