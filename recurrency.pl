@@ -56,7 +56,7 @@ while ( <IN> ) {
       print "$_\ttrace\n";
     } elsif ($maf eq 'founds') {
       print "$_\tfounds\n";
-    } elsif ($maf eq 'somatic') {
+    } elsif ($maf =~ /somatic/) {
       print "$_\tsomatic\tgermline\n";
     } elsif ($maf eq 'depth'){
       print "$_\tdepthav\n";
@@ -214,6 +214,8 @@ while ( <IN> ) {
             $endsratio = $infos[1];
             ($cmean, $cmedian) = split(',', $infos[2]);
           }
+
+          print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
