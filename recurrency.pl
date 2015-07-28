@@ -21,8 +21,8 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
     push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
   }
   close IN;
-  print STDERR Dumper (\%somatic);
-  print STDERR Dumper (\%germline);
+  #print STDERR Dumper (\%somatic);
+  #print STDERR Dumper (\%germline);
 }
 
 
@@ -215,7 +215,7 @@ while ( <IN> ) {
             ($cmean, $cmedian) = split(',', $infos[2]);
           }
 
-          print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
+          #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
