@@ -225,9 +225,9 @@ while ( <IN> ) {
       } #each column
       my $status;
       if ($rep == 1 and $sc == 1){
-        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and $cmean < 3 and $cmedian < 3)?'PASS':'FOUT';
+        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3))?'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 5.2)?'PASS':'FOUT';
+        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 5.5)?'PASS':'FOUT';
       }
       print "$_\t$status\n";
     } elsif ($maf =~ /somatic/) {  #find somatic ones
