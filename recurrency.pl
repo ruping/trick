@@ -197,13 +197,15 @@ while ( <IN> ) {
       } #each column
       my $depav = ($Ndep > 0)? sprintf("%.1f", $dep/$Ndep):0;
       print "$_\t$depav\n";
-    } elsif ($maf =~ /filter/){     #filter (based on Jie's Results)
+    } elsif ($maf =~ /filter/) {     #filter (based on Jie's Results)
       my @detectedSample;
       my $chr;
       my $pos;
       my $endsratio = 0;
       my $cmean = 0;
       my $cmedian = 0;
+      my $cmeanav = 0;
+      my $cmedianav = 0;
       my $mmaf = 0;
       my $rep = 0;
       my $sc = 0;
@@ -228,14 +230,17 @@ while ( <IN> ) {
             ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
             $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
           }
-        } #maf sample
+        } elsif ($colindex{$i} eq 'cmeanav') {
+          $cmeanav = $cols[$i];
+          $cmedianav = $cols[$i+1];
+        }
       } #each column
       my $status;
-      print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\tendsratio\t$cmean\t$cmedian\n";
+      print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\tendsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1){
-        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3))?'PASS':'FOUT';
+        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 5.5)?'PASS':'FOUT';
+        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 5.5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       }
       print "$_\t$status\n";
     } elsif ($maf =~ /somatic/) {  #find somatic ones
