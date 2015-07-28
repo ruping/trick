@@ -198,6 +198,8 @@ while ( <IN> ) {
       print "$_\t$depav\n";
     } elsif ($maf =~ /filter/){     #filter (based on Jie's Results)
       my @detectedSample;
+      my $chr;
+      my $pos;
       my $endsratio = 0;
       my $cmean = 0;
       my $cmedian = 0;
@@ -205,7 +207,11 @@ while ( <IN> ) {
       my $rep = 0;
       my $sc = 0;
       for ( my $i = 0; $i <= $#cols; $i++ ) {
-        if ($colindex{$i} eq 'sample') {
+        if ($colindex{$i} eq 'chr'){
+          $chr = $cols[$i];
+        } elsif ($colindex{$i} eq 'pos'){
+          $pos = $cols[$i];
+        } elsif ($colindex{$i} eq 'sample') {
           @detectedSample = split(',', $cols[$i]);
         } elsif ($colindex{$i} eq 'rep') {
           $rep = $cols[$i];
@@ -224,6 +230,7 @@ while ( <IN> ) {
         } #maf sample
       } #each column
       my $status;
+      print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\tendsratio\t$cmean\t$cmedian\n";
       if ($rep == 1 and $sc == 1){
         $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3))?'PASS':'FOUT';
       } else {
