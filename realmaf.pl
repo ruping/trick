@@ -209,7 +209,8 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
                   $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                 } else {  #looks like artifact
-                  $somatic{$coor}{$djindex}{$name} = 0;
+                  #$somatic{$coor}{$djindex}{$name} = 0;
+                  $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);  #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                   $cmean = 0; #reset for artifact like stuff
                   $cmedian = 0; #reset
@@ -229,7 +230,8 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
                 $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
                 $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
               } else {          #looks like artifact
-                $somatic{$coor}{$djindex}{$name} = 0;
+                #$somatic{$coor}{$djindex}{$name} = 0;
+                $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);  #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                 $cmean = 0;     #reset for artifact like stuff
                 $cmedian = 0;   #reset
