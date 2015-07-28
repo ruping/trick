@@ -221,7 +221,7 @@ while ( <IN> ) {
           my $vard = sprintf("%.1f", $maf*$depth);
 
           if (exists $somatic{$samp}) { #it is tumor
-             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.03);
+             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.02);
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
               if ( $maf == 0 and $depth >= 10 ) {
