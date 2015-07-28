@@ -202,9 +202,15 @@ while ( <IN> ) {
       my $cmean = 0;
       my $cmedian = 0;
       my $mmaf = 0;
+      my $rep = 0;
+      my $sc = 0;
       for ( my $i = 0; $i <= $#cols; $i++ ) {
         if ($colindex{$i} eq 'sample') {
           @detectedSample = split(',', $cols[$i]);
+        } elsif ($colindex{$i} eq 'rep') {
+          $rep = $cols[$i];
+        } elsif ($colindex{$i} eq 'sc') {
+          $sc = $cols[$i];
         } elsif ($colindex{$i} =~ /^(.+?)maf$/) {
           my $samp = $1;
           next if ($samp !~ /^$detectedSample[0]\D/);
@@ -217,7 +223,12 @@ while ( <IN> ) {
           }
         } #maf sample
       } #each column
-      my $status = ($endsratio < 0.8 and $cmean < 2.5 and $cmedian < 2.5)?'PASS':'FOUT';
+      my $status;
+      if ($rep == 1 and $sc == 1){
+        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 4.5 and $cmean < 3 and $cmedian < 3)?'PASS':'FOUT';
+      } else {
+        $status = ($endsratio < 0.8 and ($cmean+$cmedian) < 5.5)?'PASS':'FOUT';
+      }
       print "$_\t$status\n";
     } elsif ($maf =~ /somatic/) {  #find somatic ones
       my %tumor;
