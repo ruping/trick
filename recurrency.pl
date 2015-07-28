@@ -43,6 +43,7 @@ while ( <IN> ) {
   chomp;
   if (/^[\#]?chr\t/) {
     #it is header
+    $_ =~ s/^#//;
     my @cols = split /\t/;
     for(my $i = 0; $i <= $#cols; $i++) {
       $colnames{$cols[$i]} = $i;
