@@ -251,10 +251,16 @@ while ( <IN> ) {
             ($cmean, $cmedian) = split(',', $infos[2]);
           }
 
-          #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
-
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
+
+          if (($endsratio <= 0.8 or ((1-$endsratio)*$vard >= 2)) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))){  #true event
+            $maf = $maf;
+          } else {
+            $maf = 0;   #not reliable somatic
+          }
+
+          #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           if (exists $somatic{$samp}) { #it is tumor
              $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.02);
