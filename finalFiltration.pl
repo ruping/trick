@@ -9,7 +9,6 @@ my $file = shift;
 my $type = "snv";
 
 
-
 open IN, "$file";
 while ( <IN> ) {
   chomp;

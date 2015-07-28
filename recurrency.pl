@@ -194,15 +194,27 @@ while ( <IN> ) {
       } #each column
       my $depav = ($Ndep > 0)? sprintf("%.1f", $dep/$Ndep):0;
       print "$_\t$depav\n";
-    } elsif ($maf eq 'somatic'){  #find somatic ones
+    } elsif ($maf =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
       my %nonblood;
       my %unknown;
       for ( my $i = 0; $i <= $#cols; $i++ ) {
+
         if ($colindex{$i} =~ /^(.+?)maf$/) {
           my $samp = $1;
           my $maf = $cols[$i];
+          my $endsratio = 0;
+          my $cmean = 0;
+          my $cmedian = 0;
+
+          if ($cols[$i] =~ /\|/) {
+            my @infos = split('|', $cols[$i]);
+            $maf = $infos[0];
+            $endsratio = $infos[1];
+            ($cmean, $cmedian) = split(',', $infos[2]);
+          }
+
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
