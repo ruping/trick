@@ -209,7 +209,7 @@ while ( <IN> ) {
           my $cmedian = 0;
 
           if ($cols[$i] =~ /\|/) {
-            my @infos = split('|', $cols[$i]);
+            my @infos = split(/\|/, $cols[$i]);
             $maf = $infos[0];
             $endsratio = $infos[1];
             ($cmean, $cmedian) = split(',', $infos[2]);
