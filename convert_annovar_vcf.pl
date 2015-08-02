@@ -79,13 +79,19 @@ $mapping{'1000g2014oct_eur'} = '1KG.EUR';
 $mapping{'snp138'} = 'dbSNP';
 
 my $headerbuffer;
+my $headerColumns;
+my $headerbufferFlag = 0;
 while ( <VCFORI> ) {
   chomp;
   if ($_ =~ /^\#/){  #header
-    if ($_ =~ /^\#\#INFO\=\<ID\=ANNOVAR\_DATE/ ){
+    if ( $_ =~ /^[#]+CHROM\t/ ) {
+      $headerColumns = "$_\n";
       last;
     } else {
-      $headerbuffer .= "$_\n";
+      if ( $_ =~ /^\#\#INFO\=\<ID\=ANNOVAR\_DATE/ ) {
+        $headerbufferFlag = 1;
+      }
+      $headerbuffer .= "$_\n" if ($headerbufferFlag == 0);
     }
   }
 }
@@ -93,6 +99,7 @@ close VCFORI;
 
 print OUT "$headerbuffer";              #header part 1
 print OUT "$headerAdd";                 #header part 2
+print OUT "$headerColumns";             #header part 3
 
 
 my %colindex;
