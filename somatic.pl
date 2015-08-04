@@ -3,15 +3,14 @@ use File::Glob ':glob';
 use Data::Dumper;
 use Getopt::Long;
 use FindBin qw($RealBin);
+use File::Basename;
 
 my $list;   #filename of all vcfs
 my $type;
 my $normal;
-my $recheck;
 my $task;
 my $prefix;
 my $dbsnp = "no";
-my $clinical;
 my $tmpdir = "./";
 my $bin = $RealBin;
 my $tolerance = 0;
@@ -22,11 +21,9 @@ GetOptions (
             "list|l=s"       => \$list,             #filename of all vcfs
             "type|t=s"       => \$type,             #snv or indel
             "normal|n=s"     => \$normal,           #comma seperated id of normal samples
-            "recheck|r=s"    => \$recheck,          #directory of rechecked files
             "task|k=s"       => \$task,             #task type
             "prefix|p=s"     => \$prefix,
             "dbsnp|d=s"      => \$dbsnp,
-            "clinical|c=s"   => \$clinical,         #clinical dbSNP sites
             "tmpdir|y=s"     => \$tmpdir,
             "tolerance=i"    => \$tolerance,
             "strandBiasTh=f" => \$strandBiasTh,
@@ -37,9 +34,7 @@ GetOptions (
                                print "\t--normal\tcomma seperated id of normal samples\n";
                                print "\t--prefix\tthe prefix of samples' names\n";
                                print "\t--task\t\tthe task, such as tcga or rnaediting\n";
-                               print "\t--recheck\tthe dir whether recheck files are located\n";
                                print "\t--dbsnp\t\tyes or no, whether to keep dbsnp variants into the table\n";
-                               print "\t--clinical\tthe file containing the clinical dbSNP sites, it is a gzipped vcf file\n";
                                print "\t--tolerance\tthe tolerance for comparing indels with certain distance shift\n";
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
                                print "\t--strandBiasTh\tthe p value threshold for filtering out vars with strand bias <0.005>\n";
@@ -60,68 +55,26 @@ while ( <IN> ) {
 }
 close IN;
 
-
-open DR, "/ifs/scratch/c2b2/ac_lab/rs3412/no1/net/dna2rna.mapping";
-my %rna2dna;
-while ( <DR> ) {
-  #dna     rna     availability
-  next if /^dna\trna/;
-  my ($dna, $rna, $availability) = split /\t/;
-  if ($availability eq 'N') {
-    next;
-  }
-  $rna2dna{$rna} = $dna;
-}
-close DR;
+my @prefix = split(',', $prefix);
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
 
 my %somatic;
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($task ne 'tcga' and $file =~ /($prefix\d+)[^a-zA-Z0-9]/) {
+  my $filebase = basename($file);
+  if ($task !~ /tcga/i and $filebase =~ /(($prefixReg)[a-zA-Z0-9]+)[^a-zA-Z0-9]/) {
     $name = $1;
   }
-  if ($task eq 'tcga') {
-    $file =~ /\/((TCGA\-[^\-]+\-[^\-]+)\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)\./;
+  if ($task =~ /tcga/i) {
+    #$file =~ /\/((TCGA\-[^\-]+\-[^\-]+)\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)\./;
+    $filebase =~ /(TCGA\-[^\-]+\-[^\-]+)\./;
     $name = $1;
   }
-  print STDERR "$name\t$file\n";
-
-  if ($task eq 'rnaediting'){
-    $name = $rna2dna{$name};
-  }
+  print STDERR "$name\t$file\t$filebase\n";
 
   $samples{$name} = '';
-
-  my %recheck;
-  if ($recheck ne '') {
-     open RECHECK, "$recheck/$type/$name";
-     while ( <RECHECK> ) {
-        chomp;
-        my @cols = split /\t/;
-        my $coor = $cols[0].':'.$cols[1];
-        if ($type eq 'snv'){
-          if (($cols[4]+$cols[5]+$cols[6]+$cols[7]) == 0 and $cols[2] >= 10) {                       #only record for absent indels
-             $recheck{$coor} = 1;
-          }
-        } elsif ($type eq 'indel') {
-          if ($cols[6] == 0 and $cols[5] >= 10) {                       #only record for absent indels
-              $recheck{$coor} = 1;
-          }
-        }
-     }
-     close RECHECK;
-     print STDERR "$recheck/$type/$name loaded\n";
-  }
-  my $tmpc = scalar(keys %recheck);
-  print STDERR "recheced somatic: $tmpc\n";
-
-  if ($clinical ne ''){        # want to grep the clinical sites only, first generate tmp intersect file
-    my $cmd = "perl $bin/intersectFiles.pl -o $file -m $clinical -t $tolerance -vcf -overlap -column INFO >$tmpdir/tmp";
-    RunCommand($cmd,0,0);
-    $file = "$tmpdir/tmp";
-  }
-
 
   my $openway = $file;
   if ($file =~ /\.gz$/){
@@ -136,10 +89,10 @@ foreach my $file (@list) {
   while ( <IN> ) {
      chomp;
      if ($_ =~ /^#/) {
-       if ($_ =~ /^#CHROM\tPOS\tID/) {
+       if ($_ =~ /^#CHROM\tPOS\tID/) {   #the common three column header in vcf file
          my @cols = split /\t/;
-         my $minusI = ($clinical eq '')? 1:2;
-         if ($cols[$#cols - $minusI] eq $normal) {
+         my $minusI = 1;
+         if (($cols[$#cols - $minusI] eq $normal) or ($cols[$#cols - $minusI] =~ /NORMAL/i)) {
            $revertornot = "yes";
          } elsif ( $cols[$#cols - $minusI] eq 'FORMAT' ) {
            $singlecalling = "yes";
@@ -151,9 +104,9 @@ foreach my $file (@list) {
          next;
        }
      }
-     my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood, $clinINFO) = split /\t/;
+     my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
-     next if ($qual ne '.' and $qual < 30);
+     next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
 
      if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
@@ -166,7 +119,7 @@ foreach my $file (@list) {
      for(my $f = 0; $f <= $#formats; $f++) {
        $formindex{$formats[$f]} = $f;
      }
-     if ($printerror == 0){
+     if ($printerror == 0) {
        print STDERR Dumper(\%formindex);
        $printerror ++;
      }
@@ -177,56 +130,24 @@ foreach my $file (@list) {
         next;
      }
 
-     if ($clinical ne ''){  # want to grep the clinical sites only
-        goto PRODUCE;
-     }
 
      ###########################################################################decide somatic
      my $somatic = 0;
-     if ($type eq 'snv') {   #for snp
-        my @blood = split(/\:/,$blood);
-        my @bad = split (/\,/, $blood[$formindex{'AD'}]);
-        if (scalar(@bad) > 1) {
-           if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
-             $somatic = 1;
-           }
-        } else {
-           if ($blood[$formindex{'GT'}] !~ /1/) {
-             $somatic = 1;
-           }
-        }
-        if ($recheck ne '') {       #recheck
-           my $coor = $chr.':'.$pos;
-           if (exists($recheck{$coor})) {
-              $somatic = 1;
-           }
-        }
-     } elsif ($type eq 'indel') {
-         my @blood = split(/\:/,$blood);
-         my @bad = split (/\,/, $blood[$formindex{'AD'}]);
-         if (scalar(@bad) > 1){
-           if ($blood[$formindex{'GT'}] !~ /1/ and $bad[1] == 0) {
-             $somatic = 1;
-           }
-         } else {
-           if ($blood[$formindex{'GT'}] !~ /1/) {
-             $somatic = 1;
-           }
-         }
-         if ($recheck ne '') {        #recheck
-           my $coor = $chr.':'.$pos;
-           if (exists($recheck{$coor})) {
-              $somatic = 1;
-           }
-         }
+     if ($type eq 'snv') {      #for snp
+       my @blood = split(/\:/,$blood);
+       if ($blood[$formindex{'GT'}] !~ /1/) {
+         $somatic = 1;
+       }
+     } elsif ($type eq 'indel') {   #for indel
+       my @blood = split(/\:/,$blood);
+       if ($blood[$formindex{'GT'}] !~ /1/) {
+         $somatic = 1;
+       }
      }
      #############################################################################decide somatic
 
 
-     next if ($task eq 'rnaediting' and $somatic == 0);                  #for RNAediting study, only remember somatic ones
-
-
-     if ($task ne 'rnaediting' and ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP5400\=/)) {  #snp in population, is it a somatic one?
+     if ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/) {  #snp in population, is it a somatic one?
 
        my $freq = -1;
        if ($info =~ /(1KG=(.+?));/) {
@@ -237,20 +158,26 @@ foreach my $file (@list) {
            }
        }
 
-       if ($info =~ /(ESP5400=(.+?));/) {
+       if ($info =~ /((ESP\d+)=(.+?));/) {
            my $kid = $1;                               #re define $id to ESP when absent
-           $freq = $2;
+           $freq = $3;
            if ($id eq '.') {
               $id = $kid;
            }
        }
 
-       if ($somatic == 0) {                             #keep somatic ones even if it is marked as a common snp
+       if ($somatic == 0) {                            #if it is not somatic, then only rare ones should be kept
          if ($freq == -1) {
-            next if $dbsnp eq "no";
-         }
-         elsif ($freq > 0 and ($id !~ /^1KG/ and $id !~ /^ESP5400/)) {   #still dbSNP ones
-            next if $dbsnp eq "no";
+           if ($dbsnp eq "no" or $task =~ /rare/i) {
+             next;
+           }
+         } else {   #freq is defined
+           if ($id !~ /^1KG/ and $id !~ /^ESP\d+/) {  #dbSNP ones with reported MAF in 1KG or ESP
+             next if $dbsnp eq "no";
+           }
+           if ($task =~ /rare/i) {
+             next if $freq > 0.005;                   #rare kept
+           }
          }
        }
      } #somatic common snp
@@ -259,30 +186,30 @@ foreach my $file (@list) {
 
      unless ($qual ne '.' and $qual > 90) { #unless very high quality
 
-       if ($info =~ /MQ0F=(.+?);/) {
+       if ($info =~ /MQ0F=(.+?);/) {    #if with MQ0F
          next if ($1 > 0.1);
        }
 
-       if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {
+       if ($info =~ /\;PV4\=(.+?)\,(.+?)\,(.+?)\,(.+?);/) {    #if with PV4 info
          my $strandb = $1;
          my $baseqb = $2;
          my $mapqb = $3;
          my $tailb = $4;
-         if ($strandb =~ /e/) { #strand bias
+         if ($strandb =~ /e/) {               #strand bias
            next;
          } elsif ($strandb < $strandBiasTh) { #strand bias make it very stringent! for net data
            next;
-         } elsif ($baseqb =~ /e/) { #basequality bias
+         } elsif ($baseqb =~ /e/) {           #basequality bias
            next;
-         } elsif ($baseqb < 0.0005) { #basequality bias
+         } elsif ($baseqb < 0.0005) {         #basequality bias
            next;
-           #} elsif ($mapqb =~ /e/) {          #mapquality bias   #mask it for sid's data
+           #} elsif ($mapqb =~ /e/) {         #mapquality bias   #mask it for sid's data
            #  next;
-           #} elsif ($mapqb < 0.0001) {        #mapquality bias   #mask it for sid's data
-           #  next;
-         } elsif ($tailb =~ /e/) { #tailbias
+           #} elsif ($mapqb < 0.0001) {       #mapquality bias   #mask it for sid's data
+           #  next;/MQ0
+         } elsif ($tailb =~ /e/) {            #tailbias
            next;
-         } elsif ($tailb < $tailDisBiasTh) { #tailbias
+         } elsif ($tailb < $tailDisBiasTh) {  #tailbias
            next;
          } else {
            #pass
@@ -306,7 +233,7 @@ foreach my $file (@list) {
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
-     #$somatic{$coor}{'function'} = $function;
+
      my $idrefalt = join("\t", ($id,$ref,$alt));
      $somatic{$coor}{'info'}{$idrefalt} = $function;  #not necessarily just one!
 
@@ -315,12 +242,9 @@ foreach my $file (@list) {
      } else {
         $somatic{$coor}{'germline'} .= $name.',';
      }
-     if ($clinical ne '') {
-       $somatic{$coor}{'clinical'} = $clinINFO;  #clinical id information
-     }
   }
   close IN;
-  $tmpc = scalar(keys %somatic);
+  my $tmpc = scalar(keys %somatic);
   print STDERR "table tmp: $tmpc\n";
 
   my $cmd = "rm $tmpdir/tmp -f";
@@ -329,15 +253,16 @@ foreach my $file (@list) {
 
 #######------------------print header-----------------------#####
 print "#chr\tpos\tid\tref\talt";
-foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
-  print "\t$name";
+if ($prefixReg ne ''){
+  foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+    print "\t$name";
+  }
+} elsif ($task =~ /tcga/i) {
+  foreach my $name (sort {$a =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples){
+    print "\t$name";
+  }
 }
 print "\tfunction";
-if ($clinical eq '') {
-  print "\tsomatic\tgermline";
-} else {
-  print "\tclinical";
-}
 print "\n";
 #################################################################
 
@@ -348,22 +273,27 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   my $position = $2;
   foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
     print "$chrom\t$position\t$info";
-    foreach my $name (sort {$a =~ /$prefix(\d+)/; my $ia = $1; $b =~ /$prefix(\d+)/; my $ib = $1; $ia <=> $ib} keys %samples) {
-      if ($somatic{$coor}{$name} ne '') {
-        print "\t$somatic{$coor}{$name}";
-      } else {
-        print "\t0";
+    if ($prefixReg ne '') {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+        if ($somatic{$coor}{$name} ne '') {
+          print "\t$somatic{$coor}{$name}";
+        } else {
+          print "\t0";
+        }
+      }
+    } elsif ($task =~ /tcga/i) {
+      foreach my $name (sort {$a =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples) {
+        if ($somatic{$coor}{$name} ne '') {
+          print "\t$somatic{$coor}{$name}";
+        } else {
+          print "\t0";
+        }
       }
     }
     my $function = $somatic{$coor}{'info'}{$info};
-    my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};
-    my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};
+    #my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};       #temporarily silence somatic and germline info
+    #my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};    #temporarily silence somatic and germline info
     print "\t$function";
-    if ($clinical eq '') {
-      print "\t$somatic\t$germline";
-    } else {
-      print "\t$somatic{$coor}{'clinical'}";
-    }
     print "\n";
   } #for each different variant in this coordinate
 }
