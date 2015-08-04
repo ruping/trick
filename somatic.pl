@@ -64,12 +64,12 @@ my %samples;
 foreach my $file (@list) {
   my $name;
   my $filebase = basename($file);
-  if ($task !~ /tcga/i and $filebase =~ /(($prefixReg)[a-zA-Z0-9]+)[^a-zA-Z0-9]/) {
+  if ($prefixReg ne '' and $filebase =~ /(($prefixReg)[a-zA-Z0-9]+)[^a-zA-Z0-9]/) {
     $name = $1;
   }
-  if ($task =~ /tcga/i) {
+  elsif ($task =~ /tcga/i) {
     #$file =~ /\/((TCGA\-[^\-]+\-[^\-]+)\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)\./;
-    $filebase =~ /(TCGA\-[A-Z0-9]+\-[A-Z0-9]+)\./;
+    $filebase =~ /(TCGA\-[A-Z0-9]+\-[A-Z0-9]+)/;
     $name = $1;
   }
   print STDERR "$name\t$file\t$filebase\n";
