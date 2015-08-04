@@ -69,7 +69,7 @@ foreach my $file (@list) {
   }
   if ($task =~ /tcga/i) {
     #$file =~ /\/((TCGA\-[^\-]+\-[^\-]+)\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)\./;
-    $filebase =~ /(TCGA\-[^\-]+\-[^\-]+)\./;
+    $filebase =~ /(TCGA\-[A-Z0-9]+\-[A-Z0-9]+)\./;
     $name = $1;
   }
   print STDERR "$name\t$file\t$filebase\n";
@@ -258,7 +258,7 @@ if ($prefixReg ne ''){
     print "\t$name";
   }
 } elsif ($task =~ /tcga/i) {
-  foreach my $name (sort {$a =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples){
+  foreach my $name (sort {$a =~ /TCGA\-([A-Z0-9]+)\-([A-Z0-9]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples){
     print "\t$name";
   }
 }
@@ -282,7 +282,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
         }
       }
     } elsif ($task =~ /tcga/i) {
-      foreach my $name (sort {$a =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples) {
+      foreach my $name (sort {$a =~ /TCGA\-([A-Z0-9]+)\-([A-Z0-9]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples) {
         if ($somatic{$coor}{$name} ne '') {
           print "\t$somatic{$coor}{$name}";
         } else {
