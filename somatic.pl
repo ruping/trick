@@ -4,6 +4,7 @@ use Data::Dumper;
 use Getopt::Long;
 use FindBin qw($RealBin);
 use File::Basename;
+use List::Util;
 
 my $list;   #filename of all vcfs
 my $type;
@@ -225,8 +226,15 @@ foreach my $file (@list) {
         $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
      } else {
         my @sampleinfo = split(":", $sample);
-        $sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/;
-        $maf = sprintf("%.3f", $2/($1+$2));
+        if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/){
+          $maf = sprintf("%.3f", $2/($1+$2));
+        } else {
+          my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
+          my $adsum = sum(@ads);
+          shift(@ads);
+          my $altadsum = sum(@ads);
+          $maf = sprintf("%.3f", $altadsum/$adsum);
+        }
      }
 
      $somatic{$coor}{$name} = $maf.'|'.$qual;
