@@ -17,6 +17,8 @@ my $bin = $RealBin;
 my $tolerance = 0;
 my $strandBiasTh = 0.005;
 my $tailDisBiasTh = 0.005;
+my $nonsegdup;
+my $exonic;
 
 GetOptions (
             "list|l=s"       => \$list,             #filename of all vcfs
@@ -29,6 +31,8 @@ GetOptions (
             "tolerance=i"    => \$tolerance,
             "strandBiasTh=f" => \$strandBiasTh,
             "tailDisBiasTh=f"=> \$tailDisBiasTh,
+            "nonsegdup"      => \$nonsegdup,
+            "exonic"         => \$exonic,
             "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -241,6 +245,13 @@ foreach my $file (@list) {
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
+
+     if ($nonsegdup){
+       next if $function =~ /segdup\.score/;
+     }
+     if ($exonic){
+       next if ($function !~ /exonic/ and $function !~ /UTR[35]/ and $function !~ /splicing/);
+     }
 
      my $idrefalt = join("\t", ($id,$ref,$alt));
      $somatic{$coor}{'info'}{$idrefalt} = $function;  #not necessarily just one!
