@@ -4,7 +4,7 @@ use Data::Dumper;
 use Getopt::Long;
 use FindBin qw($RealBin);
 use File::Basename;
-use List::Util;
+use List::Util qw(max min sum);
 
 my $list;   #filename of all vcfs
 my $type;
