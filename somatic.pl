@@ -44,6 +44,8 @@ GetOptions (
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
                                print "\t--strandBiasTh\tthe p value threshold for filtering out vars with strand bias <0.005>\n";
                                print "\t--tailDisBiasTh\tthe p value threshold for filtering out vars with Tail distance bias <0.005>\n";
+                               print "\t--nonsegdup\tdo not collect segdup ones\n";
+                               print "\t--exonic\tonly collect exonic ones (including UTR and splicing)\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
