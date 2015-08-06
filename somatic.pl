@@ -71,7 +71,7 @@ my %samples;
 foreach my $file (@list) {
   my $name;
   my $filebase = basename($file);
-  if ($prefixReg ne '' and $filebase =~ /(($prefixReg)[a-zA-Z0-9]+)[^a-zA-Z0-9]/) {
+  if ($prefixReg ne '' and $filebase =~ /(($prefixReg)[a-zA-Z0-9\-\_]+)[^a-zA-Z0-9\-\_]/) {     #changed to adapt to lowGI data
     $name = $1;
   }
   elsif ($task =~ /tcga/i) {
@@ -275,7 +275,7 @@ foreach my $file (@list) {
 #######------------------print header-----------------------#####
 print "#chr\tpos\tid\tref\talt";
 if ($prefixReg ne ''){
-  foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+  foreach my $name (sort {$a =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
     print "\t$name";
   }
 } elsif ($task =~ /tcga/i) {
@@ -295,7 +295,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
     print "$chrom\t$position\t$info";
     if ($prefixReg ne '') {
-      foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
         if ($somatic{$coor}{$name} ne '') {
           print "\t$somatic{$coor}{$name}";
         } else {

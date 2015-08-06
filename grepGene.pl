@@ -4,6 +4,7 @@ my $file = shift;
 my $type = shift;
 my $cohort = shift;
 
+#these are samples from RECTAL-NETS##############################
 my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
 my %ileum;
 foreach my $il (@ileum) {
@@ -14,6 +15,7 @@ my %rectum;
 foreach my $rec (@rectum) {
   $rectum{$rec} = '';
 }
+#these are samples from RECTAL-NETS###########################
 
 open IN, "$file";
 my @name;
@@ -109,9 +111,9 @@ foreach my $gene (keys %result) {
 sub grepGene {
   my $line = shift;
   my @dummy;
-  if ($line =~ /function=exonic\;functionalClass=([^\;]+)\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/) {
-    my $g1 = $2;
-    my $function = $1;
+  if ($line =~ /function=exonic\;geneName=([\w\.\-\,\/]+?)\;functionalClass=([^\;]+)\;/) {     #coding change
+    my $g1 = $1;
+    my $function = $2;
     if ($type =~ /exonic/){
       &splitGene($g1);
     } elsif ($type =~ /coding/) {
@@ -121,15 +123,15 @@ sub grepGene {
          &splitGene($g1);
       }
     }
-  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/) {
+  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\,\/]+?)\;/) {                  #RNA_exonic
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /exonic/);
-  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\,\;\/]+?)\t/) {
+  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\,\/]+?)$/) {                   #RNA_exonic ending
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /exonic/);
-  } elsif ($line =~ /function=exonic\;splicing\;functionalClass=([^\;]+)\;geneName=([\w\.\-\,\;\(\)\_\:\+\>\/]+?)\;[\w\.]+\=/) {
-    my $g1 = $2;
-    my $function = $1;
+  } elsif ($line =~ /function=exonic\;splicing\;geneName=([\w\.\-\,\;\_]+?)\;(geneDetail\=[\S]+;)?functionalClass=([^\;]+)\;/) {   #splicing and coding
+    my $g1 = $1;
+    my $function = $3;
     if ($type =~ /exonic/ or $type =~ /splicing/){
        &splitGene($g1);
     } elsif ($type =~ /coding/) {
@@ -194,8 +196,8 @@ sub grepGene {
 
 sub splitGene {
   my $genes = shift;
-  $genes =~ s/\(.+?\)//g;    #remove the splicing parentheses
-  my @genes = split (/[\;\,]/, $genes);
+  $genes =~ s/\(.+?\)//g;    #remove the splicing or intergenic parentheses
+  my @genes = split (/[\,]/, $genes);
   my %tmp;
   foreach my $gene (@genes) {
     $tmp{$gene} = "";
