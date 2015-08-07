@@ -233,8 +233,8 @@ while ( <IN> ) {
           foreach my $detectedSamp (@detectedSample) {
             $detectedSample{$detectedSamp} = '';
           }
-          print STDERR "$traceSomatic\t$traceGermline\n";
-          print STDERR Dumper(\%detectedSample);
+          #print STDERR "$traceSomatic\t$traceGermline\n";
+          #print STDERR Dumper(\%detectedSample);
         } elsif ($colindex{$i} eq 'rep') {
           $rep = $cols[$i];
         } elsif ($colindex{$i} eq 'sc') {
