@@ -199,6 +199,8 @@ while ( <IN> ) {
       print "$_\t$depav\n";
     } elsif ($maf =~ /filter/) {     #filter (based on Jie's Results)
       my @detectedSample;
+      my %detectedSample;
+      my %mafs;
       my $chr;
       my $pos;
       my $endsratio = 0;
@@ -214,30 +216,44 @@ while ( <IN> ) {
           $chr = $cols[$i];
         } elsif ($colindex{$i} eq 'pos'){
           $pos = $cols[$i];
-        } elsif ($colindex{$i} eq 'sample') {
-          @detectedSample = split(',', $cols[$i]);
+        } elsif ($colindex{$i} eq 'trace') {
+          my ($traceSomatic, $traceGermline) = split(';', $cols[$i]);
+          $traceSomatic =~ /somatic\=(.+?)$/;
+          $traceSomatic = $1;
+          $traceGermline =~ /germline\=(.+?)$/;
+          $traceGermline = $1;
+          push (@detectedSample, split(',', $traceSomatic)) if ($traceSomatic != 0);
+          push (@detectedSample, split(',', $traceGermline)) if ($traceGermline != 0);
+          foreach my $detectedSamp (@detectedSample) {
+            $detectedSample{$detectedSamp} = '';
+          }
         } elsif ($colindex{$i} eq 'rep') {
           $rep = $cols[$i];
         } elsif ($colindex{$i} eq 'sc') {
           $sc = $cols[$i];
-        } elsif ($colindex{$i} =~ /^(.+?)maf$/) {
+        } elsif ($colindex{$i} =~ /^(.+?)maf$/) {   #store maf information
           my $samp = $1;
-          next if ($samp !~ /^$detectedSample[0]\D/);
-
-          if ($cols[$i] =~ /\|/) {  #split the var surrounding information
-            my @infos = split(/\|/, $cols[$i]);
-            $endsratio = ($infos[0] > $mmaf)? $infos[1]:$endsratio;
-            ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
-            $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
-          }
+          $mafs{$samp} = $cols[$i];
         } elsif ($colindex{$i} eq 'cmeanav') {
           $cmeanav = $cols[$i];
           $cmedianav = $cols[$i+1];
         }
       } #each column
+
+      foreach my $samp (keys %mafs) {  #get endsratio and cmean cmedian info
+        next if (! exists($detectedSample{$samp}));   #only look at the sample where it is called
+        my $sampmaf = $mafs{$samp};
+        if ($sampmaf =~ /\|/) { #split the var surrounding information
+          my @infos = split(/\|/, $sampmaf);
+          $endsratio = ($infos[0] > $mmaf)? $infos[1]:$endsratio;
+          ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
+          $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
+        }
+      }
+
       my $status;
       print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\tendsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
-      if ($rep == 1 and $sc == 1){
+      if ($rep == 1 and $sc == 1) {
         $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       } else {
         $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5.5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
