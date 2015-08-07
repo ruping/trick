@@ -184,7 +184,7 @@ while ( <IN> ) {
     } elsif ($maf eq 'depth') {   #find av depth
       my $dep = 0;
       my $Ndep = 0;
-      for (my $i = 0; $i <= $#cols; $i++){
+      for (my $i = 0; $i <= $#cols; $i++) {
         if ($colindex{$i} =~ /maf$/) {
           if ($cols[$i] >= 0.1){
             my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
@@ -212,9 +212,9 @@ while ( <IN> ) {
       my $rep = 0;
       my $sc = 0;
       for ( my $i = 0; $i <= $#cols; $i++ ) {
-        if ($colindex{$i} eq 'chr'){
+        if ($colindex{$i} eq 'chr') {
           $chr = $cols[$i];
-        } elsif ($colindex{$i} eq 'pos'){
+        } elsif ($colindex{$i} eq 'pos') {
           $pos = $cols[$i];
         } elsif ($colindex{$i} eq 'trace') {
           my ($traceSomatic, $traceGermline) = split(';', $cols[$i]);
@@ -227,6 +227,8 @@ while ( <IN> ) {
           foreach my $detectedSamp (@detectedSample) {
             $detectedSample{$detectedSamp} = '';
           }
+          print STDERR "$traceSomatic\t$traceGermline\n";
+          print STDERR Dumper(\%detectedSample);
         } elsif ($colindex{$i} eq 'rep') {
           $rep = $cols[$i];
         } elsif ($colindex{$i} eq 'sc') {
@@ -252,7 +254,7 @@ while ( <IN> ) {
       }
 
       my $status;
-      print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\tendsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
+      print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\t$endsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1) {
         $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       } else {
