@@ -59,7 +59,7 @@ $chrJumper{'original'} = getchrpos($original);
 my %samples;
 foreach my $file (@list) {
   my $name;
-  if ($prefix ne '' and $file =~ /(($prefixReg)\w+)$/) {
+  if ($prefix ne '' and $file =~ /(($prefixReg)[A-Za-z0-9\-\_]+)$/) {
     $name = $1;
   } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
@@ -75,7 +75,7 @@ print STDERR Dumper(\%chrJumper);
 
 
 print "#chr\tpos\tid\tref\talt";
-foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+foreach my $name (sort {$a =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
    print "\t$name\t$name".'d';
 }
 print "\tcmeanav\tcmedianav\n";
@@ -118,7 +118,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
   my %somatic;
   foreach my $file (@list) {
     my $name;
-    if ($prefix ne '' and $file =~ /(($prefixReg)\w+)$/) {
+    if ($prefix ne '' and $file =~ /(($prefixReg)[A-Za-z0-9\-\_]+)$/) {
       $name = $1;
     } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
@@ -292,7 +292,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if ($id eq '');
 
       print "$chrom\t$pos\t$id\t$info";
-      foreach my $name (sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
         if ($somatic{$coor}{$djindex}{$name} ne '') {
           print "\t$somatic{$coor}{$djindex}{$name}";
         } elsif ($blood eq 'yes') {

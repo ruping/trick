@@ -53,7 +53,7 @@ while ( <IN> ) {
           last;
         } else {
           push(@order, $i);
-          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^($prefixReg)\w+$/) {
+          if ($cols[$i] =~ /^TCGA-.+?$/ or $cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+$/) {
             $samples{$cols[$i]} = $i;
           }
         } #else
@@ -64,7 +64,7 @@ while ( <IN> ) {
         if ( exists($samples{$cols[$i]}) ) {
           my $insertpos = $samples{$cols[$i]};
           my $offset;
-          foreach my $sample ( sort {$a =~ /($prefixReg)(\d+)(\w+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)(\w+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples ) {
+          foreach my $sample ( sort {$a =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples ) {
              my $rank = $samples{$sample};
              last if ($insertpos == $rank);
              if ( exists($inserted{$sample}) ) {
@@ -76,10 +76,10 @@ while ( <IN> ) {
           $inserted{$cols[$i]} = '';
           $cols[$i] .= 'maf';
         } elsif ( $cols[$i] !~ /d$/ ) { #not depth
-          if ($cols[$i] =~ /^($prefixReg)\w+/) {
+          if ($cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+/) {
             $cols[$i] .= 'maf';
             push(@order, $i);
-            push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^($prefixReg)\w+/);
+            push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+/);
           } else {
             push(@order, $i);
           }
