@@ -154,6 +154,8 @@ foreach my $file (@list) {
      #############################################################################decide somatic
 
 
+     print STDERR "somatic: $somatic\n";
+
      if ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/) {  #snp in population, is it a somatic one?
 
        my $freq = -1;
@@ -173,7 +175,7 @@ foreach my $file (@list) {
            }
        }
 
-       if ($somatic == 0) {                            #if it is not somatic, then only rare ones should be kept
+       if ( $somatic == 0 ) {                            #if it is not somatic, then only rare ones should be kept
          if ($freq == -1) {
            if ($dbsnp eq "no" or $task =~ /rare/i) {
              next;
@@ -283,7 +285,7 @@ if ($prefixReg ne ''){
     print "\t$name";
   }
 }
-print "\tfunction";
+print "\tfunction\ttrace";
 print "\n";
 #################################################################
 
@@ -312,9 +314,10 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
       }
     }
     my $function = $somatic{$coor}{'info'}{$info};
-    #my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};       #temporarily silence somatic and germline info
-    #my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};    #temporarily silence somatic and germline info
-    print "\t$function";
+    my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};       #temporarily silence somatic and germline info
+    my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};    #temporarily silence somatic and germline info
+    my $trace = 'somatic='.$somatic.';germline='.$germline;
+    print "\t$function\t$trace";
     print "\n";
   } #for each different variant in this coordinate
 }
