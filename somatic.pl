@@ -140,15 +140,17 @@ foreach my $file (@list) {
 
      ###########################################################################decide somatic
      my $somatic = 0;
-     if ($type eq 'snv') {      #for snp
-       my @blood = split(/\:/,$blood);
-       if ($blood[$formindex{'GT'}] !~ /1/) {
-         $somatic = 1;
-       }
-     } elsif ($type eq 'indel') {   #for indel
-       my @blood = split(/\:/,$blood);
-       if ($blood[$formindex{'GT'}] !~ /1/) {
-         $somatic = 1;
+     if ($singlecalling eq 'no'){      # if it is paired calling
+       if ($type eq 'snv') {    #for snp
+         my @blood = split(/\:/,$blood);
+         if ($blood[$formindex{'GT'}] !~ /1/) {
+           $somatic = 1;
+         }
+       } elsif ($type eq 'indel') { #for indel
+         my @blood = split(/\:/,$blood);
+         if ($blood[$formindex{'GT'}] !~ /1/) {
+           $somatic = 1;
+         }
        }
      }
      #############################################################################decide somatic
