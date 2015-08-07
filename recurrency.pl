@@ -222,19 +222,13 @@ while ( <IN> ) {
           $traceSomatic = $1;
           $traceGermline =~ /germline\=(.+?)$/;
           $traceGermline = $1;
-          if ($traceSomatic != 0) {
+          if ($traceSomatic =~ /\,/) {
             my @traceSomatic = split(',', $traceSomatic);
-            print STDERR Dumper (\@traceSomatic);
-            foreach my $traceSomaticSamp (@traceSomatic) {
-              push(@detectedSample, $traceSomaticSamp);
-            }
+            push(@detectedSample, @traceSomatic);
           }
-          if ($traceGermline != 0) {
+          if ($traceGermline =~ /\,/) {
             my @traceGermline = split(',', $traceGermline);
-            print STDERR Dumper (\@traceGermline);
-            foreach my $traceGermlineSamp (@traceGermline) {
-              push(@detectedSample, $traceGermlineSamp);
-            }
+            push(@detectedSample, @traceGermline);
           }
           foreach my $detectedSamp (@detectedSample) {
             $detectedSample{$detectedSamp} = '';
