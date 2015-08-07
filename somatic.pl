@@ -155,8 +155,7 @@ foreach my $file (@list) {
      }
      #############################################################################decide somatic
 
-
-     print STDERR "somatic: $somatic\n";
+     #print STDERR "somatic: $somatic\n";
 
      if ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/) {  #snp in population, is it a somatic one?
 
