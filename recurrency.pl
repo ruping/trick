@@ -224,13 +224,15 @@ while ( <IN> ) {
           $traceGermline = $1;
           if ($traceSomatic != 0) {
             my @traceSomatic = split(',', $traceSomatic);
-            foreach my $traceSomaticSamp (@traceSomatic){
+            print STDERR Dumper (\@traceSomatic);
+            foreach my $traceSomaticSamp (@traceSomatic) {
               push(@detectedSample, $traceSomaticSamp);
             }
           }
           if ($traceGermline != 0) {
             my @traceGermline = split(',', $traceGermline);
-            foreach my $traceGermlineSamp (@traceGermline){
+            print STDERR Dumper (\@traceGermline);
+            foreach my $traceGermlineSamp (@traceGermline) {
               push(@detectedSample, $traceGermlineSamp);
             }
           }
