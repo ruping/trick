@@ -262,9 +262,9 @@ while ( <IN> ) {
       my $status;
       print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\t$endsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1) {
-        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5 and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
       } else {
         $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5.5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
       }
