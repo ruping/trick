@@ -293,7 +293,7 @@ while ( <IN> ) {
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))){  #true event
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5)){  #true event
             $maf = $maf;
           } else {
             $maf = 0;   #not reliable somatic
