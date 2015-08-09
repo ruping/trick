@@ -302,7 +302,7 @@ while ( <IN> ) {
           #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           if (exists $somatic{$samp}) { #it is tumor
-             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.02);
+             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.05);
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
               if ( $maf == 0 and $depth >= 10 ) {
@@ -325,7 +325,7 @@ while ( <IN> ) {
           $stype = 'good';
           $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
         } elsif (exists($blood{$tumorSamp})) {
-          if ($blood{$tumorSamp} <= 0.01 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 4) {
+          if ($blood{$tumorSamp} < 0.05 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 4) {
             $stype = 'doubt';
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
           } elsif (exists($unknown{$tumorSamp})) {
