@@ -292,6 +292,7 @@ while ( <IN> ) {
     } elsif ($maf =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
+      my %bloodcalled;   #store the called information for blood
       my %nonblood;
       my %unknown;
       for ( my $i = 0; $i <= $#cols; $i++ ) {
@@ -327,6 +328,9 @@ while ( <IN> ) {
              $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.05);
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
+              if ($cols[$i-1] =~ /\|/) {       #it is originally called
+                $bloodcalled{$ct} = '';
+              }
               if ( $maf == 0 and $depth >= 10 ) {
                 $nonblood{$ct} = '';
               } elsif ( $maf == 0 and $depth < 10 ) {
@@ -360,7 +364,13 @@ while ( <IN> ) {
           $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
         }
       }
-      print "$_\t$soma\t$germ\n";
+
+      if ($soma eq 'NA' and $germ eq 'NA'){     #check whether it is germline
+        foreach my $ct (sort keys %bloodcalled){
+          $germ .= $ct.',' if ($ct ne '');
+        }
+      }
+      print "$_\t$soma\t$germ\n" if ($soma ne 'NA' and $germ ne 'NA');
     } #somatic
   }
 }
