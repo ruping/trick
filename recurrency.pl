@@ -365,12 +365,12 @@ while ( <IN> ) {
         }
       }
 
-      if ($soma eq 'NA' and $germ eq 'NA'){     #check whether it is germline
+      if ($soma eq 'NA' and $germ eq 'NA') {     #check whether it is germline
         foreach my $ct (sort keys %bloodcalled){
           $germ .= $ct.',' if ($ct ne '');
         }
       }
-      print "$_\t$soma\t$germ\n" if ($soma ne 'NA' and $germ ne 'NA');
+      print "$_\t$soma\t$germ\n" if ($soma ne 'NA' or $germ ne 'NA');
     } #somatic
   }
 }
