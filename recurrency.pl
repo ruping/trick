@@ -172,7 +172,7 @@ while ( <IN> ) {
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5)) {
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {
             if ($maf >= 0.05 and $vard >= 2) {
               if ($somaticInfo ne '') {        #count only tumor
                 if ( exists($somatic{$samp}) ) {
@@ -284,11 +284,11 @@ while ( <IN> ) {
       if ($rep == 1 and $sc == 1) {
         $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5 and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 5.5 and ($cmeanav + $cmedianav) < 6)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)?'PASS':'FOUT';
       }
-      print "$_\t$status\n";
+      print "$_\t$status\n" if ($status eq 'PASS');
     } elsif ($maf =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
@@ -314,7 +314,7 @@ while ( <IN> ) {
           my $vard = sprintf("%.1f", $maf*$depth);
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
-            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5)) { #true event
+            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #true event
               $maf = $maf;
             } else {
               $maf = 0;         #not reliable somatic
