@@ -64,7 +64,7 @@ while ( <IN> ) {
     } elsif ($maf eq 'depth'){
       print "$_\tdepthav\n";
     } elsif ($maf eq 'samfounds'){
-      print "$_\tsamfounds\n";
+      print "$_\tfounds\trsam\n";
     }
   } else {
     my @cols = split /\t/;
@@ -151,36 +151,56 @@ while ( <IN> ) {
         print "$_\t$ftrace\n" if ($maf eq 'trace');
         print "$_\t$trace\n" if ($maf eq 'traceall');
       }
-    } elsif ($maf eq 'founds') {  #trace all samples
+    } elsif ($maf =~ /founds/) {    #trace all samples and check whether it is originally called
       my $founds = 0;
+      my $samfounds = 0;
       for (my $i = 0; $i <= $#cols; $i++){
         if ($colindex{$i} =~ /^(.+?)maf$/) {
           my $samp = $1;
-          if ($cols[$i] >= 0.1) {
-            my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
-            if ($vard >= 2) {
-              if ($somaticInfo ne ''){  #count only tumor
-                if ( exists($somatic{$samp}) ){
+          my $maf = $cols[$i];
+          my $endsratio = 0;
+          my $cmean = 0;
+          my $cmedian = 0;
+
+          if ($cols[$i] =~ /\|/) { #split the var surrounding information
+            my @infos = split(/\|/, $cols[$i]);
+            $maf = $infos[0];
+            $endsratio = $infos[1];
+            ($cmean, $cmedian) = split(',', $infos[2]);
+          }
+
+          my $depth = $cols[$i+1];
+          my $vard = sprintf("%.1f", $maf*$depth);
+
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5)) {
+            if ($maf >= 0.05 and $vard >= 2) {
+              if ($somaticInfo ne '') {        #count only tumor
+                if ( exists($somatic{$samp}) ) {
                   $founds++;
+                  if ($colindex{$i-1} =~ /^$samp$/){  #calling information for the same sample
+                    if ( $cols[$i-1] =~ /\|/ ){  #it is called originally
+                      $samfounds++;
+                    }
+                  }
                 }
               } else {
-                $founds++;              #count all samples
+                $founds++;                     #count all samples
+                if ($colindex{$i-1} =~ /^$samp$/){  #calling information for the same sample
+                  if ( $cols[$i-1] =~ /\|/ ) { #it is called originally
+                    $samfounds++;
+                  }
+                }
               }
-            } #vard >= 2
-          }
+            } #maf and vard requirements
+          }                     # it looks good
         } #maf
       } #each column
-      print "$_\t$founds\n";
-    } elsif ($maf eq 'samfounds') {
-      my $samfounds = 0;
-      for (my $i = 0; $i <= $#cols; $i++){
-        if ($colindex{$i} =~ /AC\d+$/) {
-          if ($cols[$i] > 0){
-            $samfounds++;
-          }
-        } #samaf
-      } #each column
-      print "$_\t$samfounds\n";
+      print "$_\t$founds";
+      if ($maf =~ /sam/){  #original founds
+        my $rsam = sprintf("%.2f", $samfounds/$founds);
+        print "\t$rsam";
+      }
+      print "\n";
     } elsif ($maf eq 'depth') {   #find av depth
       my $dep = 0;
       my $Ndep = 0;
