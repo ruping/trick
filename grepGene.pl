@@ -40,7 +40,7 @@ while ( <IN> ) {
       print STDERR "function column is indexed $j\n" if $cols[$j] eq 'function';
     }
     for (my $i = 0; $i <= $#name; $i++) {
-      if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf/) {
+      if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf/) {
         push(@samples, $1);
       }
     }
@@ -51,7 +51,7 @@ while ( <IN> ) {
     my @genes = &grepGene($cols[$colindex{'function'}]);
     #print STDERR Dumper(\@genes);
     for (my $i = 0; $i <= $#cols; $i++) {
-      if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf$/) {
+      if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf$/) {
         my $name = $1;
         my $maf = $cols[$i];
         my $endsratio = 0;
