@@ -154,7 +154,7 @@ while ( <IN> ) {
     } elsif ($maf =~ /founds/) {    #trace all samples and check whether it is originally called
       my $founds = 0;
       my $samfounds = 0;
-      for (my $i = 0; $i <= $#cols; $i++){
+      for (my $i = 0; $i <= $#cols; $i++) {
         if ($colindex{$i} =~ /^(.+?)maf$/) {
           my $samp = $1;
           my $maf = $cols[$i];
@@ -172,7 +172,7 @@ while ( <IN> ) {
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
             if ($maf >= 0.05 and $vard >= 2) {
               if ($somaticInfo ne '') {        #count only tumor
                 if ( exists($somatic{$samp}) ) {
@@ -192,12 +192,12 @@ while ( <IN> ) {
                 }
               }
             } #maf and vard requirements
-          }                     # it looks good
+          }  # it looks good
         } #maf
       } #each column
       print "$_\t$founds";
       if ($maf =~ /sam/){  #original founds
-        my $rsam = sprintf("%.2f", $samfounds/$founds);
+        my $rsam = ($founds > 0)? sprintf("%.2f", $samfounds/$founds) : 0;
         print "\t$rsam";
       }
       print "\n";
