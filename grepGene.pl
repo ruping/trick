@@ -41,9 +41,8 @@ while ( <IN> ) {
   } else {
     my @genes = &grepGene($cols[$colindex{'function'}]);
     for (my $i = 0; $i <= $#cols; $i++) {
-      if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)$/) {
+      if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf$/) {
         my $name = $1;
-        $name =~ s/maf$//;
         my $maf = $cols[$i];
         my $endsratio = 0;
         my $cmean = 0;
@@ -74,7 +73,7 @@ while ( <IN> ) {
 }
 close IN;
 for (my $i = 0; $i <= $#name; $i++){
-  if ($name[$i] =~ /(AC\d+)maf/){
+  if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf/){
      push(@samples, $1);
    }
 }
