@@ -111,7 +111,7 @@ foreach my $gene (keys %result) {
 sub grepGene {
   my $line = shift;
   my @dummy;
-  if ($line =~ /function=exonic\;geneName=([\w\.\-\,\/]+?)\;functionalClass=([^\;]+)\;/) {     #coding change
+  if ($line =~ /function=exonic\;geneName=([\w\.\-\_\,\/]+?)\;functionalClass=([^\;]+)\;/) {     #coding change
     my $g1 = $1;
     my $function = $2;
     if ($type =~ /exonic/){
@@ -123,13 +123,13 @@ sub grepGene {
          &splitGene($g1);
       }
     }
-  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\,\/]+?)\;/) {                  #RNA_exonic
+  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\_\,\/]+?)\;/) {                  #RNA_exonic
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /exonic/);
-  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\,\/]+?)$/) {                   #RNA_exonic ending
+  } elsif ($line =~ /function\=ncRNA\_exonic\;geneName=([\w\.\-\_\,\/]+?)$/) {                   #RNA_exonic ending
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /exonic/);
-  } elsif ($line =~ /function=exonic\;splicing\;geneName=([\w\.\-\,\;\_]+?)\;(geneDetail\=[\S]+;)?functionalClass=([^\;]+)\;/) {   #splicing and coding
+  } elsif ($line =~ /function=exonic\;splicing\;geneName=([\w\.\-\_\,\;\_]+?)\;(geneDetail\=[\S]+;)?functionalClass=([^\;]+)\;/) {   #splicing and coding
     my $g1 = $1;
     my $function = $3;
     if ($type =~ /exonic/ or $type =~ /splicing/){
@@ -141,49 +141,31 @@ sub grepGene {
         &splitGene($g1);
       }
     }
-  } elsif ($line =~ /function\=(ncRNA\_)?intronic\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/) {
+  } elsif ($line =~ /function\=(ncRNA\_)?intronic\;geneName=([\w\.\-\_\,\/]+?)\;/) {                       #intronic
     my $g1 = $2;
     &splitGene($g1) if ($type =~ /intronic/);
-  } elsif ($line =~ /function\=(ncRNA\_)?intronic\;geneName=([\w\.\-\,\;\/]+?)\t/) {
-    my $g1 = $2;
-    &splitGene($g1) if ($type =~ /intronic/);
-  } elsif ($line =~ /function\=(ncRNA\_)?splicing\;geneName=([\w\.\-\,\;\(\)\_\:\+\>\/]+?)\;[\w\.]+\=/) {
+  } elsif ($line =~ /function\=(ncRNA\_)?splicing\;geneName=([\w\.\-\_\,\/]+?)\;(geneDetail\=[\S]+;)?/) {  #splicing
     my $g1 = $2;
     &splitGene($g1) if ($type =~ /splicing/);
-  } elsif ($line =~ /function\=(ncRNA\_)?splicing\;geneName=([\w\.\-\,\;\(\)\_\:\+\>\/]+?)\t/) {
-    my $g1 = $2;
-    &splitGene($g1) if ($type =~ /splicing/);
-  } elsif ($line =~ /function\=(ncRNA\_)?UTR\d\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/) {
-    my $g1 = $2;
-    &splitGene($g1) if ($type =~ /UTR/);
-  } elsif ($line =~ /function\=(ncRNA\_)?UTR\d\;geneName=([\w\.\-\,\;\/]+?)\t/){
+  } elsif ($line =~ /function\=ncRNA\_exonic\;splicing\;geneName=([\w\.\-\_\,\;\/]+?)\;(geneDetail\=[\S]+;)?[\w\.]+\=/) { #splicing
+    my $g1 = $1;
+    &splitGene($g1) if ($type =~ /splicing/ or $type =~ /exonic/);
+  } elsif ($line =~ /function\=(ncRNA\_)?UTR\d\;geneName=([\w\.\-\_\,\/]+?)\;/) {                                     #UTR
     my $g1 = $2;
     &splitGene($g1) if ($type =~ /UTR/);
-  } elsif ($line =~ /function\=UTR5\;UTR3\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/) {
+  } elsif ($line =~ /function\=UTR5\;UTR3\;geneName=([\w\.\-\_\,\;\/]+?)\;(geneDetail\=[\S]+;)?[\w\.]+\=/) {          #UTRs
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /UTR/);
-  } elsif ($line =~ /function\=UTR5\;UTR3\;geneName=([\w\.\-\,\;\/]+?)\t/) {
-    my $g1 = $1;
-    &splitGene($g1) if ($type =~ /UTR/);
-  } elsif ($line =~ /function\=upstream\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/){
+  } elsif ($line =~ /function\=upstream\;geneName=([\w\.\-\_\,\/]+?)\;/){                                             #upstream
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /upstream/);
-  } elsif ($line =~ /function\=upstream\;geneName=([\w\.\-\,\;\/]+?)\t/){
-    my $g1 = $1;
-    &splitGene($g1) if ($type =~ /upstream/);
-  } elsif ($line =~ /function\=downstream\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/){
+  } elsif ($line =~ /function\=downstream\;geneName=([\w\.\-\_\,\/]+?)\;/){                                           #downstream
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /downstream/);
-  } elsif ($line =~ /function\=downstream\;geneName=([\w\.\-\,\;\/]+?)\t/){
-    my $g1 = $1;
-    &splitGene($g1) if ($type =~ /downstream/);
-  } elsif ($line =~ /function\=upstream\;downstream\;geneName=([\w\.\-\,\;\/]+?)\;[\w\.]+\=/){
+  } elsif ($line =~ /function\=upstream\;downstream\;geneName=([\w\.\-\_\,\;\/]+?)\;[\w\.]+\=/){                      #upstream,downstream
     my $g1 = $1;
     &splitGene($g1) if ($type =~ /upstream/ or $type =~ /downstream/);
-  } elsif ($line =~ /function\=upstream\;downstream\;geneName=([\w\.\-\,\;\/]+?)\t/) {
-    my $g1 = $1;
-    &splitGene($g1) if ($type =~ /upstream/ or $type =~ /downstream/);
-  } elsif ($line =~ /function\=intergenic\;geneName\=(.+?)\(dist\=\w+\)\,(.+?)\(dist\=\w+\)/) {
+  } elsif ($line =~ /function\=intergenic\;geneName\=(.+?)\(dist\=\w+\)\,(.+?)\(dist\=\w+\)/) {                       #intergenic
      my $g1 = $1;
      my $g2 = $2;
      &splitGene($g1) if ($type =~ /intergenic/ and $g1 ne 'NONE');
