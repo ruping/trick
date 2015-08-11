@@ -97,6 +97,7 @@ while ( <IN> ) {
     for (my $i = 0; $i <= $#cols; $i++) {
       if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf$/) {
         my $name = $1;
+        next unless (exists $somatic{$name});
         my $maf = $cols[$i];
         my $endsratio = 0;
         my $cmean = 0;
