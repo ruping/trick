@@ -21,7 +21,7 @@ my %rectum;
 foreach my $rec (@rectum) {
   $rectum{$rec} = '';
 }
-#these are samples from RECTAL-NETS###########################
+#these are samples from RECTAL-NETS#############################
 
 open IN, "$file";
 my @name;
@@ -36,6 +36,7 @@ while ( <IN> ) {
     @name = @cols;
     for (my $j = 0; $j <= $#cols; $j++){
       $colindex{$cols[$j]} = $j;
+      print STDERR "function column is indexed $j" if $cols[$j] eq 'function';
     }
     next;
   } else {
@@ -72,7 +73,7 @@ while ( <IN> ) {
   }                             #else
 }
 close IN;
-for (my $i = 0; $i <= $#name; $i++){
+for (my $i = 0; $i <= $#name; $i++) {
   if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf/){
      push(@samples, $1);
    }
