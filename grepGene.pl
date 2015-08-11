@@ -42,7 +42,7 @@ while ( <IN> ) {
     next;
   } else {
     my @genes = &grepGene($cols[$colindex{'function'}]);
-    print STDERR Dumper(\@genes);
+    #print STDERR Dumper(\@genes);
     for (my $i = 0; $i <= $#cols; $i++) {
       if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf$/) {
         my $name = $1;
@@ -65,7 +65,7 @@ while ( <IN> ) {
 
         my $vard = sprintf("%.1f", $maf*$depth);
 
-        print STDERR "$name\t$maf\t$vard\n";
+        #print STDERR "$name\t$maf\t$vard\n";
 
         if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #it looks good
           if ($maf >= 0.05 and $vard >= 2) {
