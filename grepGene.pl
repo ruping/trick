@@ -1,27 +1,68 @@
 use strict;
 use Data::Dumper;
+use Getopt::Long;
 
-my $file = shift;
-my $prefix = shift;
-my $type = shift;
-my $cohort = shift;
+my $file;      #filename of the mutation matrix
+my $type;
+my $prefix;
+my $sampleInfo;    #sample information
+
+GetOptions (
+            "file|f=s"       => \$file,     #filename
+            "type|t=s"       => \$type,     #types of variations: coding,exonic,intronic,splicing,UTR,upstream,downstream,intergenic
+            "prefix|p=s"     => \$prefix,
+            "sampleInfo|s=s"     => \$sampleInfo,   #sampleInfo
+            "help|h"         => sub{
+              print "usage: $0 grep genes to generate mutation table for different types\n\nOptions:\n\t--file\t\tthe filename of mutation table output by pipeline\n";
+              print "\t--type\t\tthe type of variants, coding,exonic,intronic,splicing,UTR,upstream,downstream,intergenic\n";
+              print "\t--prefix\tthe prefix of samples' names, comma separated\n";
+              print "\t--sampleInfo\t\tthe sample names matrix for the analysis, tab delimited tumor-normal pairs\n";
+              print "\t--help\t\tprint this help message\n";
+              print "\n";
+              exit 0;
+            },
+           );
+
+
 
 my @prefix = split(',', $prefix);
 my $prefixReg = join('|', @prefix);
 print STDERR "prefixReg is $prefixReg\n";
 
 
+my %somatic;
+my %germline;  #may have multiple tumors
+if ($sampleInfo and -s "$sampleInfo") {
+
+  open IN, "$sampleInfo";
+  while ( <IN> ){
+    chomp;
+    s/[\s\n]$//;
+    my @columns = split /\t/;
+    my $tumor = $columns[0];
+    my $normal = $columns[1];
+
+    $somatic{$tumor} = $normal;
+    push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
+  }
+  close IN;
+  print STDERR Dumper (\%somatic);
+  print STDERR Dumper (\%germline);
+
+}
+print STDERR "sample Info processed\n";
+
 #these are samples from RECTAL-NETS##############################
-my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
-my %ileum;
-foreach my $il (@ileum) {
-  $ileum{$il} = '';
-}
-my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
-my %rectum;
-foreach my $rec (@rectum) {
-  $rectum{$rec} = '';
-}
+#my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
+#my %ileum;
+#foreach my $il (@ileum) {
+#  $ileum{$il} = '';
+#}
+#my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
+#my %rectum;
+#foreach my $rec (@rectum) {
+#  $rectum{$rec} = '';
+#}
 #these are samples from RECTAL-NETS#############################
 
 open IN, "$file";
@@ -41,7 +82,10 @@ while ( <IN> ) {
     }
     for (my $i = 0; $i <= $#name; $i++) {
       if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf/) {
-        push(@samples, $1);
+        my $sampCur = $1;
+        if (exists $somatic{$sampCur}){  #only push tumor samples
+          push(@samples, $sampCur);
+        }
       }
     }
     print STDERR "samples are:\n";
@@ -91,58 +135,21 @@ close IN;
 
 
 print "gene";
-if ($cohort == 1) {
-  foreach my $sample (@rectum) {
-    print "\t$sample";
-  }
-  foreach my $sample (@ileum) {
-    print "\t$sample";
-  }
-  print "\trectum\tileum\n";
-} else {
-  foreach my $sample (@samples) {
-    print "\t$sample";
-  }
-  print "\n";
+foreach my $sample (@samples) {
+  print "\t$sample";
 }
+print "\n";
 
 foreach my $gene (keys %result) {
-   print "$gene";
-   my $il = 0;
-   my $rec = 0;
-   foreach my $sample (keys %{$result{$gene}}) {
-     if (exists($ileum{$sample})) {
-       $il++;
-     } elsif (exists($rectum{$sample})) {
-       $rec++ unless ($sample eq 'AC442'); #do not count AC442
-     }
-   }
-   if ($cohort == 1) {
-     foreach my $sample (@rectum) {
-       if ($result{$gene}{$sample} ne '') {
-          print "\t$result{$gene}{$sample}";
-       } else {
-          print "\t0";
-       }
-     }
-     foreach my $sample (@ileum) {
-       if ($result{$gene}{$sample} ne ''){
-          print "\t$result{$gene}{$sample}";
-        } else {
-          print "\t0";
-        }
-     }
-     print "\t$rec\t$il\n";
-   } else {
-     foreach my $sample (@samples) {
-       if ($result{$gene}{$sample} ne ''){
-          print "\t$result{$gene}{$sample}";
-       } else {
-          print "\t0";
-       }
-     }
-     print "\n";
-   }
+  print "$gene";
+  foreach my $sample (@samples) {
+    if ($result{$gene}{$sample} ne '') {
+      print "\t$result{$gene}{$sample}";
+    } else {
+      print "\t0";
+    }
+  }
+  print "\n";
 }
 
 sub grepGene {
