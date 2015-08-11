@@ -86,6 +86,8 @@ for (my $i = 0; $i <= $#name; $i++) {
      push(@samples, $1);
    }
 }
+print STDERR "samples are:\n";
+print STDERR Dumper (\@samples);
 
 
 print "gene";
