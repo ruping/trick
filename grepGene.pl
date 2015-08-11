@@ -36,7 +36,7 @@ while ( <IN> ) {
     @name = @cols;
     for (my $j = 0; $j <= $#cols; $j++){
       $colindex{$cols[$j]} = $j;
-      print STDERR "function column is indexed $j" if $cols[$j] eq 'function';
+      print STDERR "function column is indexed $j\n" if $cols[$j] eq 'function';
     }
     next;
   } else {
@@ -48,15 +48,19 @@ while ( <IN> ) {
         my $endsratio = 0;
         my $cmean = 0;
         my $cmedian = 0;
+        my $depth = $cols[$i+1];
 
         if ($cols[$i] =~ /\|/) { #split the var surrounding information
           my @infos = split(/\|/, $cols[$i]);
           $maf = $infos[0];
-          $endsratio = $infos[1];
-          ($cmean, $cmedian) = split(',', $infos[2]);
+          if ($#infos == 2){
+            $endsratio = $infos[1];
+            ($cmean, $cmedian) = split(',', $infos[2]);
+          } elsif ($infos == 1){    #TCGA raw calls
+            $depth = $infos[1];
+          }
         }
 
-        my $depth = $cols[$i+1];
         my $vard = sprintf("%.1f", $maf*$depth);
 
         if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #it looks good
