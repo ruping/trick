@@ -56,7 +56,7 @@ while ( <IN> ) {
           if ($#infos == 2){
             $endsratio = $infos[1];
             ($cmean, $cmedian) = split(',', $infos[2]);
-          } elsif ($infos == 1){    #TCGA raw calls
+          } elsif ($#infos == 1){    #TCGA raw calls
             $depth = $infos[1];
           }
         }
