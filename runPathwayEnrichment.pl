@@ -9,6 +9,7 @@ use FindBin qw($RealBin);
 
 my $file = shift;
 my $pathway = shift;
+my $Rbin = shift;
 my $path = dirname($file);
 my $bin = $RealBin;
 
@@ -18,7 +19,7 @@ RunCommand($cmd, 0, 0);
 $cmd = "cut -f 6,7,8 $file\.path >$path/ptmp";
 RunCommand($cmd, 0, 0);
 
-$cmd = "R CMD BATCH --no-save --no-restore "."\'--args path=\"$path\" file=\"$path\/ptmp\"' $bin/phyper.R $path/R\_html\.out";
+$cmd = "$Rbin CMD BATCH --no-save --no-restore "."\'--args path=\"$path\" file=\"$path\/ptmp\"' $bin/phyper.R $path/R\_html\.out";
 RunCommand($cmd, 0, 0);
 
 $cmd = "paste $file\.path $path/pvalues | sort -t \"\t\" -k 10,10 -g >$file\.path\.result";
