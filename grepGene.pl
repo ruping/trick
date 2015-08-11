@@ -1,4 +1,5 @@
 use strict;
+use Data::Dumper;
 
 my $file = shift;
 my $prefix = shift;
@@ -41,6 +42,7 @@ while ( <IN> ) {
     next;
   } else {
     my @genes = &grepGene($cols[$colindex{'function'}]);
+    print STDERR Dumper(\@genes);
     for (my $i = 0; $i <= $#cols; $i++) {
       if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)maf$/) {
         my $name = $1;
