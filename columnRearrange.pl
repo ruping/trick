@@ -79,7 +79,9 @@ while ( <IN> ) {
           if ($cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+/) {
             $cols[$i] .= 'maf';
             push(@order, $i);
-            push(@order, $i+1) if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+/);
+            if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+/){
+              push(@order, $i+1) if $cols[$i+1] =~ /^($prefixReg)[A-Za-z0-9\-\_]+d$/;      #depth info pushed
+            } 
           } else {
             push(@order, $i);
           }

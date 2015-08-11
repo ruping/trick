@@ -1,8 +1,14 @@
 use strict;
 
 my $file = shift;
+my $prefix = shift;
 my $type = shift;
 my $cohort = shift;
+
+my @prefix = split(',', $prefix);
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
+
 
 #these are samples from RECTAL-NETS##############################
 my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
@@ -19,28 +25,49 @@ foreach my $rec (@rectum) {
 
 open IN, "$file";
 my @name;
+my %colindex;
 my %result;
 my @samples;
 
 while ( <IN> ) {
   chomp;
-  #next if ($_ =~ /^[\@\#]/);
   my @cols = split /\t/;
   if ($_ =~ /^[\#]?chr\t/) {
     @name = @cols;
+    for (my $j = 0; $j <= $#cols; $j++){
+      $colindex{$cols[$j]} = $j;
+    }
     next;
   } else {
-    my @genes = &grepGene($_);
+    my @genes = &grepGene($cols[$colindex{'function'}]);
     for (my $i = 0; $i <= $#cols; $i++) {
-      if ($name[$i] =~ /(AC\d+)maf/) {
+      if ($name[$i] =~ /^($prefixReg[A-Za-z0-9\-\_]+)$/) {
         my $name = $1;
-        if ($cols[$i] >= 0.1) {
-          foreach my $gene (@genes) {
-            if ($gene ne ''){
-              $result{$gene}{$name}++;
-            }                   #gene ne ''
-          }                     #foreach
-        }                       #found in this sample
+        $name =~ s/maf$//;
+        my $maf = $cols[$i];
+        my $endsratio = 0;
+        my $cmean = 0;
+        my $cmedian = 0;
+
+        if ($cols[$i] =~ /\|/) { #split the var surrounding information
+          my @infos = split(/\|/, $cols[$i]);
+          $maf = $infos[0];
+          $endsratio = $infos[1];
+          ($cmean, $cmedian) = split(',', $infos[2]);
+        }
+
+        my $depth = $cols[$i+1];
+        my $vard = sprintf("%.1f", $maf*$depth);
+
+        if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #it looks good
+          if ($maf >= 0.05 and $vard >= 2) {
+            foreach my $gene (@genes) {
+              if ($gene ne '') {
+                $result{$gene}{$name}++;
+              }                 #gene ne ''
+            }                   #foreach
+          }                     #found in this sample
+        }                       #it looks good
       }                         #it is maf
     }                           #iterator
   }                             #else
@@ -54,14 +81,14 @@ for (my $i = 0; $i <= $#name; $i++){
 
 
 print "gene";
-if ($cohort == 1){
- foreach my $sample (@rectum) {
-   print "\t$sample";
- }
- foreach my $sample (@ileum) {
-   print "\t$sample";
- }
- print "\trectum\tileum\n";
+if ($cohort == 1) {
+  foreach my $sample (@rectum) {
+    print "\t$sample";
+  }
+  foreach my $sample (@ileum) {
+    print "\t$sample";
+  }
+  print "\trectum\tileum\n";
 } else {
   foreach my $sample (@samples) {
     print "\t$sample";
