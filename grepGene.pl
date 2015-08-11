@@ -65,6 +65,8 @@ while ( <IN> ) {
 
         my $vard = sprintf("%.1f", $maf*$depth);
 
+        print STDERR "$name\t$maf\t$vard\n";
+
         if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #it looks good
           if ($maf >= 0.05 and $vard >= 2) {
             foreach my $gene (@genes) {
