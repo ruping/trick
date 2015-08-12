@@ -76,7 +76,7 @@ while ( <IN> ) {
   my @cols = split /\t/;
   if ($_ =~ /^[\#]?chr\t/) {    #header line
     @name = @cols;
-    for (my $j = 0; $j <= $#cols; $j++){
+    for (my $j = 0; $j <= $#cols; $j++) {
       $colindex{$cols[$j]} = $j;
       print STDERR "function column is indexed $j\n" if $cols[$j] eq 'function';
     }
@@ -142,18 +142,20 @@ print "gene";
 foreach my $sample (@samples) {
   print "\t$sample";
 }
-print "\n";
+print "sum\n";
 
 foreach my $gene (keys %result) {
   print "$gene";
+  my $sum;
   foreach my $sample (@samples) {
     if ($result{$gene}{$sample} ne '') {
+      $sum += $result{$gene}{$sample};
       print "\t$result{$gene}{$sample}";
     } else {
       print "\t0";
     }
   }
-  print "\n";
+  print "$sum\n";
 }
 
 sub grepGene {
