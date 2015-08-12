@@ -8,11 +8,11 @@ my $prefix;
 my $sampleInfo;    #sample information
 
 GetOptions (
-            "file|f=s"       => \$file,     #filename
-            "type|t=s"       => \$type,     #types of variations: coding,exonic,intronic,splicing,UTR,upstream,downstream,intergenic
-            "prefix|p=s"     => \$prefix,
+            "file|f=s"           => \$file,     #filename
+            "type|t=s"           => \$type,     #types of variations: coding,exonic,intronic,splicing,UTR,upstream,downstream,intergenic
+            "prefix|p=s"         => \$prefix,
             "sampleInfo|s=s"     => \$sampleInfo,   #sampleInfo
-            "help|h"         => sub{
+            "help|h"             => sub{
               print "usage: $0 grep genes to generate mutation table for different types\n\nOptions:\n\t--file\t\tthe filename of mutation table output by pipeline\n";
               print "\t--type\t\tthe type of variants, coding,exonic,intronic,splicing,UTR,upstream,downstream,intergenic\n";
               print "\t--prefix\tthe prefix of samples' names, comma separated\n";
@@ -35,7 +35,7 @@ my %germline;  #may have multiple tumors
 if ($sampleInfo and -s "$sampleInfo") {
 
   open IN, "$sampleInfo";
-  while ( <IN> ){
+  while ( <IN> ) {
     chomp;
     s/[\s\n]$//;
     my @columns = split /\t/;
@@ -74,7 +74,7 @@ my @samples;
 while ( <IN> ) {
   chomp;
   my @cols = split /\t/;
-  if ($_ =~ /^[\#]?chr\t/) {
+  if ($_ =~ /^[\#]?chr\t/) {    #header line
     @name = @cols;
     for (my $j = 0; $j <= $#cols; $j++){
       $colindex{$cols[$j]} = $j;
@@ -91,7 +91,10 @@ while ( <IN> ) {
     print STDERR "samples are:\n";
     print STDERR Dumper (\@samples);
     next;
-  } else {
+  } else {                      #data lines
+    if ($type =~ /somatic/) {
+      next if ($cols[$colindex{'somatic'}] eq 'NA');
+    }
     my @genes = &grepGene($cols[$colindex{'function'}]);
     #print STDERR Dumper(\@genes);
     for (my $i = 0; $i <= $#cols; $i++) {
