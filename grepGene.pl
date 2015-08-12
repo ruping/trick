@@ -142,7 +142,7 @@ print "gene";
 foreach my $sample (@samples) {
   print "\t$sample";
 }
-print "sum\n";
+print "\tsum\n";
 
 foreach my $gene (keys %result) {
   print "$gene";
@@ -155,7 +155,7 @@ foreach my $gene (keys %result) {
       print "\t0";
     }
   }
-  print "$sum\n";
+  print "\t$sum\n";
 }
 
 sub grepGene {
