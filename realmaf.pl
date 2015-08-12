@@ -205,7 +205,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
                 $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
               } else {  #it is tumor
                 my $endratio = sprintf("%.4f", $vends/$vard);
-                if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) {  #limiting endsratio and mismatch stuff
+                if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean+$cmedian) < 6 or $cmedian <= 2)) {  #limiting endsratio and mismatch stuff
                   $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
                 } else {  #looks like artifact
@@ -226,7 +226,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
             } else { #it is tumor
               my $endratio = sprintf("%.4f", $vends/$vard);
-              if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean < 3 and $cmedian <= 3) or ($cmean <= 3 and $cmedian < 3))) { #limiting endsratio and mismatch stuff
+              if (($endratio <= 0.8 or ($vard - $vends) >= 2) and (($cmean+$cmedian) < 6 or $cmedian <= 2)) { #limiting endsratio and mismatch stuff
                 $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);
                 $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian;
               } else {          #looks like artifact
