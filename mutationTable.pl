@@ -152,7 +152,7 @@ sub splitFunction {
   if ($func =~ /AAChange=([^\;]+)/){
     $func{'AAChange'} = $1;
   }
-  if ($func =~ /cytoBand=(.+?)$/){
+  if ($func =~ /(cytoBand=.+?)$/){
     $func{'rest'} = $1;
   }
   return(\%func);
