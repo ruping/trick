@@ -101,7 +101,7 @@ for (1..$times) {  #randomization 5000 times
   print STDERR "$outdir/rgenelist is generated.\n";
 
   #do enrichment analysis
-  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist $pathdb";
+  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist $pathdb Rme";
   RunCommand($cmd, 0 , 0);
 
   #save it into memory
