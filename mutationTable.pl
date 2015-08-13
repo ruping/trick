@@ -87,6 +87,7 @@ while ( <IN> ) {
         $chr = $cols[$i];
         $print = $chr;
         push (@printcols, $print);
+        $chr =~ s/^chr//;
 
       } elsif ($colnames[$i] eq 'pos') {
         $pos = $cols[$i];
