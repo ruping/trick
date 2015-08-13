@@ -16,7 +16,7 @@ my $Rbin = shift;
 my $nonexonic = shift;
 
 if ($vcf eq '' or $vcf =~ /\-h(elp)?$/){
-  print STDERR "arguments: rareVardbSNP  pathres  outdir  times  pathdb  <nonexonic>\n";
+  print STDERR "arguments: rareVardbSNP  pathres  outdir  times  pathdb  Rbin <nonexonic>\n";
   exit 22;
 }
 
