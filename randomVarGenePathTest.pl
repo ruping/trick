@@ -12,6 +12,7 @@ my $pathres = shift;
 my $outdir = shift;
 my $times = shift;
 my $pathdb = shift;
+my $Rbin = shift;
 my $nonexonic = shift;
 
 if ($vcf eq '' or $vcf =~ /\-h(elp)?$/){
@@ -101,7 +102,7 @@ for (1..$times) {  #randomization 5000 times
   print STDERR "$outdir/rgenelist is generated.\n";
 
   #do enrichment analysis
-  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist $pathdb Rme";
+  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/rgenelist $pathdb $Rbin";
   RunCommand($cmd, 0 , 0);
 
   #save it into memory
