@@ -33,6 +33,10 @@ GetOptions (
            );
 
 
+my @prefix = split(',', $prefix);
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
+
 my @type1 = qw(AC2maf AC3maf AC4maf AC53maf AC54maf AC55maf AC56maf AC57maf AC565maf AC566maf AC567maf) if ($task eq 'arj');
 my %type1;
 foreach my $sample (@type1){
@@ -56,14 +60,13 @@ while ( <IN> ) {
       } elsif ($colnames[$c] eq 'id'){
         print "\tlink\tid";
       } elsif ($colnames[$c] =~ /function/){
-        print "\tgeneName\tgeneLoc\tfunctionalClass\tAAChange";
+        print "\tgeneName\tgeneLoc\tfunctionalClass\tAAChange\totherFunction";
       } elsif ($colnames[$c] eq 'clinical'){
         print "\tpopFreq\tClinChanel\tClinAllele\tClinVariantDisease";
       } else {
         print "\t$colnames[$c]";
       }
     }
-    #print "\tcloneType\n" if ($task eq 'arj');
     print "\n";
   } else {
     my @cols = split /\t/;
@@ -97,7 +100,7 @@ while ( <IN> ) {
 
       } elsif ($colnames[$i] =~ /function/) { #now it is function, gene names need to be extracted
         my $functions = &splitFunction($cols[$i]);
-        $print = "$functions->{'geneName'}\t$functions->{'loc'}\t$functions->{'functionClass'}\t$functions->{'AAChange'}";
+        $print = "$functions->{'geneName'}\t$functions->{'loc'}\t$functions->{'functionClass'}\t$functions->{'AAChange'}\t$functions->{'rest'}";
         push (@printcols, $print);
 
       } elsif ($colnames[$i] eq 'clinical') {
@@ -111,39 +114,14 @@ while ( <IN> ) {
           $onoff = 0;
         }
 
-      } elsif ( $colnames[$i] =~ /$prefix\d+maf/ ) {
+      } elsif ( $colnames[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf$/ ) {
         $print = $cols[$i];
         push (@printcols, $print);
-      }
-
-      #elsif ( $colnames[$i] =~ /^AC\d+d$/ ) {
-      #  if ( $colnames[$i] eq 'AC565d' and $cols[$i] >= 5 ) {
-      #    $primary += 0.5;
-      #  }
-      #  $print = $cols[$i];
-      #  push (@printcols, $print);
-      #
-      #}
-
-      else {
+      } else {
         $print = $cols[$i];
         push (@printcols, $print);
       }
     }
-    #if (($nt1 >= 1 and $nt1nz >= 5) and ($nt2 > 0 and $nt2nz > 1)) {
-    #  $cloneType .= '.both'
-    #} elsif (($nt1 <= 1 and $nt1nz < 3) and ($nt2 > 0 and $nt2nz > 1)){
-    #  $cloneType .= '.type2';
-    #} elsif (($nt2 == 0 and $nt2nz == 0) and $nt1 >= 2){
-    #  $cloneType .= '.type1';
-    #}
-    #if ($primary == 1){
-    #  $cloneType .= '.metastasis';
-    #}
-    #if ($task eq 'arj'){
-    #  $print = $cloneType;
-    #  push (@printcols, $print);
-    #}
 
     if ($onoff == 1){
       printf("%s\n", join("\t",@printcols));
@@ -173,6 +151,9 @@ sub splitFunction {
   }
   if ($func =~ /AAChange=([^\;]+)/){
     $func{'AAChange'} = $1;
+  }
+  if ($func =~ /cytoBand=(.+?)$/){
+    $func{'rest'} = $1;
   }
   return(\%func);
 }
