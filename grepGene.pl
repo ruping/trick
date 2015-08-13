@@ -144,12 +144,17 @@ foreach my $sample (@samples) {
 }
 print "\tsum\n";
 
+my %sampRed;   #sample redundancy
 foreach my $gene (keys %result) {
   print "$gene";
   my $sum;
   foreach my $sample (@samples) {
+    my $individual = $somatic{$sample};
     if ($result{$gene}{$sample} ne '') {
-      $sum += $result{$gene}{$sample};
+      if (!exists($sampRed{$individual})) {
+         $sum += 1;
+         $sampRed{$individual} = '';
+      }
       print "\t$result{$gene}{$sample}";
     } else {
       print "\t0";
