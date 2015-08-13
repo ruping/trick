@@ -144,8 +144,8 @@ foreach my $sample (@samples) {
 }
 print "\tsum\n";
 
-my %sampRed;   #sample redundancy
 foreach my $gene (keys %result) {
+  my %sampRed;   #sample redundancy
   print "$gene";
   my $sum;
   foreach my $sample (@samples) {
