@@ -7,19 +7,24 @@ use FindBin qw($RealBin);
 
 my $bin = $RealBin;
 
-my $vcf = shift;
+my $vcf = shift;       #this is the dbSNP rare variant database
 my $pathres = shift;
 my $outdir = shift;
 my $times = shift;
 my $pathdb = shift;
 my $nonexonic = shift;
 
+if ($vcf eq '' or $vcf =~ /\-h(elp)?$/){
+  print STDERR "arguments: rareVardbSNP  pathres  outdir  times  pathdb  <nonexonic>\n";
+  exit 22;
+}
+
 open IN, "$vcf";
 my $i = 1;
 my %vcf;
 while ( <IN> ) {
   chomp;
-  if (/^#/){
+  if (/^#/) {
     next;
   } else {
     if ($nonexonic eq '') {
