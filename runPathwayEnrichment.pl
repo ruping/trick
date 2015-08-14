@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use Getopt::Long;
 use Data::Dumper;
@@ -10,6 +10,12 @@ use FindBin qw($RealBin);
 my $file = shift;
 my $pathway = shift;
 my $Rbin = shift;
+
+if ( $file eq '' or $file =~ /\-h(elp)?$/ ) {
+  print STDERR "arguments in order: geneList pathwaydatabase Rbin\n";
+  exit 22;
+}
+
 my $path = dirname($file);
 my $bin = $RealBin;
 
