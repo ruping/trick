@@ -78,8 +78,18 @@ $type2int{'snv&somatic'} = 3;
 $type2int{'indel'} = 4;
 $type2int{'indel&somatic'} = 5;
 $type2int{'fusion'} = 6;
-$type2int{'cnva'} = 1;
-$type2int{'cnvd'} = -1;
+$type2int{'cnva'} = '+';
+$type2int{'cnvd'} = '-';
+$type2int{'hypermethy'} = 7;
+my %int2type;
+$int2type{2} = 'snv';
+$int2type{3} = 'snv&somatic';
+$int2type{4} = 'indel';
+$int2type{5} = 'indel&somatic';
+$int2type{6} = 'fusion';
+$int2type{'+'} = 'cnva';
+$int2type{'-'} = 'cnvd';
+$int2type{7} = 'hypermethy';
 
 my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
 my %ileum;
@@ -95,21 +105,27 @@ foreach my $rec (@rectum) {
 my %result;
 foreach my $file (@files) {
   my $type;
-  if ($file =~ /snv/){
-    $type = 'snv';
-    if ($file =~ /somatic/){
-      $type .= '&somatic';
+  if ($file =~ /merged/) {  #it is an already merged table
+    $type = 'merged';
+  } else {
+    if ($file =~ /snv/) {
+      $type = 'snv';
+      if ($file =~ /somatic/) {
+        $type .= '&somatic';
+      }
+    } elsif ($file =~ /indel/) {
+      $type = 'indel';
+      if ($file =~ /somatic/) {
+        $type .= '&somatic';
+      }
+    } elsif ($file =~ /fusion/) {
+      $type = 'fusion';
+    } elsif ($file =~ /copynumber/) {
+      $type = 'cnv';
+    } elsif ($file =~ /methy/) {
+      $type = 'methy';
     }
-  } elsif ($file =~ /indel/){
-    $type = 'indel';
-    if ($file =~ /somatic/){
-      $type .= '&somatic';
-    }
-  } elsif ($file =~ /fusion/){
-    $type = 'fusion';
-  } elsif ($file =~ /copynumber/){
-    $type = 'cnv';
-  }
+  } #indiviual type
 
   open IN, "$file";
   my @name;
@@ -128,16 +144,38 @@ foreach my $file (@files) {
         }
         if ($name[$i] =~ /(AC\d+)/) {
           my $sample = $1;
+          my $typenow = $type;
+
+          #already merged ones######################################
+          if ( $type eq 'merged' ){  #already merged table processing
+            $cols[$i] =~ s/23/3/;
+            while ($cols[$i] =~ /([\+\-]?\d)/g) {
+              if ($1 != 0){
+                $typenow = $int2type{$1};
+                #print STDERR "$typenow\n";
+                $result{$gene}{$sample}{$typenow} = 1;
+              }
+            }
+            next; #jump out for merged table
+          }
+          #already merged ones######################################
+
           if ($type eq 'cnv') {
             if ($cols[$i] eq 'NA') {
               #do nothing
             } elsif ($cols[$i] > 1) {
-              $type = $type.'a';
+              $typenow = $type.'a';
             } elsif ($cols[$i] <= 1) {
-              $type = $type.'d';
+              $typenow = $type.'d';
+            }
+          } elsif ($type eq 'methy') {
+            if ($cols[$i] eq 'NA') {
+              #do nothing
+            } elsif ($cols[$i] >= 0.65) {
+              $typenow = 'hypermethy';
             }
           }
-          $result{$gene}{$sample}{$type} = $cols[$i];
+          $result{$gene}{$sample}{$typenow} = $cols[$i];
         }                         #it is sample
       }                           #iterator
     }                             #else
@@ -166,9 +204,11 @@ foreach my $gene (keys %result) {
     my $vars;
     foreach my $type (sort {my $ta = $type2int{$a}; my $tb = $type2int{$b}; $ta <=> $tb} keys %{$result{$gene}{$sample}}) {
       if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA') {
-         $changed = 1;
          #$vars .= $type.","
          $vars .= $type2int{$type};
+         if ($vars ne ''){
+           $changed = 1;
+         }
          $sumRec{$type2int{$type}} = '';
       }
     }
@@ -183,9 +223,11 @@ foreach my $gene (keys %result) {
     my $vars;
     foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $a <=> $b} keys %{$result{$gene}{$sample}}) {
       if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA'){
-         $changed = 1;
          #$vars .= $type.","
          $vars .= $type2int{$type};
+         if ($vars ne ''){
+           $changed = 1;
+         }
          $sumIle{$type2int{$type}} = '';
       }
     }

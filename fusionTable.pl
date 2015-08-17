@@ -25,7 +25,7 @@ while ( <IN> ) {
   next if /^dna\t/;
   my ($dna, $rna, $avail) = split /\t/;
   if ($avail eq 'Y') {
-    if (exists ($arj{$rna})){
+    if (exists ($arj{$rna})) {
       $rna2dna{$rna} = 'AC3';
     } else {
       $rna2dna{$rna} = $dna;
