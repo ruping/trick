@@ -312,6 +312,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   my $chrom = $1;
   my $position = $2;
   my $pmaf = 0;
+  my $pfreq = 0;
   my $aqual = 0;
   foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
     print "$chrom\t$position\t$info";
@@ -325,6 +326,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
       }
     } elsif ($task =~ /tcga/i) {
       my $totalSamps = 0;
+      my $totalQualSamps = 0;
       my $totalMafs = 0;
       my $totalQuals = 0;
       foreach my $name (sort {$a =~ /TCGA\-([A-Z0-9]+)\-([A-Z0-9]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples) {
@@ -333,6 +335,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
            my ($maf, $qual) = split(/\|/, $somatic{$coor}{$name});
            $totalMafs += $maf if ($maf > 0);
            $totalQuals += $qual if ($qual > 0);
+           $totalQualSamps += 1 if ($qual > 0);
            next;
         }
         if ($somatic{$coor}{$name} ne '') {
@@ -341,8 +344,9 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
           print "\t0";
         }
       }
-      $pmaf = sprintf("%.6f", $totalMafs/$totalSamps);
-      $aqual = sprintf("%.1f", $totalQuals/$totalSamps);
+      $pmaf = sprintf("%g", $totalMafs/$totalSamps);
+      $pfreq = $totalQualSamps.'/'.$totalSamps;
+      $aqual = sprintf("%.1f", $totalQuals/$totalQualSamps);
     } #tcga
     my $function = $somatic{$coor}{'info'}{$info};
     my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};       #temporarily silence somatic and germline info
@@ -350,7 +354,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
     my $trace = 'somatic='.$somatic.';germline='.$germline;
 
     if ($task =~ /refpanel/) {
-      $function .= 'pmaf='.$pmaf;
+      $function .= 'pmaf='.$pmaf.';pfreq='.$pfreq;
       print "\t$aqual\tPASS\t$function\n";
       next;
     }
