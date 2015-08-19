@@ -249,7 +249,7 @@ foreach my $file (@list) {
 
      # generate reference panel for her2 brca
      if ($task =~ /refpanel/) {
-       next if ($qual ne 'PASS');
+       next if ($pass ne 'PASS');
        next if ($info =~ /SOMATIC/);
        next if ($info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/);  #skip known ones
      }
