@@ -246,15 +246,25 @@ foreach my $file (@list) {
         }
      }
 
+
+     # generate reference panel for her2 brca
+     if ($task =~ /refpanel/) {
+       next if ($qual ne 'PASS');
+       next if ($info =~ /SOMATIC/);
+       next if ($info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/);  #skip known ones
+     }
+     # generate reference panel for her2 brca
+
+
      $somatic{$coor}{$name} = $maf.'|'.$qual;
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
 
-     if ($nonsegdup){
+     if ($nonsegdup) {
        next if $function =~ /segdup\.score/;
      }
-     if ($exonic){
+     if ($exonic) {
        next if ($function !~ /exonic/ and $function !~ /UTR[35]/ and $function !~ /splicing/);
      }
 
@@ -276,6 +286,11 @@ foreach my $file (@list) {
 }
 
 #######------------------print header-----------------------#####
+if ($task =~ /refpanel/){
+  print "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n";
+  goto CONTENT;
+}
+
 print "#chr\tpos\tid\tref\talt";
 if ($prefixReg ne ''){
   foreach my $name (sort {$a =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
@@ -290,11 +305,14 @@ print "\tfunction\ttrace";
 print "\n";
 #################################################################
 
+COTTENT:
 
 foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /^(\w+):(\d+)$/; my $cb = $1; my $pb = $2; $ca cmp $cb || $pa <=> $pb} keys %somatic) {
   $coor =~ /^(\w+):(\d+)$/;
   my $chrom = $1;
   my $position = $2;
+  my $pmaf = 0;
+  my $aqual = 0;
   foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
     print "$chrom\t$position\t$info";
     if ($prefixReg ne '') {
@@ -306,18 +324,36 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
         }
       }
     } elsif ($task =~ /tcga/i) {
+      my $totalSamps = 0;
+      my $totalMafs = 0;
+      my $totalQuals = 0;
       foreach my $name (sort {$a =~ /TCGA\-([A-Z0-9]+)\-([A-Z0-9]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples) {
+        $totalSamps += 1;
+        if ($task =~ /refpanel/) {
+           my ($maf, $qual) = split(/\|/, $somatic{$coor}{$name});
+           $totalMafs += $maf if ($maf > 0);
+           $totalQuals += $qual if ($qual > 0);
+           next;
+        }
         if ($somatic{$coor}{$name} ne '') {
           print "\t$somatic{$coor}{$name}";
         } else {
           print "\t0";
         }
       }
-    }
+      $pmaf = sprintf("%.6f", $totalMafs/$totalSamps);
+      $aqual = sprintf("%.1f", $totalQuals/$totalSamps);
+    } #tcga
     my $function = $somatic{$coor}{'info'}{$info};
     my $somatic = ($somatic{$coor}{'somatic'} eq '')? 0 : $somatic{$coor}{'somatic'};       #temporarily silence somatic and germline info
     my $germline = ($somatic{$coor}{'germline'} eq '')? 0 : $somatic{$coor}{'germline'};    #temporarily silence somatic and germline info
     my $trace = 'somatic='.$somatic.';germline='.$germline;
+
+    if ($task =~ /refpanel/) {
+      $function .= 'pmaf='.$pmaf;
+      print "\t$aqual\tPASS\t$function\n";
+      next;
+    }
     print "\t$function\t$trace";
     print "\n";
   } #for each different variant in this coordinate
