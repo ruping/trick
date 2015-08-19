@@ -251,6 +251,7 @@ foreach my $file (@list) {
      if ($task =~ /refpanel/) {
        next if ($pass ne 'PASS');
        next if ($info =~ /SOMATIC/);
+       next if (($info !~ /exonic/ and $info !~ /function\=UTR/ and $info !~ /splicing/) and $qual < 80);   #skip non exonic ones
        next if ($info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/);  #skip known ones
      }
      # generate reference panel for her2 brca
