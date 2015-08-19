@@ -305,7 +305,7 @@ print "\tfunction\ttrace";
 print "\n";
 #################################################################
 
-COTTENT:
+CONTENT:
 
 foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /^(\w+):(\d+)$/; my $cb = $1; my $pb = $2; $ca cmp $cb || $pa <=> $pb} keys %somatic) {
   $coor =~ /^(\w+):(\d+)$/;
