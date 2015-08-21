@@ -140,7 +140,7 @@ foreach my $file (@list) {
 
      ###########################################################################decide somatic
      my $somatic = 0;
-     if ($singlecalling eq 'no'){      # if it is paired calling
+     if ($singlecalling eq 'no') {      # if it is paired calling
        if ($type eq 'snv') {    #for snp
          my @blood = split(/\:/,$blood);
          if ($blood[$formindex{'GT'}] !~ /1/) {
@@ -258,6 +258,11 @@ foreach my $file (@list) {
      }
      # generate reference panel for her2 brca
 
+     #for titan purpose
+     if ($task =~ /titan/) {
+       next if ($maf < 0.3 or $maf > 0.65);  #retain only heterozygous one
+     }
+     #for titan purpose
 
      $somatic{$coor}{$name} = $maf.'|'.$qual;
      my $function;
