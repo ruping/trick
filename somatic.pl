@@ -115,6 +115,10 @@ foreach my $file (@list) {
 
      next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
 
+     if ($task =~ /titan/) {    #for titan, pick good ones
+       next if ($qual ne '.' and $qual < 80);
+     }
+
      if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
         $sample = $blood;
