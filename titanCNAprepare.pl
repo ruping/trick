@@ -1,31 +1,40 @@
 use strict;
+use Data::Dumper;
+use File::Glob ':glob';
+use File::Basename;
+
 
 my $data = shift;
-my $split = shift;
+my $somaticInfo = shift;
+my $split = 1;
 
-my $outdir = "./titan/";
+my %somatic;
+my %germline;  #may have multiple tumors
+if ($somaticInfo ne '' and -s "$somaticInfo") {
 
-unless ($split == 1) {
-  open IN, "$data";
-  while ( <IN> ) {
+  open IN, "$somaticInfo";
+  while ( <IN> ){
     chomp;
-    if (/^#/) {
-      print "$_\n";
-      next;
-    }
-    my ($chr, $pos, $id, $ref, $alt, $bloodmaf, $bloodd, $cmeanav, $cmedianav) = split /\t/;
-    my $vard = &round($bloodmaf*$bloodd);
-    next if ($cmeanav >= 3 and $cmedianav >= 3);
-    if ($bloodd >= 7 and $bloodmaf >= 0.25 and $bloodmaf <= 0.75) {
-      print "$_\n";
-    }
+    s/[\s\n]$//;
+    my @columns = split /\t/;
+    my $tumor = $columns[0];
+    my $normal = $columns[1];
+
+    $somatic{$tumor} = $normal;
+    push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
   }
   close IN;
+  #print STDERR Dumper (\%somatic);
+  #print STDERR Dumper (\%germline);
 }
 
 
+my $outdir = "./titan/";
+
 if ($split == 1) {
+
   my %colnames;
+  my %colindex;
   my %fhs;
   open IN, "$data";
   while (<IN>) {
@@ -35,31 +44,71 @@ if ($split == 1) {
       $_ =~ s/^\#//;
       for (my $i = 0; $i <= $#cols; $i++) {
         $colnames{$i} = $cols[$i];
+        $colindex{$cols[$i]} = $i;
       }
       next;
     } else {
+      my $chr = $cols[$colindex{'chr'}];
+      my $pos = $cols[$colindex{'pos'}];
+      my $ref = $cols[$colindex{'ref'}];
+      my $alt = $cols[$colindex{'alt'}];
       for (my $i = 0; $i <= $#cols; $i++) {
-        if ($colnames{$i} =~ /^(.+?)maf$/){  #now it is maf
+        if ($colnames{$i} =~ /^(.+?)maf$/){  #now it is sample maf
+
           my $sample = $1;
-          my $fh = $sample;
-          unless (-e "$outdir/$sample\_titan") {
-            open ( my $fh, ">>", "$outdir/$sample\_titan" )  || die $!;
-            $fhs{$sample} = $fh;
-            #open $sample, ">>$outdir/$sample\_titan";
-          }
-          my $refCount = 0;
-          my $NrefCount = 0;
-          $refCount = round($cols[$i]*$cols[$i+1]);
-          $NrefCount = $cols[$i+1] - $refCount;
-          if (($refCount +$NrefCount) >= 3) {
-            print {$fhs{$sample}} "$cols[0]\t$cols[1]\t$cols[3]\t$refCount\t$cols[4]\t$NrefCount\n";
-          }
+
+          if (exists($germline{$sample})) {  #it is a blood
+            my $calledBlood = $cols[$i-1];
+            if ($calledBlood =~ /\|/){   #originally called
+              if ($cols[$i] =~ /\|/) { #split the var surrounding information
+                my @infos = split(/\|/, $cols[$i]);
+                my $bmaf = $infos[0];
+                my $bendsratio = $infos[1];
+                my ($bcmean, $bcmedian) = split(',', $infos[2]);
+                if ($bendsratio <= 0.9 and (($bcmean+$bcmedian) < 5.5 or $bcmedian <= 2)) { #likely true event
+
+                  foreach my $tumorSamp (@{$germline{$sample}}) {   ##now should start checking for each tumor samples
+
+                    my $indexts = $colindex{$tumorSamp.'maf'};
+                    if ($cols[$indexts] =~ /\|/) { #split the var surrounding information
+                      my @tsinfo = split(/\|/, $cols[$indexts]);
+                      my $tsmaf = $tsinfo[0];
+                      my $tsendsratio = $tsinfo[1];
+                      my ($tscmean, $tscmedian) = split(',', $tsinfo[2]);
+                      my $tsd = $cols[$indexts+1];
+                      if ($tsendsratio <= 0.9 and (($tscmean+$tscmedian) < 5.5 or $tscmedian <= 2)) {  #likely true event, start printing
+                        my $fh = $tumorSamp;
+                        unless (-e "$outdir/$tumorSamp\_titan") {
+                          open ( $fh, ">>", "$outdir/$tumorSamp\_titan" )  || die $!;
+                          $fhs{$tumorSamp} = $fh;
+                          print {$fhs{$tumorSamp}} "chr\tpos\tref\trefCount\talt\taltCount\n";
+                        }
+                        my $NrefCount = 0;
+                        my $refCount = 0;
+                        $NrefCount = round($tsmaf*$tsd);
+                        $refCount = $tsd - $NrefCount;
+                        if (($refCount + $NrefCount) >= 5) {
+                          print {$fhs{$tumorSamp}} "$chr\t$pos\t$ref\t$refCount\t$alt\t$NrefCount\n";
+                        }
+                      } #true event print
+                    } #split tumor info
+                  }  ##now should start checking for each tumor samples
+
+                } #true blood event
+              } #split blood recheck info
+            } #originally called
+          } #blood
+
         } #maf
       } #each col
     } #each non header
   } #each line
   close IN;
+
 } #split samples
+
+
+
 
 
 sub round {
