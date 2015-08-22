@@ -79,7 +79,7 @@ if ($split == 1) {
                       if ($tsendsratio <= 0.9 and (($tscmean+$tscmedian) < 5.5 or $tscmedian <= 2)) {  #likely true event, start printing
                         my $fh = $tumorSamp;
                         unless (-e "$outdir/$tumorSamp\_titan") {
-                          open (my $fh, ">>", "$outdir/$tumorSamp\_titan" )  || die $!;
+                          open ( my $fh, ">>", "$outdir/$tumorSamp\_titan" )  || die $!;
                           $fhs{$tumorSamp} = $fh;
                           print {$fhs{$tumorSamp}} "chr\tpos\tref\trefCount\talt\taltCount\n";
                         }
