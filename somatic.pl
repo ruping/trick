@@ -71,7 +71,7 @@ my %samples;
 foreach my $file (@list) {
   my $name;
   my $filebase = basename($file);
-  if ($prefixReg ne '' and $filebase =~ /(($prefixReg)[a-zA-Z0-9\-\_]+)[^a-zA-Z0-9\-\_]/) {     #changed to adapt to lowGI data
+  if ($prefixReg ne '' and $filebase =~ /(($prefixReg)([a-zA-Z0-9\-\_]+)?)[^a-zA-Z0-9\-\_]/) {     #changed to adapt to lowGI data
     $name = $1;
   }
   elsif ($task =~ /tcga/i) {
@@ -95,6 +95,18 @@ foreach my $file (@list) {
   my $singlecalling = "no";
   while ( <IN> ) {
      chomp;
+
+     if ($task =~ /mutect/) {  #gathering information for mutect calls "nopara.txt"
+       my ($chr, $pos, $ref, $alt, $normal_reads, $tumor_reads, $normal_varfrac, $tumor_varfrac, $tumor_nonadj_varfrac, $purity) = split /\t/;
+       my $coor = $chr.':'.$pos;
+       my $id = '.';
+       $somatic{$coor}{$name} = $tumor_varfrac.'|'.$tumor_reads;
+       my $idrefalt = join("\t", ($id,$ref,$alt));
+       $somatic{$coor}{'info'}{$idrefalt} = 'unknown';  #not necessarily just one!
+       $somatic{$coor}{'somatic'} .= $name.',';
+       next;
+     }
+
      if ($_ =~ /^#/) {
        if ($_ =~ /^#CHROM\tPOS\tID/) {   #the common three column header in vcf file
          my @cols = split /\t/;
@@ -305,7 +317,7 @@ if ($task =~ /refpanel/){
 
 print "#chr\tpos\tid\tref\talt";
 if ($prefixReg ne ''){
-  foreach my $name (sort {$a =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+  foreach my $name (sort {$a =~ /($prefixReg)(\d+)?([a-zA-Z0-9\-\_]+)?/; my $pa = $1; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)?([a-zA-Z0-9\-\_]+)?/; my $pb = $1; my $ib = $2; my $ibs = $3; $pa cmp $pb or $ia <=> $ib or $ias cmp $ibs} keys %samples) {
     print "\t$name";
   }
 } elsif ($task =~ /tcga/i) {
@@ -329,7 +341,7 @@ foreach my $coor (sort {$a =~ /^(\w+):(\d+)$/; my $ca = $1; my $pa = $2; $b =~ /
   foreach my $info (keys (%{$somatic{$coor}{'info'}})) {
     print "$chrom\t$position\t$info";
     if ($prefixReg ne '') {
-      foreach my $name (sort {$a =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([a-zA-Z0-9\-\_]+)?/; my $ib = $2; my $ibs = $3; $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)?([a-zA-Z0-9\-\_]+)?/; my $pa = $1; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)?([a-zA-Z0-9\-\_]+)?/; my $pb = $1; my $ib = $2; my $ibs = $3; $pa cmp $pb or $ia <=> $ib or $ias cmp $ibs} keys %samples) {
         if ($somatic{$coor}{$name} ne '') {
           print "\t$somatic{$coor}{$name}";
         } else {
