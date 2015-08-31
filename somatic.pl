@@ -10,6 +10,7 @@ my $list;   #filename of all vcfs
 my $type;
 my $normal;
 my $task;
+my $qualfilter;
 my $prefix;
 my $dbsnp = "no";
 my $tmpdir = "./";
@@ -26,6 +27,7 @@ GetOptions (
             "normal|n=s"     => \$normal,           #comma seperated id of normal samples
             "task|k=s"       => \$task,             #task type
             "prefix|p=s"     => \$prefix,
+            "qualfilter"     => \$qualfilter,
             "dbsnp|d=s"      => \$dbsnp,
             "tmpdir|y=s"     => \$tmpdir,
             "tolerance=i"    => \$tolerance,
@@ -38,6 +40,7 @@ GetOptions (
                                print "\t--type\t\tthe type of variants, snv or indel\n";
                                print "\t--normal\tcomma seperated id of normal samples\n";
                                print "\t--prefix\tthe prefix of samples' names\n";
+                               print "\t--qualfilter\tset the number when you want to skip low qual calls\n";
                                print "\t--task\t\tthe task, such as tcga or rnaediting\n";
                                print "\t--dbsnp\t\tyes or no, whether to keep dbsnp variants into the table\n";
                                print "\t--tolerance\tthe tolerance for comparing indels with certain distance shift\n";
@@ -126,7 +129,9 @@ foreach my $file (@list) {
      }
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
-     next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
+     if ($qualfilter) {     #if do qual filter
+       next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
+     }
 
      if ($task =~ /titan/) {    #for titan, pick good ones
        next if ($qual ne '.' and $qual < 80);
@@ -226,10 +231,10 @@ foreach my $file (@list) {
            next;
          } elsif ($strandb < $strandBiasTh) { #strand bias make it very stringent! for net data
            next;
-         } elsif ($baseqb =~ /e/) {           #basequality bias
-           next;
-         } elsif ($baseqb < 0.0005) {         #basequality bias
-           next;
+         #} elsif ($baseqb =~ /e/) {           #basequality bias
+         #  next;
+         #} elsif ($baseqb < 0.0005) {         #basequality bias
+         #  next;
            #} elsif ($mapqb =~ /e/) {         #mapquality bias   #mask it for sid's data
            #  next;
            #} elsif ($mapqb < 0.0001) {       #mapquality bias   #mask it for sid's data
@@ -248,21 +253,31 @@ foreach my $file (@list) {
      my $coor = $chr.':'.$pos;
 
      my $maf = -1;
+     my $tdp = 0;
      if ($info =~ /DP4\=(\d+)\,(\d+)\,(\d+)\,(\d+)\;/) {
-        $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
+       $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
+       $tdp = $1+$2+$3+$4;
      } else {
-        my @sampleinfo = split(":", $sample);
-        if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/){
-          $maf = sprintf("%.3f", $2/($1+$2));
-        } else {
-          my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
-          my $adsum = sum(@ads);
-          shift(@ads);
-          my $altadsum = sum(@ads);
-          $maf = sprintf("%.3f", $altadsum/$adsum);
-        }
+       if ($info =~ /DP\=(\d+)\;/) {
+         $tdp = $1;
+       }
+       my @sampleinfo = split(":", $sample);
+       if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/) {
+         $maf = sprintf("%.3f", $2/($1+$2));
+       } else {
+         my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
+         my $adsum = sum(@ads);
+         shift(@ads);
+         my $altadsum = sum(@ads);
+         $maf = sprintf("%.3f", $altadsum/$adsum);
+       }
      }
 
+     #depth filter
+     unless ($qualfilter) {
+       next if ( $tdp < 5 );
+     }
+     #depth filter
 
      # generate reference panel for her2 brca
      if ($task =~ /refpanel/) {
