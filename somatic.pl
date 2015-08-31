@@ -97,6 +97,7 @@ foreach my $file (@list) {
      chomp;
 
      if ($task =~ /mutect/) {  #gathering information for mutect calls "nopara.txt"
+       next if $_ =~ /^chr\tpos/;
        my ($chr, $pos, $ref, $alt, $normal_reads, $tumor_reads, $normal_varfrac, $tumor_varfrac, $tumor_nonadj_varfrac, $purity) = split /\t/;
        my $coor = $chr.':'.$pos;
        my $id = '.';
