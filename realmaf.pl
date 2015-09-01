@@ -292,7 +292,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if ($id eq '');
 
       print "$chrom\t$pos\t$id\t$info";
-      foreach my $name (sort {$a =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pa = $1; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)([A-Za-z0-9\-\_]+)?/; my $pb = $1; my $ib = $2; my $ibs = $3; $pa cmp $pb or $ia <=> $ib or $ias cmp $ibs} keys %samples) {
+      foreach my $name (sort {$a =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pa = $1; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pb = $1; my $ib = $2; my $ibs = $3; $pa cmp $pb or $ia <=> $ib or $ias cmp $ibs} keys %samples) {
         if ($somatic{$coor}{$djindex}{$name} ne '') {
           print "\t$somatic{$coor}{$djindex}{$name}";
         } elsif ($blood eq 'yes') {
