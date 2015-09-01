@@ -76,7 +76,7 @@ while ( <IN> ) {
           $inserted{$cols[$i]} = '';
           $cols[$i] .= 'maf';
         } elsif ( $cols[$i] !~ /d$/ ) { #not depth
-          if ($cols[$i] =~ /^($prefixReg)[A-Za-z0-9\-\_]+/) {
+          if ($cols[$i] =~ /^($prefixReg)([A-Za-z0-9\-\_]+)?/) {
             $cols[$i] .= 'maf';
             push(@order, $i);
             if ($cols[$i] =~ /^TCGA/ or $cols[$i] =~ /^($prefixReg)([A-Za-z0-9\-\_]+)?/){
