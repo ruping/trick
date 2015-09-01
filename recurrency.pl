@@ -4,6 +4,8 @@ use Data::Dumper;
 my $file = shift;
 my $maf = shift;
 my $somaticInfo = shift; #if for somatic judgement
+my $bloodCall = shift;   #whether the blood is also single called
+
 
 my %somatic;
 my %germline;  #may have multiple tumors
@@ -325,15 +327,15 @@ while ( <IN> ) {
           #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           if (exists $somatic{$samp}) {       #it is tumor
-             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.05);
+             $tumor{$samp} = $maf if ($vard >= 2 and $maf >= 0.03);
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
-              if ($cols[$i-1] =~ /\|/) {       #it is originally called
+              if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) {       #it is originally called
                 $bloodcalled{$ct} = '';
               }
-              if ( $maf == 0 and $depth >= 10 ) {
+              if ( $maf == 0 and $depth >= 7 ) {
                 $nonblood{$ct} = '';
-              } elsif ( $maf == 0 and $depth < 10 ) {
+              } elsif ( $maf == 0 and $depth < 7 ) {
                 $unknown{$ct} = '';
               } else {                          #maf != 0
                 $blood{$ct} = $maf;
@@ -351,7 +353,7 @@ while ( <IN> ) {
           $stype = 'good';
           $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
         } elsif (exists($blood{$tumorSamp})) {
-          if ($blood{$tumorSamp} < 0.05 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 4) {
+          if ($blood{$tumorSamp} < 0.03 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 4) {
             $stype = 'doubt';
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
           } elsif (exists($unknown{$tumorSamp})) {
