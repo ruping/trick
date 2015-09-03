@@ -177,8 +177,6 @@ foreach my $file (@list) {
      }
      #############################################################################decide somatic
 
-     #print STDERR "somatic: $somatic\n";
-
      if ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/) {  #snp in population, is it a somatic one?
 
        my $freq = -1;
@@ -198,17 +196,21 @@ foreach my $file (@list) {
            }
        }
 
-       if ( $somatic == 0 ) {                            #if it is not somatic, then only rare ones should be kept
+       if ( $info =~ /clinvar/ ) {                    #if clinvar, skip normal filter
+         goto PRODUCE;
+       }
+
+       if ( $somatic == 0 ) {                          #if it is not somatic, then only rare ones should be kept
          if ($freq == -1) {
            if ($dbsnp eq "no" or $task =~ /rare/i) {
              next;
            }
          } else {   #freq is defined
-           if ($id !~ /^1KG/ and $id !~ /^ESP\d+/) {  #dbSNP ones with reported MAF in 1KG or ESP
-             next if $dbsnp eq "no";
+           if ($id !~ /^1KG/ and $id !~ /^ESP\d+/) {   #dbSNP ones with reported MAF in 1KG or ESP (also with a dbSNP id)
+             next if ($dbsnp eq "no");
            }
            if ($task =~ /rare/i) {
-             next if $freq > 0.005;                   #rare kept
+             next if $freq > 0.005;                    #rare kept
            }
          }
        }
