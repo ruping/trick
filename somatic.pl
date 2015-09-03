@@ -155,9 +155,9 @@ foreach my $file (@list) {
 
      my @sample = split(/\:/,$sample);
 
-     if ($sample[$formindex{'GT'}] !~ /1/) {     #skip some wierd thing
-        next;
-     }
+     #if ($sample[$formindex{'GT'}] !~ /1/) {     #skip some wierd thing (deprecated)
+     #   next;
+     #}
 
 
      ###########################################################################decide somatic
@@ -237,10 +237,10 @@ foreach my $file (@list) {
          #  next;
          #} elsif ($baseqb < 0.0005) {         #basequality bias
          #  next;
-           #} elsif ($mapqb =~ /e/) {         #mapquality bias   #mask it for sid's data
-           #  next;
-           #} elsif ($mapqb < 0.0001) {       #mapquality bias   #mask it for sid's data
-           #  next;/MQ0
+         #} elsif ($mapqb =~ /e/) {         #mapquality bias   #mask it for sid's data
+         #  next;
+         #} elsif ($mapqb < 0.0001) {       #mapquality bias   #mask it for sid's data
+         #  next;/MQ0
          } elsif ($tailb =~ /e/) {            #tailbias
            next;
          } elsif ($tailb < $tailDisBiasTh) {  #tailbias
