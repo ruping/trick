@@ -248,18 +248,18 @@ while ( <IN> ) {
           $traceGermline =~ /germline\=(.+?)$/;
           $traceGermline = $1;
           if ($traceSomatic =~ /\,/) {
-            my @traceSomatic = split(',', $traceSomatic);
+            my @traceSomatic = split(/\,/, $traceSomatic);
             push(@detectedSample, @traceSomatic);
           }
           if ($traceGermline =~ /\,/) {
-            my @traceGermline = split(',', $traceGermline);
+            my @traceGermline = split(/\,/, $traceGermline);
             push(@detectedSample, @traceGermline);
           }
           foreach my $detectedSamp (@detectedSample) {
             $detectedSample{$detectedSamp} = '';
           }
-          #print STDERR "$traceSomatic\t$traceGermline\n";
-          #print STDERR Dumper(\%detectedSample);
+          print STDERR "$chr\t$pos\t$traceSomatic\t$traceGermline\n";
+          print STDERR Dumper(\%detectedSample);
         } elsif ($colindex{$i} eq 'rep') {
           $rep = $cols[$i];
         } elsif ($colindex{$i} eq 'sc') {
@@ -282,6 +282,7 @@ while ( <IN> ) {
           ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
           $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
           $strandRatio = ($infos[0] > $mmaf)? $infos[3]:$strandRatio;
+          print STDERR "sr: $strandRatio\n";
         }
       }
 
