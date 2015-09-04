@@ -258,8 +258,8 @@ while ( <IN> ) {
           foreach my $detectedSamp (@detectedSample) {
             $detectedSample{$detectedSamp} = '';
           }
-          print STDERR "$chr\t$pos\t$traceSomatic\t$traceGermline\n";
-          print STDERR Dumper(\%detectedSample);
+          #print STDERR "$chr\t$pos\t$traceSomatic\t$traceGermline\n";
+          #print STDERR Dumper(\%detectedSample);
         } elsif ($colindex{$i} eq 'rep') {
           $rep = $cols[$i];
         } elsif ($colindex{$i} eq 'sc') {
@@ -282,7 +282,7 @@ while ( <IN> ) {
           ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
           $strandRatio = ($infos[0] > $mmaf)? $infos[3]:$strandRatio;
           $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
-          print STDERR "sr: $strandRatio\n";
+          #print STDERR "sr: $strandRatio\n";
         }
       }
 
