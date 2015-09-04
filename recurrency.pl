@@ -163,19 +163,21 @@ while ( <IN> ) {
           my $endsratio = 0;
           my $cmean = 0;
           my $cmedian = 0;
+          my $strandRatio = 0;
 
           if ($cols[$i] =~ /\|/) { #split the var surrounding information
             my @infos = split(/\|/, $cols[$i]);
             $maf = $infos[0];
             $endsratio = $infos[1];
             ($cmean, $cmedian) = split(',', $infos[2]);
+            $strandRatio = $infos[3];
           }
 
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
-            if ($maf >= 0.05 and $vard >= 2) {
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
+            if ($maf >= 0.03 and $vard >= 3) {
               if ($somaticInfo ne '') {        #count only tumor
                 if ( exists($somatic{$samp}) ) {
                   $founds++;
@@ -226,6 +228,7 @@ while ( <IN> ) {
       my $chr;
       my $pos;
       my $endsratio = 0;
+      my $strandRatio = 0;
       my $cmean = 0;
       my $cmedian = 0;
       my $cmeanav = 0;
@@ -278,17 +281,18 @@ while ( <IN> ) {
           $endsratio = ($infos[0] > $mmaf)? $infos[1]:$endsratio;
           ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
           $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
+          $strandRatio = ($infos[0] > $mmaf)? $infos[3]:$strandRatio;
         }
       }
 
       my $status;
       print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\t$endsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1) {
-        $status = ($endsratio < 0.9 and ($cmean+$cmedian) < 4.5 and ($cmean < 3 and $cmedian < 3) and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 4.5 or $cmedian < 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';   #conservative for rep and sc
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)?'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
       }
       print "$_\t$status\n" if ($status eq 'PASS');
     } elsif ($maf =~ /somatic/) {  #find somatic ones
@@ -303,6 +307,7 @@ while ( <IN> ) {
           my $samp = $1;
           my $maf = $cols[$i];
           my $endsratio = 0;
+          my $strandRatio = 0;
           my $cmean = 0;
           my $cmedian = 0;
 
@@ -311,13 +316,14 @@ while ( <IN> ) {
             $maf = $infos[0];
             $endsratio = $infos[1];
             ($cmean, $cmedian) = split(',', $infos[2]);
+            $strandRatio = $infos[3];
           }
 
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
-            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.2 or $cmedian <= 2)) { #true event
+            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.2 or $cmedian <= 2)) { #true event
               $maf = $maf;
             } else {
               $maf = 0;         #not reliable somatic
@@ -333,9 +339,9 @@ while ( <IN> ) {
               if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) {       #it is originally called
                 $bloodcalled{$ct} = '';
               }
-              if ( $maf == 0 and $depth >= 7 ) {
+              if ( $maf == 0 and $depth >= 8 ) {
                 $nonblood{$ct} = '';
-              } elsif ( $maf == 0 and $depth < 7 ) {
+              } elsif ( $maf == 0 and $depth < 8 ) {
                 $unknown{$ct} = '';
               } else {                          #maf != 0
                 $blood{$ct} = $maf;
