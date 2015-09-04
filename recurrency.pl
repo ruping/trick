@@ -280,8 +280,8 @@ while ( <IN> ) {
           my @infos = split(/\|/, $sampmaf);
           $endsratio = ($infos[0] > $mmaf)? $infos[1]:$endsratio;
           ($cmean, $cmedian) = ($infos[0] > $mmaf)? split(',', $infos[2]):($cmean, $cmedian);
-          $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
           $strandRatio = ($infos[0] > $mmaf)? $infos[3]:$strandRatio;
+          $mmaf = ($infos[0] > $mmaf)? $infos[0]:$mmaf;
           print STDERR "sr: $strandRatio\n";
         }
       }
