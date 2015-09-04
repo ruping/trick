@@ -289,11 +289,11 @@ while ( <IN> ) {
       my $status;
       print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\t$endsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1) {
-        $status = ($endsratio < 0.9 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 4.5 or $cmedian < 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';   #conservative for rep and sc
+        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 4.5 or $cmedian < 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';   #conservative for rep and sc
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < 0.9 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.9 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
       }
       print "$_\t$status\n" if ($status eq 'PASS');
     } elsif ($maf =~ /somatic/) {  #find somatic ones
