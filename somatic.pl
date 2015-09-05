@@ -283,8 +283,8 @@ foreach my $file (@list) {
        }
        my @sampleinfo = split(":", $sample);
        if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/) {
-         $maf = sprintf("%.3f", $2/($1+$2));
-         if ($tdp == -1){
+         $maf = (($1+$2) > 0)? sprintf("%.3f", $2/($1+$2)) : 0;
+         if ($tdp == -1) {
            $tdp = $1+$2;
          }
        } else {  #multiple depths
