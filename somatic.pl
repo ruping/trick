@@ -328,7 +328,9 @@ foreach my $file (@list) {
      $function = $1;
 
      if ($nonsegdup) {
-       next if $function =~ /segdup\.score/;
+       unless ($somatic == 1) {
+         next if $function =~ /segdup\.score/;
+       }
      }
      if ($exonic) {
        next if ($function !~ /exonic/ and $function !~ /UTR[35]/ and $function !~ /splicing/);
