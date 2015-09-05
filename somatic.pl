@@ -69,6 +69,12 @@ my @prefix = split(',', $prefix);
 my $prefixReg = join('|', @prefix);
 print STDERR "prefixReg is $prefixReg\n";
 
+my %normals;
+foreach my $normalControl (split(',', $normal)){
+  $normals{$normalControl} = '';
+}
+print STDERR Dumper(\%normals);
+
 my %somatic;
 my %samples;
 foreach my $file (@list) {
@@ -116,7 +122,7 @@ foreach my $file (@list) {
        if ($_ =~ /^#CHROM\tPOS\tID/) {   #the common three column header in vcf file
          my @cols = split /\t/;
          my $minusI = 1;
-         if (($cols[$#cols - $minusI] eq $normal) or ($cols[$#cols - $minusI] =~ /NORMAL/i)) {
+         if (exists($normals{$cols[$#cols - $minusI]}) or ($cols[$#cols - $minusI] =~ /NORMAL/i)) {
            $revertornot = "yes";
          } elsif ( $cols[$#cols - $minusI] eq 'FORMAT' ) {
            $singlecalling = "yes";
