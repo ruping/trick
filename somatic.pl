@@ -99,7 +99,7 @@ foreach my $file (@list) {
   while ( <IN> ) {
      chomp;
 
-     if ($task =~ /mutect/) {  #gathering information for mutect calls "nopara.txt"
+     if ($task =~ /mutectTemp/) {  #gathering information for mutect calls "nopara.txt"
        next if $_ =~ /^chr\tpos/;
        my ($chr, $pos, $ref, $alt, $normal_reads, $tumor_reads, $normal_varfrac, $tumor_varfrac, $tumor_nonadj_varfrac, $purity) = split /\t/;
        my $coor = $chr.':'.$pos;
@@ -111,6 +111,7 @@ foreach my $file (@list) {
        next;
      }
 
+     #judge whether it is single calling or paired calling
      if ($_ =~ /^#/) {
        if ($_ =~ /^#CHROM\tPOS\tID/) {   #the common three column header in vcf file
          my @cols = split /\t/;
@@ -127,6 +128,8 @@ foreach my $file (@list) {
          next;
        }
      }
+     #judging whether it is single calling or paired calling
+
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
 
      if ($qualfilter) {     #if do qual filter
@@ -155,23 +158,31 @@ foreach my $file (@list) {
 
      my @sample = split(/\:/,$sample);
 
-     #if ($sample[$formindex{'GT'}] !~ /1/) {     #skip some wierd thing (deprecated)
-     #   next;
-     #}
-
 
      ###########################################################################decide somatic
      my $somatic = 0;
-     if ($singlecalling eq 'no') {      # if it is paired calling
-       if ($type eq 'snv') {    #for snp
-         my @blood = split(/\:/,$blood);
-         if ($blood[$formindex{'GT'}] !~ /1/) {
-           $somatic = 1;
+     if ($singlecalling eq 'no') {      #if it is paired calling
+       if ($type eq 'snv') {            #for snp
+         if ($task =~ /muTect/) {       #if mutect
+           if ($info =~ /SOMATIC/) {
+             $somatic = 1;
+           }
+         } else {
+           my @blood = split(/\:/,$blood);
+           if ($blood[$formindex{'GT'}] !~ /1/) {
+             $somatic = 1;
+           }
          }
        } elsif ($type eq 'indel') { #for indel
-         my @blood = split(/\:/,$blood);
-         if ($blood[$formindex{'GT'}] !~ /1/) {
-           $somatic = 1;
+         if ($task =~ /muTect/) {   #if mutect
+           if ($info =~ /SOMATIC/) {
+             $somatic = 1;
+           }
+         } else {
+           my @blood = split(/\:/,$blood);
+           if ($blood[$formindex{'GT'}] !~ /1/) {
+             $somatic = 1;
+           }
          }
        }
      }
@@ -214,7 +225,8 @@ foreach my $file (@list) {
            }
          }
        }
-     } #somatic common snp
+
+     } #known variation
 
    PRODUCE:
 
@@ -254,24 +266,30 @@ foreach my $file (@list) {
 
      my $coor = $chr.':'.$pos;
 
-     my $maf = -1;
-     my $tdp = 0;
-     if ($info =~ /DP4\=(\d+)\,(\d+)\,(\d+)\,(\d+)\;/) {
+     my $maf = -1;    #get maf
+     my $tdp = -1;    #get total depth
+     if ($info =~ /DP4\=(\d+)\,(\d+)\,(\d+)\,(\d+)\;/) { #DP4 information
        $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
        $tdp = $1+$2+$3+$4;
-     } else {
+     } else {                   #no DP4 information
        if ($info =~ /DP\=(\d+)\;/) {
          $tdp = $1;
        }
        my @sampleinfo = split(":", $sample);
        if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/) {
          $maf = sprintf("%.3f", $2/($1+$2));
-       } else {
+         if ($tdp == -1){
+           $tdp = $1+$2;
+         }
+       } else {  #multiple depths
          my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
          my $adsum = sum(@ads);
          shift(@ads);
          my $altadsum = sum(@ads);
          $maf = sprintf("%.3f", $altadsum/$adsum);
+         if ($tdp == -1){
+           $tdp = $adsum;
+         }
        }
      }
 
@@ -298,7 +316,7 @@ foreach my $file (@list) {
      }
      #for titan purpose
 
-     $somatic{$coor}{$name} = $maf.'|'.$qual;
+     $somatic{$coor}{$name} = ($task =~ /muTect/)? $maf.'|'.$tdp : $maf.'|'.$qual;
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
