@@ -168,7 +168,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
 
       } elsif ($type =~ /snv/) {    #snv
 
-        my ($chr, $pos, $depth, $vard, $A, $An, $C, $Cn, $G, $Gn, $T, $Tn, $vends, $junction, $cmean, $cmedian) = split /\t/;
+        my ($chr, $pos, $depth, $vard, $A, $An, $C, $Cn, $G, $Gn, $T, $Tn, $vends, $junction, $badqual, $cmean, $cmedian) = split /\t/;
         if ($cmean =~ /e/) {
           $cmean = 0;
         }
@@ -207,16 +207,16 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
               if (exists($blood{$name}) or $blood eq 'yes') { #it is blood
                 my $endratio = sprintf("%.4f", $vends/$vard);
                 $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
-                $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio;
+                $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
               } else {  #it is tumor
                 my $endratio = sprintf("%.4f", $vends/$vard);
                 if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean+$cmedian) < 6 or $cmedian <= 2)) {  #limiting endsratio and mismatch stuff
                   $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
-                  $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio;
+                  $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
                 } else {  #looks like artifact
                   #$somatic{$coor}{$djindex}{$name} = 0;
                   $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);                   #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                  $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio;
+                  $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
                   $cmean = 0; #reset for artifact like stuff
                   $cmedian = 0; #reset
                 }
