@@ -35,6 +35,7 @@ while ( <IN> ) {
   print STDERR "$chr\t$pos\t$ref\t$alt\tadd:$add\tlref:$lengthRef\n";
 
   my $seq = substr($genome{$chr}, ($pos-(50+$add)), (100+$lengthRef));
+  $seq =~ tr/a-z/A-Z/;
   my $realref = substr($seq, 50, 1);
   if ($realref ne $ref and $type eq 'snv') {
      print STDERR "shit_not_same_ref\t$chr\t$pos\t$ref\t$realref\n";
