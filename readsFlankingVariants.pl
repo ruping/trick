@@ -22,6 +22,7 @@ while ( <IN> ) {
   next if ($_ =~ /^[#@]/ or $_ =~ /^chr\t/);
   my @cols = split /\t/;
   my $chr = $cols[0];
+  $chr =~ s/^chr//;
   my $pos = $cols[1];
   my $ref = $cols[3];
   next if ($ref !~ /[ACGT\-]/);
