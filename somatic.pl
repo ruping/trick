@@ -6,6 +6,19 @@ use FindBin qw($RealBin);
 use File::Basename;
 use List::Util qw(max min sum);
 
+#define needed chrs
+my %chrs;
+for (1..22){
+  $chrs{$_} = '';
+  $chrs{'chr'.$_} = '';
+}
+$chrs{'chrX'} = '';
+$chrs{'chrY'} = '';
+$chrs{'chrM'} = '';
+$chrs{'X'} = '';
+$chrs{'Y'} = '';
+$chrs{'M'} = '';
+
 my $list;   #filename of all vcfs
 my $type;
 my $normal;
@@ -142,6 +155,9 @@ foreach my $file (@list) {
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
      if ($withChr){
        $chr = 'chr'.$chr if ($chr !~ /^chr/);
+     }
+     if ($chr eq 'chr10' and $pos == 3161957) {  #debug
+       print STDERR "$name\t$_\n";
      }
 
      if ($qualfilter) {     #if do qual filter
@@ -383,7 +399,7 @@ if ($prefixReg ne ''){
     print "\t$name";
   }
 } elsif ($task =~ /tcga/i) {
-  foreach my $name (sort {$a =~ /TCGA\-([A-Z0-9]+)\-([A-Z0-9]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples){
+  foreach my $name (sort {$a =~ /TCGA\-([A-Z0-9]+)\-([A-Z0-9]+)/; my $tsa = $1; my $inda = $2; $b =~ /TCGA\-([^\-]+)\-([^\-]+)/; my $tsb = $1; my $indb = $2; $tsa cmp $tsb or $inda cmp $indb} keys %samples) {
     print "\t$name";
   }
 }
