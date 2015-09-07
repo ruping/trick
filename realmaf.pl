@@ -137,7 +137,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if /^chr\t/;
       if ($type =~ /indel/) {       #indel
         my ($chr, $pos, $ref, $alt, $indelType, $depth, $vard, $junction, $cmean, $cmedian) = split /\t/;
-        if ($cmean =~ /e/){
+        if ($cmean =~ /e/) {
           $cmean = 0;
         }
         last if $chr ne $chrc;
@@ -181,6 +181,11 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $djindex = 1;
         }
 
+        if ( $somatic{$coor}{$djindex}{$name} ne '' and $somatic{$coor}{$djindex}{$name} !~ /^0\t/){   #already detected with certain reads in a previous file
+          goto SEENB;
+        }
+
+        ############################ here adding data ###########################################
         if ( $vard > 0 and $depth > 0 ) {
           if ( $OR{$coor}{$djindex} ne '' ) {
             my @information = split(",", $OR{$coor}{$djindex});
@@ -224,7 +229,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
             } else {
               $somatic{$coor}{$djindex}{$name} = 0;
             }
-          } else {
+          } else {  #coor is not found in the original table
             print STDERR "error: coor is not found in the original file, must be found!\n";
             exit 22;
           }
@@ -237,10 +242,13 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         }
         $somatic{$coor}{$djindex}{'info'} = join("\t", ("ref","alt"));
         $somatic{$coor}{$djindex}{'consecutive'} .= $cmean.','.$cmedian.','.$vard.';';
+        ############################ above adding data ###########################################
+
+      SEENB:
 
         #redefine
         $prevCoor = $coor;
-      } #snv
+      }                         #snv
     }
     close IN;
   }
