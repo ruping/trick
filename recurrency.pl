@@ -178,7 +178,7 @@ while ( <IN> ) {
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.5 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.6 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
             if ($maf >= 0.03 and $vard >= 3) {
               if ($somaticInfo ne '') {        #count only tumor
                 if ( exists($somatic{$samp}) ) {
@@ -295,9 +295,9 @@ while ( <IN> ) {
       if ($rep == 1 and $sc == 1) {
         $status = ($endsratio < 0.9 and $badQualFrac <= 0.5 and (($cmean+$cmedian) < 4.5 or $cmedian < 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';   #conservative for rep and sc
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < 0.9 and $badQualFrac <= 0.5 and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and $badQualFrac <= 0.6 and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.9 and $badQualFrac <= 0.5 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
+        $status = ($endsratio < 0.9 and $badQualFrac <= 0.6 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
       }
       print "$_\t$status\n" if ($status eq 'PASS');
     } elsif ($maf =~ /somatic/) {  #find somatic ones
@@ -330,7 +330,7 @@ while ( <IN> ) {
           my $vard = sprintf("%.1f", $maf*$depth);
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
-            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.5 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.2 or $cmedian <= 2)) { #true event
+            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.6 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.2 or $cmedian <= 2)) { #true event
                 $maf = $maf;
             } else {
               $maf = 0;         #not reliable somatic
@@ -346,9 +346,9 @@ while ( <IN> ) {
               if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) {       #it is originally called
                 $bloodcalled{$ct} = '';
               }
-              if ( $maf == 0 and $depth >= 8 ) {
+              if ( $maf == 0 and $depth >= 10 ) {      #at least 10 reads for blood
                 $nonblood{$ct} = '';
-              } elsif ( $maf == 0 and $depth < 8 ) {
+              } elsif ( $maf == 0 and $depth < 10 ) {
                 $unknown{$ct} = '';
               } else {                          #maf != 0
                 $blood{$ct} = $maf;
