@@ -6,18 +6,6 @@ use FindBin qw($RealBin);
 use File::Basename;
 use List::Util qw(max min sum);
 
-#define needed chrs
-my %chrs;
-for (1..22){
-  $chrs{$_} = '';
-  $chrs{'chr'.$_} = '';
-}
-$chrs{'chrX'} = '';
-$chrs{'chrY'} = '';
-$chrs{'chrM'} = '';
-$chrs{'X'} = '';
-$chrs{'Y'} = '';
-$chrs{'M'} = '';
 
 my $list;   #filename of all vcfs
 my $type;
@@ -71,6 +59,22 @@ GetOptions (
                              },
            );
 
+
+#define needed chrs
+my %chrs;
+for (1..22){
+  $chrs{$_} = '';
+  $chrs{'chr'.$_} = '';
+}
+$chrs{'chrX'} = '';
+$chrs{'chrY'} = '';
+$chrs{'chrM'} = '';
+$chrs{'chrMT'} = '';
+$chrs{'X'} = '';
+$chrs{'Y'} = '';
+$chrs{'M'} = '';
+$chrs{'MT'} = '';
+print STDERR Dumper(\%chrs);
 
 my @list;
 open IN, "$list";
@@ -153,11 +157,14 @@ foreach my $file (@list) {
      #judging whether it is single calling or paired calling
 
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
-     if ($withChr){
+     if ($withChr) {
        $chr = 'chr'.$chr if ($chr !~ /^chr/);
+       $chr = 'chrM' if ($chr == 'chrMT');
      }
-     if ($chr eq 'chr10' and $pos == 3161957) {  #debug
-       print STDERR "$name\t$_\n";
+
+     #chr filter
+     if (! exists($chrs{$chr})) {
+       next;
      }
 
      if ($qualfilter) {     #if do qual filter
