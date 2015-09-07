@@ -159,7 +159,7 @@ foreach my $file (@list) {
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
      if ($withChr) {
        $chr = 'chr'.$chr if ($chr !~ /^chr/);
-       $chr = 'chrM' if ($chr == 'chrMT');
+       $chr = 'chrM' if ($chr eq 'chrMT');
      }
 
      #chr filter
