@@ -16,6 +16,7 @@ my $dbsnp = "no";
 my $tmpdir = "./";
 my $bin = $RealBin;
 my $tolerance = 0;
+my $withChr;
 my $strandBiasTh = 0.005;
 my $tailDisBiasTh = 0.005;
 my $nonsegdup;
@@ -31,6 +32,7 @@ GetOptions (
             "dbsnp|d=s"      => \$dbsnp,
             "tmpdir|y=s"     => \$tmpdir,
             "tolerance=i"    => \$tolerance,
+            "withChr"        => \$withChr,
             "strandBiasTh=f" => \$strandBiasTh,
             "tailDisBiasTh=f"=> \$tailDisBiasTh,
             "nonsegdup"      => \$nonsegdup,
@@ -44,6 +46,7 @@ GetOptions (
                                print "\t--task\t\tthe task, such as tcga or rnaediting\n";
                                print "\t--dbsnp\t\tyes or no, whether to keep dbsnp variants into the table\n";
                                print "\t--tolerance\tthe tolerance for comparing indels with certain distance shift\n";
+                               print "\t--withChr\tconvert all chromosome names to be started with chr\n";
                                print "\t--tmpdir\tthe temporary dir to write tmp files\n";
                                print "\t--strandBiasTh\tthe p value threshold for filtering out vars with strand bias <0.005>\n";
                                print "\t--tailDisBiasTh\tthe p value threshold for filtering out vars with Tail distance bias <0.005>\n";
@@ -137,6 +140,9 @@ foreach my $file (@list) {
      #judging whether it is single calling or paired calling
 
      my ($chr, $pos, $id, $ref, $alt, $qual, $pass, $info, $format, $sample, $blood) = split /\t/;
+     if ($withChr){
+       $chr = 'chr'.$chr if ($chr !~ /^chr/);
+     }
 
      if ($qualfilter) {     #if do qual filter
        next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
