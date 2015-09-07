@@ -280,9 +280,11 @@ foreach my $file (@list) {
 
      my $maf = -1;    #get maf
      my $tdp = -1;    #get total depth
+     my $altd = -1;
      if ($info =~ /DP4\=(\d+)\,(\d+)\,(\d+)\,(\d+)\;/) { #DP4 information
        $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
        $tdp = $1+$2+$3+$4;
+       $altd = $3+$4;
      } else {                   #no DP4 information
        if ($info =~ /DP\=(\d+)\;/) {
          $tdp = $1;
@@ -293,6 +295,9 @@ foreach my $file (@list) {
          if ($tdp == -1) {
            $tdp = $1+$2;
          }
+         if ($altd == -1) {
+           $altd = $2;
+         }
        } else {  #multiple depths
          my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
          my $adsum = sum(@ads);
@@ -302,12 +307,17 @@ foreach my $file (@list) {
          if ($tdp == -1){
            $tdp = $adsum;
          }
+         if ($altd == -1){
+           $altd = $altadsum;
+         }
        }
      }
 
      #depth filter
      unless ($qualfilter) {
        next if ( $tdp < 5 );
+       next if ( $altd < 2 );
+       next if ( $maf < 0.01 );
      }
      #depth filter
 
