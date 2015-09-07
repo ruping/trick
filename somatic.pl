@@ -338,11 +338,10 @@ foreach my $file (@list) {
      }
      #for titan purpose
 
-     $somatic{$coor}{$name} = ($task =~ /muTect/)? $maf.'|'.$tdp : $maf.'|'.$qual;
+     #functional filter
      my $function;
      $info =~ /(function=.+?$)/;
      $function = $1;
-
      if ($nonsegdup) {
        unless ($somatic == 1) {
          next if $function =~ /segdup\.score/;
@@ -351,6 +350,9 @@ foreach my $file (@list) {
      if ($exonic) {
        next if ($function !~ /exonic/ and $function !~ /UTR[35]/ and $function !~ /splicing/);
      }
+
+     #now start to store data
+     $somatic{$coor}{$name} = ($task =~ /muTect/)? $maf.'|'.$tdp : $maf.'|'.$qual;
 
      my $idrefalt = join("\t", ($id,$ref,$alt));
      $somatic{$coor}{'info'}{$idrefalt} = $function;  #not necessarily just one!
