@@ -331,7 +331,15 @@ while ( <IN> ) {
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
             if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.6 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.2 or $cmedian <= 2)) { #true event
+              if ( $maf >= 0.1 ){
                 $maf = $maf;
+              } else {  #subclonal ones, subject to additional constrains
+                if ($badQualFrac < 0.3 and $cmedian < 1.5){
+                  $maf = $maf;
+                } else {
+                  $maf = 0;         #not reliable somatic
+                }
+              }
             } else {
               $maf = 0;         #not reliable somatic
             }
