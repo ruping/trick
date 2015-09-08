@@ -172,7 +172,7 @@ foreach my $file (@list) {
      }
 
      if ($task =~ /titan/) {    #for titan, pick good ones
-       next if ($qual ne '.' and $qual < 80);
+       next if ($qual ne '.' and $qual < 50);
      }
 
      if ($revertornot eq 'yes') {   #revert sample and blood
