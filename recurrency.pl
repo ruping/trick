@@ -334,7 +334,7 @@ while ( <IN> ) {
               if ( $maf >= 0.1 ) {
                 $maf = $maf;
               } else {  #subclonal ones, subject to additional constrains
-                if ($badQualFrac < 0.5 and $cmedian < 1.5) {
+                if ($badQualFrac < 0.4 and $cmedian <= 1.7) {
                   $maf = $maf;
                 } else {
                   $maf = 0;         #not reliable somatic
@@ -348,7 +348,7 @@ while ( <IN> ) {
           #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           if (exists $somatic{$samp}) {       #it is tumor
-             $tumor{$samp} = $maf if ($vard >= 3 and $maf >= 0.04);
+             $tumor{$samp} = $maf if ($vard >= 3 and $maf >= 0.05);
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
               if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) {       #it is originally called
