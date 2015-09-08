@@ -334,7 +334,7 @@ while ( <IN> ) {
               if ( $maf >= 0.1 ){
                 $maf = $maf;
               } else {  #subclonal ones, subject to additional constrains
-                if ($badQualFrac < 0.3 and $cmedian < 1.5){
+                if ($badQualFrac < 0.3 and $cmedian < 1.5) {
                   $maf = $maf;
                 } else {
                   $maf = 0;         #not reliable somatic
