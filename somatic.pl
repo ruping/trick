@@ -22,6 +22,7 @@ my $strandBiasTh = 0.005;
 my $tailDisBiasTh = 0.005;
 my $nonsegdup;
 my $exonic;
+my $qualTitan = 50;
 
 GetOptions (
             "list|l=s"       => \$list,             #filename of all vcfs
@@ -38,6 +39,7 @@ GetOptions (
             "tailDisBiasTh=f"=> \$tailDisBiasTh,
             "nonsegdup"      => \$nonsegdup,
             "exonic"         => \$exonic,
+            "qualTitan=i"    => \$qualTitan,
             "help|h"         => sub{
                                print "usage: $0 get all somatic and rare variants from a bunch of vcf files\n\nOptions:\n\t--list\t\tthe filename of all vcfs\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
@@ -53,6 +55,7 @@ GetOptions (
                                print "\t--tailDisBiasTh\tthe p value threshold for filtering out vars with Tail distance bias <0.005>\n";
                                print "\t--nonsegdup\tdo not collect segdup ones\n";
                                print "\t--exonic\tonly collect exonic ones (including UTR and splicing)\n";
+                               print "\t--qualTitan\tmin qual for titan selection of heteroSNPs\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -172,7 +175,7 @@ foreach my $file (@list) {
      }
 
      if ($task =~ /titan/) {    #for titan, pick good ones
-       next if ($qual ne '.' and $qual < 50);
+       next if ($qual ne '.' and $qual < $qualTitan);
      }
 
      if ($revertornot eq 'yes') {   #revert sample and blood
