@@ -10,7 +10,7 @@ if ($chrom !~ /^[cC][hH][rR]/){
 open IN, "$samheader";
 while ( <IN> ){
   chomp;
-  if ( $_ =~ /^\@SQ\tSN\:(\w+)\tLN\:\d+/ ) {
+  if ( $_ =~ /^\@SQ\tSN\:(\S+)\tLN\:\d+/ ) {
     my $chr = $1;
     if ($chr !~ /^[cC][hH][rR]/){
       $chr = 'chr'.$chr;
