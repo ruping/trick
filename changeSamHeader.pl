@@ -9,17 +9,16 @@ if ($chrom !~ /^[cC][hH][rR]/){
 
 open IN, "$samheader";
 while ( <IN> ){
-  chomp;
   if ( $_ =~ /^\@SQ\tSN\:(\S+)\tLN\:\d+/ ) {
     my $chr = $1;
     if ($chr !~ /^[cC][hH][rR]/){
       $chr = 'chr'.$chr;
     }
     if ( $chrom eq $chr ) {
-      print "$_\n";
+      print "$_";
     }
   } else {
-    print "$_\n";
+    print "$_";
   }
 }
 close IN;
