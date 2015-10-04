@@ -2,11 +2,12 @@ use strict;
 use Data::Dumper;
 
 my $file = shift;
-my $maf = shift;
+my $task = shift;
 my $somaticInfo = shift; #if for somatic judgement
 my $bloodCall = shift;   #whether the blood is also single called
+my $rna = shift;         #if for rna found
 
-
+my @all;
 my %somatic;
 my %germline;  #may have multiple tumors
 if ($somaticInfo ne '' and -s "$somaticInfo") {
@@ -27,15 +28,30 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
   #print STDERR Dumper (\%germline);
 }
 
-
-my @rectum = qw(AC57maf AC439maf AC440maf AC441maf AC443maf AC447maf AC525maf AC526maf AC527maf AC528maf AC529maf AC530maf AC531maf AC532maf AC533maf AC546maf AC548maf AC580maf AC637maf AC653maf AC668maf);
-my @ileum = qw(AC444maf AC445maf AC446maf AC516maf AC517maf AC518maf AC519maf);
-my @primary = qw(AC532maf AC533maf AC546maf AC580maf AC668maf);
-my @blood = qw(AC1maf AC547maf AC581maf AC669maf);
-my @all = ();
-push(@all, @rectum);
-push(@all, @ileum);
-push(@all, "AC442maf");
+my %rnasamps;
+if ( (! -e $rna) and $rna =~ /,/ ){
+  my @rnas = split(',', $rna);
+  foreach my $rnas (@rnas){
+    $rnasamps{$rnas} = '';
+  }
+} elsif (-e $rna) {
+  my %rcol;
+  open IN, "$rna";
+  while ( <IN> ){
+    chomp;
+    my @cols = split /\t/;
+    if ($_ =~ /^([\#])?dna\t/){ #header
+      for (my $i=0; $i<=$#cols; $i++){
+        $rcol{$cols[$i]} = $i;
+      }
+    } else {
+      next if $cols[$rcol{'rna'}] eq 'NA';
+      $rnasamps{$cols[$rcol{'rna'}]} = $cols[$rcol{'dna'}];
+    }
+  }
+  close IN;
+}
+print STDERR Dumper(\%rnasamps);
 
 
 open IN, "$file";
@@ -51,61 +67,28 @@ while ( <IN> ) {
       $colnames{$cols[$i]} = $i;
       $colindex{$i} = $cols[$i];
     }
-    if ($maf eq '') {
-      print "$_\tfounds\tfounds.rectum\tfounds.ileum\tfounds.primary\n";
-    } elsif ($maf == 1) {
+    if ($task eq 'maf') {
       print "$_\tmaf\n";
-    } elsif ($maf =~ /trace/) {
+    } elsif ($task eq 'trace') {
       print "$_\ttrace\n";
-    } elsif ($maf eq 'founds') {
+    } elsif ($task eq 'rnatrace') {
+      print "$_\trnatrace\n";
+    } elsif ($task eq 'founds') {
       print "$_\tfounds\n";
-    } elsif ($maf =~ /filter/) {
+    } elsif ($task eq 'rnafounds') {
+      print "$_\trnafounds\n";
+    } elsif ($task =~ /filter/) {
       print "$_\tfilter\n";
-    } elsif ($maf =~ /somatic/) {
+    } elsif ($task =~ /somatic/) {
       print "$_\tsomatic\tgermline\n";
-    } elsif ($maf eq 'depth'){
+    } elsif ($task eq 'depth'){
       print "$_\tdepthav\n";
-    } elsif ($maf eq 'samfounds'){
+    } elsif ($task eq 'samfounds'){
       print "$_\tfounds\trsam\n";
     }
   } else {
     my @cols = split /\t/;
-    if ($maf eq ''){
-      my $founds = 0;
-      my $foundsRectum = 0;
-      my $foundsIleum = 0;
-      my $foundsPrimary = 0;
-      foreach my $rec ( @rectum ) {
-        if ($cols[$colnames{$rec}] >= 0.1) {
-          my $vard = sprintf("%.1f", $cols[$colnames{$rec}]*$cols[$colnames{$rec}+1]);
-          if ($vard >= 2) {
-            $foundsRectum++;
-            $founds++;
-          }
-        }
-      }
-
-      foreach my $ile ( @ileum ) {
-        if ($cols[$colnames{$ile}] >= 0.1) {
-          my $vard = sprintf("%.1f", $cols[$colnames{$ile}]*$cols[$colnames{$ile}+1]);
-          if ($vard >= 2) {
-            $foundsIleum++;
-            $founds++;
-          }
-        }
-      }
-
-      foreach my $pri (@primary) {
-        if ($cols[$colnames{$pri}] >= 0.1) {
-          my $vard = sprintf("%.1f", $cols[$colnames{$pri}]*$cols[$colnames{$pri}+1]);
-          if ($vard >= 2) {
-            $foundsPrimary++;
-          }
-        }
-      }
-
-      print "$_\t$founds\t$foundsRectum\t$foundsIleum\t$foundsPrimary\n";
-    } elsif ($maf == 1) {    #get real maf
+    if ($task eq 'maf') {    #get real maf
       my $maf = 0;
       my $sampleCounts = scalar(@all);
       foreach my $sample (@all) {
@@ -118,47 +101,16 @@ while ( <IN> ) {
       }
       $maf = sprintf("%.6f",$maf/$sampleCounts);
       print "$_\t$maf\n";
-    } elsif ($maf =~ /trace/) {  #trace sample
-      my $trace = '';
-      foreach my $sample (@all) {
-        my $samp = $sample;
-        if ($samp ne 'AC3maf') {
-          $samp =~ s/maf$//;
-          if ($cols[$colnames{$samp}] > 0){
-              $trace .= "$samp,"
-          }
-        } else {  #AC3maf
-          if ($cols[$colnames{$samp}] >= 0.1) {
-            my $vard = sprintf("%.1f", $cols[$colnames{$samp}]*$cols[$colnames{$samp}+1]);
-            if ($vard >= 2) {
-              $samp =~ s/maf$//;
-              $trace .= "$samp,";
-            }
-          }
-        }
-      }
-      $trace =~ s/,$//;
-      if ($trace ne '') {
-        my @trace = split(/\,/, $trace);
-        my $ftrace = '';
-        if (scalar(@trace) > 1) {
-          if ($trace[0] eq 'AC3') {
-            $ftrace = $trace[1];
-          } else {
-            $ftrace = $trace[0];
-          }
-        } else {
-          $ftrace = $trace[0];
-        }
-        print "$_\t$ftrace\n" if ($maf eq 'trace');
-        print "$_\t$trace\n" if ($maf eq 'traceall');
-      }
-    } elsif ($maf =~ /founds/) {    #trace all samples and check whether it is originally called
+    } elsif ($task =~ /founds/ or $task =~ /trace/) {    #trace all samples and check whether it is originally called
       my $founds = 0;
       my $samfounds = 0;
+      my $trace = '';
       for (my $i = 0; $i <= $#cols; $i++) {
         if ($colindex{$i} =~ /^(.+?)maf$/) {
           my $samp = $1;
+          if ($task =~ /rna/) {      #for rna
+            next if (!exists($rnasamps{$samp}));
+          }
           my $maf = $cols[$i];
           my $endsratio = 0;
           my $cmean = 0;
@@ -176,38 +128,59 @@ while ( <IN> ) {
           }
 
           my $depth = $cols[$i+1];
+          if ($depth =~ /\,/){
+            my @depths = split(',', $cols[$i+1]);   #spandepth, jumpdepth
+            $depth = $depths[0];
+          }
           my $vard = sprintf("%.1f", $maf*$depth);
 
           if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.6 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
-            if ($maf >= 0.03 and $vard >= 3) {
-              if ($somaticInfo ne '') {        #count only tumor
-                if ( exists($somatic{$samp}) ) {
-                  $founds++;
-                  if ($colindex{$i-1} =~ /^$samp$/){  #calling information for the same sample
-                    if ( $cols[$i-1] =~ /\|/ ){  #it is called originally
+            if ($task =~ /rna/) {
+              if ($maf >= 0.01 and $vard >= 2) {
+                $founds++;
+                $trace .= "$samp,";
+              }
+            } else {
+              if ($maf >= 0.03 and $vard >= 3) {
+                if ($somaticInfo ne '') { #count only tumor
+                  if ( exists($somatic{$samp}) ) {
+                    $founds++;
+                    $trace .= "$samp,";
+                    if ($colindex{$i-1} =~ /^$samp$/) { #calling information for the same sample
+                      if ( $cols[$i-1] =~ /\|/ ) { #it is called originally
+                        $samfounds++;
+                      }
+                    }
+                  }
+                } else {
+                  $founds++;                       #count all samples
+                  $trace .= "$samp,";
+                  if ($colindex{$i-1} =~ /^$samp$/) { #calling information for the same sample
+                    if ( $cols[$i-1] =~ /\|/ ) { #it is called originally
                       $samfounds++;
                     }
                   }
                 }
-              } else {
-                $founds++;                     #count all samples
-                if ($colindex{$i-1} =~ /^$samp$/){  #calling information for the same sample
-                  if ( $cols[$i-1] =~ /\|/ ) { #it is called originally
-                    $samfounds++;
-                  }
-                }
-              }
-            } #maf and vard requirements
+              }                 #maf and vard requirements
+            } #for dna
           }  # it looks good
         } #maf
       } #each column
-      print "$_\t$founds";
-      if ($maf =~ /sam/){  #original founds
-        my $rsam = ($founds > 0)? sprintf("%.2f", $samfounds/$founds) : 0;
-        print "\t$rsam";
+      if ($task =~ /founds/) {
+        print "$_\t$founds";
+        if ($task =~ /sam/) {    #original founds
+          my $rsam = ($founds > 0)? sprintf("%.2f", $samfounds/$founds) : 0;
+          print "\t$rsam";
+        }
+        print "\n";
+      } elsif ($task =~ /trace/) {
+        if ($trace ne ''){
+          print "$_\t$trace\n";
+        } else {
+          print "$_\tNA\n";
+        }
       }
-      print "\n";
-    } elsif ($maf eq 'depth') {   #find av depth
+    } elsif ($task eq 'depth') {   #find av depth
       my $dep = 0;
       my $Ndep = 0;
       for (my $i = 0; $i <= $#cols; $i++) {
@@ -223,7 +196,7 @@ while ( <IN> ) {
       } #each column
       my $depav = ($Ndep > 0)? sprintf("%.1f", $dep/$Ndep):0;
       print "$_\t$depav\n";
-    } elsif ($maf =~ /filter/) {     #filter (based on Jie's Results)
+    } elsif ($task =~ /filter/) {     #filter (based on Jie's Results)
       my @detectedSample;
       my %detectedSample;
       my %mafs;
@@ -300,7 +273,7 @@ while ( <IN> ) {
         $status = ($endsratio < 0.9 and $badQualFrac <= 0.6 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
       }
       print "$_\t$status\n" if ($status eq 'PASS');
-    } elsif ($maf =~ /somatic/) {  #find somatic ones
+    } elsif ($task =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
       my %bloodcalled;   #store the called information for blood
