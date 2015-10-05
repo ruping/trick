@@ -31,7 +31,7 @@ foreach my $chr (sort {$a cmp $b} keys %vcfs){
 
 my $cmd = "vcf-concat $vcfs >$outdir/$outvcfname";
 unless (-s "$outdir/$outvcfname"){
-  RunCommand($cmd, 1, 0);
+  RunCommand($cmd, 0, 0);
 }
 
 sub RunCommand {
