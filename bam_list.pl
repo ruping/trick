@@ -16,7 +16,7 @@ my $sample = shift;
 my $suffix = shift;
 my $delim = shift;   #by default it will generate bam files line by line
 
-open OUT, "./$sample\_bam.list";
+open OUT, ">./$sample\_bam.list";
 my @bam_files = bsd_glob("$root/*\.$suffix");
 foreach my $bam_file (@bam_files){
   $bam_file =~ /^$root\/$sample\.(.+?)\.$suffix$/;
