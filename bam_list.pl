@@ -32,5 +32,5 @@ foreach my $bam_file (@bam_files){
     print OUT "$bam_file\n";
   }
 }
-print "\n";
+print OUT "\n";
 close OUT;
