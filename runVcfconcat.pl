@@ -1,11 +1,20 @@
 use strict;
 use File::Glob ':glob';
 use File::Basename;
+use Data::Dumper;
 
 my $dir = shift;
 my $outdir = shift;
-my @vcfs = bsd_glob("$dir/*.vcf");
+my $type = shift;
+my @vcfs;
+if ($type eq 'muTect'){
+  @vcfs = bsd_glob("$dir/*.vcf");
+} elsif ($type eq ''){
+  @vcfs = bsd_glob("$dir/*/results/all.somatic.indels.vcf");
+}
+print STDERR Dumper(\@vcfs);
 
+=pod
 my %vcfs;
 my $outvcfname = '';
 foreach my $vcf (@vcfs) {
@@ -43,3 +52,4 @@ sub RunCommand {
     system($command);
   }
 }
+=cut
