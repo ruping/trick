@@ -31,9 +31,9 @@ foreach my $vcf (@vcfs) {
       $outvcfname = $sample.'.'.$fname;
     }
     $vcfs{$chr} = $vcf;
-  } elsif ($type eq 'strelka' and $dirname =~ /\/([A-Za-z0-9\-\_]+)\/([A-Za-z0-9]+)\/results\//) {
+  } elsif ($type eq 'strelka' and $dirname =~ /\/([A-Za-z0-9\-\_]+)(\/)+([A-Za-z0-9]+)(\/)+results\//) {
     $sample = $1;
-    $chr = $2;
+    $chr = $3;
     $fname = 'genome.somatic.indel.vcf';
     if ($outvcfname eq '') {
       $outvcfname = $sample.'.'.$fname;
