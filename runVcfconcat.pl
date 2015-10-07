@@ -48,7 +48,6 @@ foreach my $vcf (@vcfs) {
 print STDERR Dumper(\%vcfs);
 
 
-=pod
 my $vcfs = '';
 foreach my $chr (sort {$a cmp $b} keys %vcfs) {
   $vcfs .= "$vcfs{$chr} ";
@@ -69,4 +68,3 @@ sub RunCommand {
   }
 }
 
-=cut
