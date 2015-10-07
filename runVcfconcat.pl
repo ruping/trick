@@ -7,22 +7,34 @@ my $dir = shift;
 my $outdir = shift;
 my $type = shift;
 my @vcfs;
-if ($type eq 'muTect'){
+if ($type eq 'muTect') {
   @vcfs = bsd_glob("$dir/*.vcf");
-} elsif ($type eq ''){
+} elsif ($type eq 'strelka') {
   @vcfs = bsd_glob("$dir/*/results/all.somatic.indels.vcf");
 }
-print STDERR Dumper(\@vcfs);
+#print STDERR Dumper(\@vcfs);
 
-=pod
+
 my %vcfs;
 my $outvcfname = '';
 foreach my $vcf (@vcfs) {
+  my $dirname = dirname($vcf);
   my $basename = basename($vcf);
-  if ($basename =~ /^([A-Za-z0-9\-\_]+)\.([A-Za-z0-9]+)\.(.+?)$/) {
-    my $sample = $1;
-    my $chr = $2;
-    my $fname = $3;
+  my $sample;
+  my $chr;
+  my $fname;
+  if ($type eq 'muTect' and $basename =~ /^([A-Za-z0-9\-\_]+)\.([A-Za-z0-9]+)\.(.+?)$/) {
+    $sample = $1;
+    $chr = $2;
+    $fname = $3;
+    if ($outvcfname eq '') {
+      $outvcfname = $sample.'.'.$fname;
+    }
+    $vcfs{$chr} = $vcf;
+  } elsif ($type eq 'strelka' and $dirname =~ /\/([A-Za-z0-9\-\_]+)\/([A-Za-z0-9]+)\/results\//) {
+    $sample = $1;
+    $chr = $2;
+    $fname = 'genome.somatic.indel.vcf';
     if ($outvcfname eq '') {
       $outvcfname = $sample.'.'.$fname;
     }
@@ -33,6 +45,10 @@ foreach my $vcf (@vcfs) {
   }
 }
 
+print STDERR Dumper(\%vcfs);
+
+
+=pod
 my $vcfs = '';
 foreach my $chr (sort {$a cmp $b} keys %vcfs) {
   $vcfs .= "$vcfs{$chr} ";
@@ -52,4 +68,5 @@ sub RunCommand {
     system($command);
   }
 }
+
 =cut
