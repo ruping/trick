@@ -8,13 +8,13 @@ my @vcfs = bsd_glob("$dir/*.vcf");
 
 my %vcfs;
 my $outvcfname = '';
-foreach my $vcf (@vcfs){
+foreach my $vcf (@vcfs) {
   my $basename = basename($vcf);
-  if ($basename =~ /^([A-Za-z0-9\-\_]+)\.([A-Za-z0-9]+)\.(.+?)$/){
+  if ($basename =~ /^([A-Za-z0-9\-\_]+)\.([A-Za-z0-9]+)\.(.+?)$/) {
     my $sample = $1;
     my $chr = $2;
     my $fname = $3;
-    if ($outvcfname eq ''){
+    if ($outvcfname eq '') {
       $outvcfname = $sample.'.'.$fname;
     }
     $vcfs{$chr} = $vcf;
@@ -25,7 +25,7 @@ foreach my $vcf (@vcfs){
 }
 
 my $vcfs = '';
-foreach my $chr (sort {$a cmp $b} keys %vcfs){
+foreach my $chr (sort {$a cmp $b} keys %vcfs) {
   $vcfs .= "$vcfs{$chr} ";
 }
 
