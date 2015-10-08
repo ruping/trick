@@ -212,8 +212,8 @@ foreach my $file (@list) {
            }
          }
        } elsif ($type eq 'indel') { #for indel
-         if ($task =~ /muTect/) {   #if mutect
-           if ($info =~ /SOMATIC/) {
+         if ($task =~ /strelka/) {   #if strelka
+           if ($pass =~ /PASS/) {
              $somatic = 1;
            }
          } else {
@@ -225,6 +225,10 @@ foreach my $file (@list) {
        }
      }
      #############################################################################decide somatic
+
+     if ( $type eq 'indel' and $task =~ /strelka/ ) {                    #if clinvar, skip normal filter
+         goto PRODUCE;
+     }
 
      if ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/) {  #snp in population, is it a somatic one?
 
@@ -307,43 +311,74 @@ foreach my $file (@list) {
      my $maf = -1;    #get maf
      my $tdp = -1;    #get total depth
      my $altd = -1;
-     if ($info =~ /DP4\=(\d+)\,(\d+)\,(\d+)\,(\d+)\;/) { #DP4 information
-       $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
-       $tdp = $1+$2+$3+$4;
-       $altd = $3+$4;
-     } else {                   #no DP4 information
-       if ($info =~ /DP\=(\d+)\;/) {
-         $tdp = $1;
+     if ( $type eq 'indel' and $task =~ /strelka/ ) {
+
+       #GT:DP:DP2:TAR:TIR:TOR:DP50:FDP50:SUBDP50
+
+       my @sampleInfo = split(":", $sample);
+       if ( $sampleInfo[$formindex{'TIR'}] =~ /^(\d+)\,(\d+)$/ ) {
+         $altd = $2;
+       } else {
+         die ("strelka vcf record without TIR, $_\n");
        }
-       my @sampleinfo = split(":", $sample);
-       if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/) {
-         $maf = (($1+$2) > 0)? sprintf("%.3f", $2/($1+$2)) : 0;
-         if ($tdp == -1) {
-           $tdp = $1+$2;
+
+       if ( $sampleInfo[$formindex{'DP2'}] =~ /(\d+)/ ) {
+         $tdp = $2;
+       } else {
+         die ("strelka vcf record without DP2, $_\n");
+       }
+
+       if ( $info =~ /^QSI=(\d+);$/ ) {
+         $qual = $1;
+       } else {
+         die ("strelka vcf record without QSI, $_\n");
+       }
+
+       $maf = sprintf("%.3f", $altd/$tdp);
+
+     } else {  #non strelka indel
+
+       if ($info =~ /DP4\=(\d+)\,(\d+)\,(\d+)\,(\d+)\;/) { #DP4 information
+         $maf = sprintf("%.3f", ($3+$4)/($1+$2+$3+$4));
+         $tdp = $1+$2+$3+$4;
+         $altd = $3+$4;
+       } else {                 #no DP4 information
+         if ($info =~ /DP\=(\d+)\;/) {
+           $tdp = $1;
          }
-         if ($altd == -1) {
-           $altd = $2;
-         }
-       } else {  #multiple depths
-         my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
-         my $adsum = sum(@ads);
-         shift(@ads);
-         my $altadsum = sum(@ads);
-         $maf = sprintf("%.3f", $altadsum/$adsum);
-         if ($tdp == -1){
-           $tdp = $adsum;
-         }
-         if ($altd == -1){
-           $altd = $altadsum;
+         my @sampleinfo = split(":", $sample);
+         if ($sampleinfo[$formindex{'AD'}] =~ /^(\d+)\,(\d+)$/) {
+           $maf = (($1+$2) > 0)? sprintf("%.3f", $2/($1+$2)) : 0;
+           if ($tdp == -1) {
+             $tdp = $1+$2;
+           }
+           if ($altd == -1) {
+             $altd = $2;
+           }
+         } else {               #multiple depths
+           my @ads = split(',', $sampleinfo[$formindex{'AD'}]);
+           my $adsum = sum(@ads);
+           shift(@ads);
+           my $altadsum = sum(@ads);
+           $maf = sprintf("%.3f", $altadsum/$adsum);
+           if ($tdp == -1) {
+             $tdp = $adsum;
+           }
+           if ($altd == -1) {
+             $altd = $altadsum;
+           }
          }
        }
+
      }
 
      #depth filter
      unless ($qualfilter) {
-       next if ( $tdp < 5 );
-       next if ( $altd < 2 );
-       next if ( $maf < 0.01 );
+       unless ( $somatic == 1 ) {
+         next if ( $tdp < 5 );
+         next if ( $altd < 2 );
+         next if ( $maf < 0.01 );
+       }
      }
      #depth filter
 

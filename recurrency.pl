@@ -26,6 +26,7 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
   close IN;
   #print STDERR Dumper (\%somatic);
   #print STDERR Dumper (\%germline);
+
 }
 
 my %rnasamps;
