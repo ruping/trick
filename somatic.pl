@@ -328,7 +328,7 @@ foreach my $file (@list) {
          die ("strelka vcf record without DP2, $_\n");
        }
 
-       if ( $info =~ /\;QSI=(\d+);$/ ) {
+       if ( $info =~ /\;QSI\=(\d+)\;/ ) {
          $qual = $1;
        } else {
          die ("strelka vcf record without QSI, $_\n");
