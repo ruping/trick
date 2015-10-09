@@ -1,16 +1,62 @@
 use strict;
 use Data::Dumper;
+use File::Glob ':glob';
+use List::Util qw[min max];
+use Data::Dumper;
+use Getopt::Long;
 
-my $file = shift;
-my $task = shift;
-my $somaticInfo = shift; #if for somatic judgement
-my $bloodCall = shift;   #whether the blood is also single called
-my $rna = shift;         #if for rna found
+my $file;
+my $task;
+my $type;
+my $somaticInfo;        # if for somatic judgement
+my $bloodCall;          # whether the blood is also single called
+my $rna;                # if for rna found
+
+GetOptions (
+           "file|f=s"          => \$file,             #filename
+           "type|t=s"          => \$type,             #snv or indel
+           "task|k=s"          => \$task,             #task type
+           "somaticInfo|s=s"   => \$somaticInfo,      #info for somatic sample pairs
+           "bloodCall|b=s"     => \$bloodCall,        #bloodCall
+           "rna|r=s"           => \$rna,              #rna info
+           "help|h"         => sub{
+                               print "usage: $0 final preparation of somatic/germline variant calls \n\nOptions:\n\t--file\t\tthe filename of the res file\n";
+                               print "\t--type\t\tthe type of variants, snv or indel\n";
+                               print "\t--task\t\tthe aim of the analysis, maf, somatic, filter, (sam)founds, (rna)trace, depth etc\n";
+                               print "\t--somaticInfo\tthe paired sample information\n";
+                               print "\t--bloodCall\twhether the blood has called for variants (yes or no), for a sanity check\n";
+                               print "\t--rna\t\tthe dna-rna matching table, when task is rnatrace\n";
+                               print "\t--help\t\tprint this help message\n";
+                               print "\n";
+                               exit 0;
+                             },
+           );
+
+
+my $Th_maf = 0.03;
+my $Th_endsratio = 0.9;
+my $Th_vard = 2;
+my $Th_badQualFrac = 0.6;
+my $Th_cmeancmedian = 5.5;
+my $Th_cmedian = 2;
+if ($type eq 'indel') {
+  $Th_endsratio = 0.95;
+  $Th_cmeancmedian = 6.5;
+  $Th_cmedian = 3;
+}
+
+print STDERR "Th_maf: $Th_maf\n";
+print STDERR "Th_endsratio: $Th_endsratio\n";
+print STDERR "Th_vard: $Th_vard\n";
+print STDERR "Th_badQualFrac: $Th_badQualFrac\n";
+print STDERR "Th_cemancmedian: $Th_cmeancmedian\n";
+print STDERR "Th_cmedian: $Th_cmedian\n";
+
 
 my @all;
 my %somatic;
 my %germline;  #may have multiple tumors
-if ($somaticInfo ne '' and -s "$somaticInfo") {
+if ($somaticInfo and -s "$somaticInfo") {
 
   open IN, "$somaticInfo";
   while ( <IN> ){
@@ -29,30 +75,33 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
 
 }
 
+
 my %rnasamps;
-if ( (! -e $rna) and $rna =~ /,/ ){
-  my @rnas = split(',', $rna);
-  foreach my $rnas (@rnas){
-    $rnasamps{$rnas} = '';
-  }
-} elsif (-e $rna) {
-  my %rcol;
-  open IN, "$rna";
-  while ( <IN> ){
-    chomp;
-    my @cols = split /\t/;
-    if ($_ =~ /^([\#])?dna\t/){ #header
-      for (my $i=0; $i<=$#cols; $i++){
-        $rcol{$cols[$i]} = $i;
-      }
-    } else {
-      next if $cols[$rcol{'rna'}] eq 'NA';
-      $rnasamps{$cols[$rcol{'rna'}]} = $cols[$rcol{'dna'}];
+if ($rna) {
+  if ( (! -e $rna) and $rna =~ /,/ ) {
+    my @rnas = split(',', $rna);
+    foreach my $rnas (@rnas) {
+      $rnasamps{$rnas} = '';
     }
+  } elsif (-e $rna) {
+    my %rcol;
+    open IN, "$rna";
+    while ( <IN> ) {
+      chomp;
+      my @cols = split /\t/;
+      if ($_ =~ /^([\#])?dna\t/) { #header
+        for (my $i=0; $i<=$#cols; $i++) {
+          $rcol{$cols[$i]} = $i;
+        }
+      } else {
+        next if $cols[$rcol{'rna'}] eq 'NA';
+        $rnasamps{$cols[$rcol{'rna'}]} = $cols[$rcol{'dna'}];
+      }
+    }
+    close IN;
   }
-  close IN;
+  print STDERR Dumper(\%rnasamps);
 }
-print STDERR Dumper(\%rnasamps);
 
 
 open IN, "$file";
@@ -86,6 +135,9 @@ while ( <IN> ) {
       print "$_\tdepthav\n";
     } elsif ($task eq 'samfounds'){
       print "$_\tfounds\trsam\n";
+    } else {
+      print STDERR "task if wierd\n";
+      exit 22;
     }
   } else {
     my @cols = split /\t/;
@@ -135,14 +187,14 @@ while ( <IN> ) {
           }
           my $vard = sprintf("%.1f", $maf*$depth);
 
-          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.6 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) {  #it looks good
+          if (($endsratio <= $Th_endsratio or ((1-$endsratio)*$vard >= $Th_vard)) and $badQualFrac <= $Th_badQualFrac and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < $Th_cmeancmedian or $cmedian <= $Th_cmedian)) {  #it looks good
             if ($task =~ /rna/) {
-              if ($maf >= 0.01 and $vard >= 2) {
+              if ($maf >= ($Th_maf - 0.02) and $vard >= $Th_vard) {
                 $founds++;
                 $trace .= "$samp,";
               }
             } else {
-              if ($maf >= 0.03 and $vard >= 3) {
+              if ($maf >= $Th_maf and $vard >= ($Th_vard+1)) {
                 if ($somaticInfo ne '') { #count only tumor
                   if ( exists($somatic{$samp}) ) {
                     $founds++;
@@ -186,9 +238,9 @@ while ( <IN> ) {
       my $Ndep = 0;
       for (my $i = 0; $i <= $#cols; $i++) {
         if ($colindex{$i} =~ /maf$/) {
-          if ($cols[$i] >= 0.1){
+          if ($cols[$i] >= 0.1){    #found clonal
             my $vard = sprintf("%.1f", $cols[$i]*$cols[$i+1]);
-            if ($vard >= 2) {
+            if ($vard >= $Th_vard) {
               $Ndep++;
               $dep += $cols[$i+1];
             }
@@ -267,13 +319,14 @@ while ( <IN> ) {
       my $status;
       print STDERR "$chr\t$pos\t$rep$sc\t$detectedSample[0]\t$mmaf\t$endsratio\t$cmean\t$cmedian\t$cmeanav\t$cmedianav\n";
       if ($rep == 1 and $sc == 1) {
-        $status = ($endsratio < 0.9 and $badQualFrac <= 0.5 and (($cmean+$cmedian) < 4.5 or $cmedian < 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';   #conservative for rep and sc
+        $status = ($endsratio < $Th_endsratio and $badQualFrac <= ($Th_badQualFrac-0.1) and (($cmean+$cmedian) < ($Th_cmeancmedian-1) or $cmedian < $Th_cmedian) and ($cmeanav + $cmedianav) < ($Th_cmeancmedian-0.3))? 'PASS':'FOUT';   #conservative for rep and sc
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < 0.9 and $badQualFrac <= 0.6 and (($cmean+$cmedian) < 5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.2)? 'PASS':'FOUT';
+        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < ($Th_cmeancmedian-0.5) or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < ($Th_cmeancmedian-0.3))? 'PASS':'FOUT';
       } else {
-        $status = ($endsratio < 0.9 and $badQualFrac <= 0.6 and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and ($cmeanav + $cmedianav) < 5.5)? 'PASS':'FOUT';
+        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < $Th_cmeancmedian or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < $Th_cmeancmedian)? 'PASS':'FOUT';
       }
       print "$_\t$status\n" if ($status eq 'PASS');
+      print STDERR "$_\t$status\n" if ($status eq 'FOUT');
     } elsif ($task =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
@@ -304,11 +357,11 @@ while ( <IN> ) {
           my $vard = sprintf("%.1f", $maf*$depth);
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
-            if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and $badQualFrac <= 0.6 and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < 5.2 or $cmedian <= 2)) { #true event
-              if ( $maf >= 0.1 ) {
+            if (($endsratio <= $Th_endsratio or ((1-$endsratio)*$vard >= $Th_vard)) and $badQualFrac <= $Th_badQualFrac and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < ($Th_cmeancmedian-0.3) or $cmedian <= $Th_cmedian)) { #true event
+              if ( $maf >= 0.1 ) {  #clonal ones
                 $maf = $maf;
-              } else {  #subclonal ones, subject to additional constrains
-                if ($badQualFrac < 0.4 and $cmedian <= 1.7) {
+              } else {              #subclonal ones, subject to additional constrains
+                if ($badQualFrac < ($Th_badQualFrac-0.2) and $cmedian <= ($Th_cmedian-0.3)) {
                   $maf = $maf;
                 } else {
                   $maf = 0;         #not reliable somatic
@@ -322,7 +375,7 @@ while ( <IN> ) {
           #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           if (exists $somatic{$samp}) {       #it is tumor
-             $tumor{$samp} = $maf if ($vard >= 3 and $maf >= 0.05);
+             $tumor{$samp} = $maf if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01));
           } elsif (exists $germline{$samp}) { #it is blood
             foreach my $ct (@{$germline{$samp}}) {
               if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) {       #it is originally called
