@@ -136,7 +136,9 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
       next if /^[#@]/;
       next if /^chr\t/;
       if ($type =~ /indel/) {       #indel
-        my ($chr, $pos, $ref, $alt, $indelType, $depth, $vard, $junction, $cmean, $cmedian) = split /\t/;
+        my ($chr, $pos, $ref, $alt, $indelType, $depth, $vardp, $vardn, $vends, $junction, $badqual, $cmean, $cmedian) = split /\t/;
+        my $vard = $vardp + $vardn;
+
         if ($cmean =~ /e/) {
           $cmean = 0;
         }
@@ -150,11 +152,12 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         }
 
         if ($vard > 0 and $depth > 0) {
+          my $endratio = sprintf("%.4f", $vends/$vard);
+          my $strandRatio = sprintf("%.4f", $vardp/$vard);
           $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $vard/$depth);
-          $somatic{$coor}{$djindex}{$name} .= '|'.$cmean.','.$cmedian;
+          $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
         } else {
           $somatic{$coor}{$djindex}{$name} = 0;
-          $somatic{$coor}{$djindex}{$name} .= '|'.$cmean.','.$cmedian;
         }
         $somatic{$coor}{$djindex}{$name} .= "\t$depth";
         if ($junction != 0) {  #there are some junction reads
@@ -181,7 +184,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
           $djindex = 1;
         }
 
-        if ( $somatic{$coor}{$djindex}{$name} ne '' and $somatic{$coor}{$djindex}{$name} !~ /^0\t/){   #already detected with certain reads in a previous file
+        if ( $somatic{$coor}{$djindex}{$name} ne '' and $somatic{$coor}{$djindex}{$name} !~ /^0\t/) {   #already detected with certain reads in a previous file, for merging purposes
           goto SEENB;
         }
 
