@@ -323,7 +323,7 @@ foreach my $file (@list) {
        }
 
        if ( $sampleInfo[$formindex{'DP2'}] =~ /(\d+)/ ) {
-         $tdp = $2;
+         $tdp = $1;
        } else {
          die ("strelka vcf record without DP2, $_\n");
        }
