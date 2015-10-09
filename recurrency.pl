@@ -252,6 +252,7 @@ while ( <IN> ) {
     } elsif ($task =~ /filter/) {     #filter (based on Jie's Results)
       my @detectedSample;
       my %detectedSample;
+      my $somaticCalled = 0;
       my %mafs;
       my $chr;
       my $pos;
@@ -279,6 +280,7 @@ while ( <IN> ) {
           if ($traceSomatic =~ /\,/) {
             my @traceSomatic = split(/\,/, $traceSomatic);
             push(@detectedSample, @traceSomatic);
+            $somaticCalled = 1;
           }
           if ($traceGermline =~ /\,/) {
             my @traceGermline = split(/\,/, $traceGermline);
@@ -324,6 +326,10 @@ while ( <IN> ) {
         $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < ($Th_cmeancmedian-0.5) or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < ($Th_cmeancmedian-0.3))? 'PASS':'FOUT';
       } else {
         $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < $Th_cmeancmedian or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < $Th_cmeancmedian)? 'PASS':'FOUT';
+      }
+
+      if ($type eq 'indel' and $somaticCalled == 1){
+        $status = 'PASS';
       }
       print "$_\t$status\n" if ($status eq 'PASS');
       print STDERR "$_\t$status\n" if ($status eq 'FOUT');
