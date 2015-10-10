@@ -405,16 +405,16 @@ while ( <IN> ) {
         my $stype = 'NA';
         if (exists $nonblood{$tumorSamp}) {
           $stype = 'good';
-          $stype .= ($tumor{$tumorSamp} < 0.01)? 'Sub' : '';  #add subclonal info
+          $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
           $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
         } elsif (exists($blood{$tumorSamp})) {
           if ($blood{$tumorSamp} < 0.02 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 4) {
             $stype = 'doubt';
-            $stype .= ($tumor{$tumorSamp} < 0.01)? 'Sub' : '';  #add subclonal info
+            $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
           } elsif (exists($unknown{$tumorSamp})) {
             $stype = 'undef';
-            $stype .= ($tumor{$tumorSamp} < 0.01)? 'Sub' : '';  #add subclonal info
+            $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
           } else {
             $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
