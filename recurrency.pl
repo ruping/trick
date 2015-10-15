@@ -19,7 +19,7 @@ GetOptions (
            "somaticInfo|s=s"   => \$somaticInfo,      #info for somatic sample pairs
            "bloodCall|b=s"     => \$bloodCall,        #bloodCall
            "rna|r=s"           => \$rna,              #rna info
-           "help|h"         => sub{
+           "help|h"         => sub {
                                print "usage: $0 final preparation of somatic/germline variant calls \n\nOptions:\n\t--file\t\tthe filename of the res file\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
                                print "\t--task\t\tthe aim of the analysis, maf, somatic, filter, (sam)founds, (rna)trace, depth etc\n";

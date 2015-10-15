@@ -1,10 +1,16 @@
 use strict;
 
 my $files = shift;
+my $prefix = shift;
+
 
 my @files = split(/\,/, $files);
+my @prefix = split(',', $prefix);
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
 
-my $annotationdir = "/cygdrive/h/annotation";
+
+my $annotationdir = "/cygdrive/g/annotation";
 my $biomart = "$annotationdir/hg19.biomart.txt";
 my $gene2loc = "$annotationdir/entrez2loc.sorted.txt";
 my $genelength = "$annotationdir/hg19.gencode_GC_Len.txt";
@@ -91,12 +97,13 @@ $int2type{'+'} = 'cnva';
 $int2type{'-'} = 'cnvd';
 $int2type{7} = 'hypermethy';
 
-my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
-my %ileum;
-foreach my $il (@ileum) {
-  $ileum{$il} = '';
-}
-my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
+#my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
+#my %ileum;
+#foreach my $il (@ileum) {
+#  $ileum{$il} = '';
+#}
+#my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
+my @rectum = qw(MB-AD-0152_T_SS6003102 MB-AD-0155_T_SS6003104 MB-AD-0285_T_SS6003098 MB-AD-0286_T_SS6003100 MB-AD-0377_T_SS6003092 MB-AD-0463_T_SS6003081 MB-AD-0476_T_SS6003079 MB-AD-0491_T_SS6003083 MB-AD-0632_T_SS6003085 MB-AD-0657_T_SS6003087 MD-AD-0184_T_SS6003106);
 my %rectum;
 foreach my $rec (@rectum) {
   $rectum{$rec} = '';
@@ -142,7 +149,7 @@ foreach my $file (@files) {
         if ($name[$i] eq 'gene'){
           $gene = $cols[$i];
         }
-        if ($name[$i] =~ /(AC\d+)/) {
+        if ($name[$i] =~ /(($prefixReg)([A-Za-z0-9\-\_]+)?)$/) {
           my $sample = $1;
           my $typenow = $type;
 
@@ -188,17 +195,17 @@ print "gene";
 foreach my $sample (@rectum){
   print "\t$sample";
 }
-foreach my $sample (@ileum){
-  print "\t$sample";
-}
-print "\tsumRectum\tsumIleum\trectum\tileum\tentrez\tchr\telength\tbiotype\tdes\tTSG\tCensus\n";
+#foreach my $sample (@ileum){
+#  print "\t$sample";
+#}
+print "\tsumT\tsum\tentrez\tchr\telength\tbiotype\tdes\tTSG\tCensus\n";
 
 foreach my $gene (keys %result) {
   print "$gene";
   my $rectum = 0;
-  my $ileum  = 0;
+  #my $ileum  = 0;
   my %sumRec;
-  my %sumIle;
+  #my %sumIle;
   foreach my $sample (@rectum) {     #rectum
     my $changed = 0;
     my $vars;
@@ -218,30 +225,30 @@ foreach my $gene (keys %result) {
     $rectum += $changed;
     print "\t$vars";
   }
-  foreach my $sample (@ileum) {     #ileum
-    my $changed = 0;
-    my $vars;
-    foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $a <=> $b} keys %{$result{$gene}{$sample}}) {
-      if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA'){
-         #$vars .= $type.","
-         $vars .= $type2int{$type};
-         if ($vars ne ''){
-           $changed = 1;
-         }
-         $sumIle{$type2int{$type}} = '';
-      }
-    }
-    if ($vars eq '') {
-      $vars = 0;
-    }
-    $ileum += $changed;
-    print "\t$vars";
-  }
+  #foreach my $sample (@ileum) {     #ileum
+  #  my $changed = 0;
+  #  my $vars;
+  #  foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $a <=> $b} keys %{$result{$gene}{$sample}}) {
+  #    if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA'){
+  #       #$vars .= $type.","
+  #       $vars .= $type2int{$type};
+  #       if ($vars ne ''){
+  #         $changed = 1;
+  #       }
+  #       $sumIle{$type2int{$type}} = '';
+  #    }
+  #  }
+  #  if ($vars eq '') {
+  #    $vars = 0;
+  #  }
+  #  $ileum += $changed;
+  #  print "\t$vars";
+  #}
   my $sumRec = join("", sort {$a <=> $b} keys %sumRec);
-  my $sumIle = join("", sort {$a <=> $b} keys %sumIle);
+  #my $sumIle = join("", sort {$a <=> $b} keys %sumIle);
   $sumRec = ($sumRec eq '')? 0 : $sumRec;
-  $sumIle = ($sumIle eq '')? 0 : $sumIle;
-  print "\t$sumRec\t$sumIle\t$rectum\t$ileum";
+  #$sumIle = ($sumIle eq '')? 0 : $sumIle;
+  print "\t$sumRec\t$rectum";
 
 
   #add columns

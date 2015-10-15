@@ -92,48 +92,67 @@ while ( <IN> ) {
     print STDERR Dumper (\@samples);
     next;
   } else {                      #data lines
-    if ($type =~ /somatic/) {
-      next if ($cols[$colindex{'somatic'}] eq 'NA');
-    }
-    my @genes = &grepGene($cols[$colindex{'function'}]);
-    #print STDERR Dumper(\@genes);
-    for (my $i = 0; $i <= $#cols; $i++) {
-      if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf$/) {
-        my $name = $1;
-        next unless (exists $somatic{$name});
-        my $maf = $cols[$i];
-        my $endsratio = 0;
-        my $cmean = 0;
-        my $cmedian = 0;
-        my $depth = $cols[$i+1];
 
-        if ($cols[$i] =~ /\|/) { #split the var surrounding information
-          my @infos = split(/\|/, $cols[$i]);
-          $maf = $infos[0];
-          if ($#infos == 2){
-            $endsratio = $infos[1];
-            ($cmean, $cmedian) = split(',', $infos[2]);
-          } elsif ($#infos == 1){    #TCGA raw calls
-            $depth = $infos[1];
+    my @genes = &grepGene($cols[$colindex{'function'}]);
+
+    if ($type =~ /somatic/) {   #somatic ones
+
+      next if ($cols[$colindex{'somatic'}] eq 'NA');
+      my @somaticSamps = split(',', $cols[$colindex{'somatic'}]);
+      foreach my $somaticSamp (@somaticSamps) {
+        $somaticSamp =~ s/\[\w+\]//;
+        next unless (exists $somatic{$somaticSamp});
+        foreach my $gene (@genes){
+          if ($gene ne ''){
+            $result{$gene}{$somaticSamp}++;
           }
         }
+      }
 
-        my $vard = sprintf("%.1f", $maf*$depth);
+    } else {
 
-        #print STDERR "$name\t$maf\t$vard\n";
+      for (my $i = 0; $i <= $#cols; $i++) {
+        if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf$/) {
+          my $name = $1;
+          next unless (exists $somatic{$name});
+          my $maf = $cols[$i];
+          my $endsratio = 0;
+          my $strandRatio = 0;
+          my $badQualFrac = 0;
+          my $cmean = 0;
+          my $cmedian = 0;
+          my $depth = $cols[$i+1];
 
-        if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #it looks good
-          if ($maf >= 0.05 and $vard >= 2) {
-            foreach my $gene (@genes) {
-              if ($gene ne '') {
-                $result{$gene}{$name}++;
-              }                 #gene ne ''
-            }                   #foreach
-          }                     #found in this sample
-        }                       #it looks good
-      }                         #it is maf
-    }                           #iterator
-  }                             #else
+          if ($cols[$i] =~ /\|/) { #split the var surrounding information
+            my @infos = split(/\|/, $cols[$i]);
+            $maf = $infos[0];
+            if ($#infos == 4) {
+              $endsratio = $infos[1];
+              ($cmean, $cmedian) = split(',', $infos[2]);
+              $strandRatio = $infos[3];
+              $badQualFrac = $infos[4];
+            } elsif ($#infos == 1) { #TCGA raw calls
+              $depth = $infos[1];
+            }
+          }
+
+          my $vard = sprintf("%.1f", $maf*$depth);
+
+          #print STDERR "$name\t$maf\t$vard\n";
+
+          if (($endsratio <= 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2)) { #it looks good
+            if ($maf >= 0.05 and $vard >= 2) {
+              foreach my $gene (@genes) {
+                if ($gene ne '') {
+                  $result{$gene}{$name}++;
+                }               #gene ne ''
+              }                 #foreach
+            }                   #found in this sample
+          }                     #it looks good
+        }                       #it is maf
+      }                         #iterator
+    }                           #germline ones
+  }                             #data line
 }
 close IN;
 
@@ -172,7 +191,7 @@ sub grepGene {
     if ($type =~ /exonic/){
       &splitGene($g1);
     } elsif ($type =~ /coding/) {
-      if ($function =~ /^synonymous/ or $function =~ /^nonframeshift/) {
+      if ($function =~ /^synonymous/ or $function =~ /^nonframeshift/ or $function =~ /^unknown/) {
          return(@dummy);
       } else {
          &splitGene($g1);
