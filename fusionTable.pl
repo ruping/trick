@@ -2,12 +2,10 @@ use strict;
 use Data::Dumper;
 
 my $need = shift;
-
 my $dir = shift;
-
 my $mapping = shift;
-
 my $raw = shift;
+
 
 my @need = split(",", $need);
 
@@ -34,7 +32,7 @@ while ( <IN> ) {
 }
 close IN;
 
-#print Dumper (\%rna2dna);
+
 
 my %fusions;
 
@@ -42,11 +40,11 @@ foreach my $sample (@need) {
 
   (my $sampleName = $sample) =~ s/\_001//;
   my $sampleDNA = $rna2dna{$sampleName};
-  my $ff = $dir."/".$sample."/05_FUSION/$sampleName\.fusion\.report";
+  my $ff = $dir."/".$sample."/05_FUSION/$sampleName\.fusion\.report\.filtered";
 
-  if ($sampleName eq 'AC252' or $sampleName eq 'AC263' or $sampleName eq 'AC281' or $sampleName eq 'AC283') {
-    $ff = $dir."../30M_SE/".$sample."/05_FUSION/$sampleName\.fusion\.report";
-  }
+  #if ($sampleName eq 'AC252' or $sampleName eq 'AC263' or $sampleName eq 'AC281' or $sampleName eq 'AC283') {
+  #  $ff = $dir."../30M_SE/".$sample."/05_FUSION/$sampleName\.fusion\.report";
+  #}
 
   if (! -e $ff){
     print STDERR "$ff does not exist!!!\n";
@@ -105,7 +103,7 @@ foreach my $sample (@need) {
     next if ($cov4/$cov5 >= 10 and $cov5 <= 3);               #high duplication
     next if ($cov4/$cov5 >= 20 and $cov5 < 10);               #high duplication
     next if ((($gene2 ne 'IGR' and $gene1 =~ /^$gene2/) or ($gene1 ne 'IGR' and $gene2 =~ /^$gene1/)) and $sc eq 'CC');  #remaining family
-    next if (($gene1 =~ /^IG[KL][JV]/ or $gene2 =~ /^IGK[KL][JV]/) and $sc eq 'CC');                                            #IGG
+    next if (($gene1 =~ /^IG[KL][JV]/ or $gene2 =~ /^IGK[KL][JV]/) and $sc eq 'CC');                                     #IGG
     next if (($gene1 eq 'IGR' and $gene2 =~ /^RP\d+\-\d+/) or ($gene2 eq 'IGR' and $gene1 =~ /^RP\d+\-\d+/));            #lnRNA IGR junk
 
     my $keep = 0;
@@ -135,8 +133,9 @@ my %dna;
 foreach my $rna (keys %rna2dna){
   $dna{$rna2dna{$rna}} = '';
 }
+
 print "gene";
-foreach my $sample ( sort keys %dna ){
+foreach my $sample ( sort keys %dna ) {
    print "\t$sample";
 }
 print "\n";
