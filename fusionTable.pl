@@ -98,12 +98,13 @@ foreach my $sample (@need) {
     next if ($rep =~ /R/ and $sc =~ /C/);                     #skip both rep and sc
     next if ($fusion1 =~ /KCNMB2/ and $fusion2 =~ /KCNMB2/);  #skip KCNMB2
     next if ($fusion1 =~ /TMPRSS3/ or $fusion2 =~ /TMPRSS3/); #skip TMPRSS3
-    next if ($cov5 < 1 or $cov3 < 3);                         #skip low spanning reads
+    next if ($cov5 < 1.5 or $cov3 < 4);                       #skip low spanning reads
     next if ($cov5 < 2 and $sc eq 'CC');                      #skip low spanning reads
     next if ($cov4/$cov5 >= 10 and $cov5 <= 3);               #high duplication
     next if ($cov4/$cov5 >= 20 and $cov5 < 10);               #high duplication
     next if ((($gene2 ne 'IGR' and $gene1 =~ /^$gene2/) or ($gene1 ne 'IGR' and $gene2 =~ /^$gene1/)) and $sc eq 'CC');  #remaining family
     next if (($gene1 =~ /^IG[KL][JV]/ or $gene2 =~ /^IGK[KL][JV]/) and $sc eq 'CC');                                     #IGG
+    next if ($gene1 =~ /^AC\d+\./ and $gene2 =~ /^AC\d+\./);                                                             #AC numbers
     next if (($gene1 eq 'IGR' and $gene2 =~ /^RP\d+\-\d+/) or ($gene2 eq 'IGR' and $gene1 =~ /^RP\d+\-\d+/));            #lnRNA IGR junk
 
     my $keep = 0;
