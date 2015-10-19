@@ -22,7 +22,7 @@ GetOptions (
            "help|h"         => sub {
                                print "usage: $0 final preparation of somatic/germline variant calls \n\nOptions:\n\t--file\t\tthe filename of the res file\n";
                                print "\t--type\t\tthe type of variants, snv or indel\n";
-                               print "\t--task\t\tthe aim of the analysis, maf, somatic, filter, (sam)founds, (rna)trace, depth etc\n";
+                               print "\t--task\t\tthe aim of the analysis, maf, somatic, filter, (sam)founds, (rna)trace, depth, freq, etc\n";
                                print "\t--somaticInfo\tthe paired sample information\n";
                                print "\t--bloodCall\twhether the blood has called for variants (yes or no), for a sanity check\n";
                                print "\t--rna\t\tthe dna-rna matching table, when task is rnatrace\n";
@@ -119,6 +119,8 @@ while ( <IN> ) {
     }
     if ($task eq 'maf') {
       print "$_\tmaf\n";
+    } elsif ($task eq 'freq') {
+      print "$_\tfreq\n";
     } elsif ($task eq 'trace') {
       print "$_\ttrace\n";
     } elsif ($task eq 'rnatrace') {
@@ -154,6 +156,20 @@ while ( <IN> ) {
       }
       $maf = sprintf("%.6f",$maf/$sampleCounts);
       print "$_\t$maf\n";
+    } elsif ($task eq 'freq') {
+      my $freq = 'NA';
+      my $function = (exists($colnames{'function'}))? $cols[$colnames{'function'}] : die("no function column.\n");
+      my $id = $cols[$colnames{'id'}];
+      if ($id =~ /1KG=(.+?)/){
+        $freq = $1;
+      } elsif ($id =~ /ESP\d+=(.+?)/){
+        $freq = $1;
+      } elsif ($function =~ /1KG=(.+?)\;/){
+        $freq = $1;
+      } elsif ($function =~ /ESP\d+=(.+?)\;/){
+        $freq = $1;
+      }
+      print "$_\t$freq\n";
     } elsif ($task =~ /founds/ or $task =~ /trace/) {    #trace all samples and check whether it is originally called
       my $founds = 0;
       my $samfounds = 0;
