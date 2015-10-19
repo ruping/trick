@@ -160,9 +160,9 @@ while ( <IN> ) {
       my $freq = 'NA';
       my $function = (exists($colnames{'function'}))? $cols[$colnames{'function'}] : die("no function column.\n");
       my $id = $cols[$colnames{'id'}];
-      if ($id =~ /1KG=(.+?)/){
+      if ($id =~ /1KG=(.+?)$/){
         $freq = $1;
-      } elsif ($id =~ /ESP\d+=(.+?)/){
+      } elsif ($id =~ /ESP\d+=(.+?)$/){
         $freq = $1;
       } elsif ($function =~ /1KG=(.+?)\;/){
         $freq = $1;
