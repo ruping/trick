@@ -34,7 +34,7 @@ my %somatic;
 my %germline;  #may have multiple tumors
 if ($sampleInfo and -s "$sampleInfo") {
 
-  open IN, "$sampleInfo";
+  open IN, "$sampleInfo" or die "$sampleInfo is not readable!\n";
   while ( <IN> ) {
     chomp;
     s/[\s\n]$//;
@@ -109,6 +109,19 @@ while ( <IN> ) {
         }
       }
 
+    } elsif ($type =~ /germline/) {   #somatic ones
+
+      next if ($cols[$colindex{'germline'}] eq 'NA');
+      next if ($cols[$colindex{'somatic'}] ne 'NA');
+      my @germlineSamps = split(',', $cols[$colindex{'germline'}]);
+      foreach my $germlineSamp (@germlineSamps) {
+        next unless (exists $somatic{$germlineSamp});
+        foreach my $gene (@genes){
+          if ($gene ne ''){
+            $result{$gene}{$germlineSamp}++;
+          }
+        }
+      }
     } else {
 
       for (my $i = 0; $i <= $#cols; $i++) {

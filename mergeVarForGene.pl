@@ -1,13 +1,38 @@
 use strict;
+use Data::Dumper;
 
 my $files = shift;
 my $prefix = shift;
+my $sampleInfo = shift;
 
 
 my @files = split(/\,/, $files);
 my @prefix = split(',', $prefix);
 my $prefixReg = join('|', @prefix);
 print STDERR "prefixReg is $prefixReg\n";
+
+my %somatic;
+my %germline;  #may have multiple tumors
+if ($sampleInfo and -s "$sampleInfo") {
+
+  open IN, "$sampleInfo" or die "$sampleInfo is not readable!\n";
+  while ( <IN> ) {
+    chomp;
+    s/[\s\n]$//;
+    my @columns = split /\t/;
+    my $tumor = $columns[0];
+    my $normal = $columns[1];
+
+    $somatic{$tumor} = $normal;
+    push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
+  }
+  close IN;
+  print STDERR Dumper (\%somatic);
+  print STDERR Dumper (\%germline);
+
+}
+print STDERR "sample Info processed\n";
+
 
 
 my $annotationdir = "/cygdrive/g/annotation";
@@ -103,7 +128,7 @@ $int2type{7} = 'hypermethy';
 #  $ileum{$il} = '';
 #}
 #my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
-my @rectum = qw(MB-AD-0152_T_SS6003102 MB-AD-0155_T_SS6003104 MB-AD-0285_T_SS6003098 MB-AD-0286_T_SS6003100 MB-AD-0377_T_SS6003092 MB-AD-0463_T_SS6003081 MB-AD-0476_T_SS6003079 MB-AD-0491_T_SS6003083 MB-AD-0632_T_SS6003085 MB-AD-0657_T_SS6003087 MD-AD-0184_T_SS6003106);
+my @rectum = sort {$a =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pa = $1; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pb = $1; my $ib = $2; my $ibs = $3; $pa cmp $pb or $ia <=> $ib or $ias cmp $ibs} keys %somatic;
 my %rectum;
 foreach my $rec (@rectum) {
   $rectum{$rec} = '';
