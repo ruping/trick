@@ -113,15 +113,17 @@ while ( <IN> ) {
 
       next if ($cols[$colindex{'germline'}] eq 'NA');
       next if ($cols[$colindex{'somatic'}] ne 'NA');
+      next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);   #only consider rare ones
       my @germlineSamps = split(',', $cols[$colindex{'germline'}]);
       foreach my $germlineSamp (@germlineSamps) {
         next unless (exists $somatic{$germlineSamp});
         foreach my $gene (@genes){
-          if ($gene ne ''){
+          if ($gene ne '') {
             $result{$gene}{$germlineSamp}++;
           }
         }
       }
+
     } else {
 
       for (my $i = 0; $i <= $#cols; $i++) {
