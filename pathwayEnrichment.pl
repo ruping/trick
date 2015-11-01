@@ -6,9 +6,11 @@ my $database = shift;
 
 open IN, "$gene_list";
 my %genes;
-while ( <IN> ){
-   chomp;
-   $genes{$_} = '';
+while ( <IN> ) {
+  chomp;
+  next if /^[\#]?gene\t/;
+  my @cols = split /\t/;
+  $genes{$cols[0]} = '';
 }
 close IN;
 my $np = scalar(keys %genes);
