@@ -271,7 +271,10 @@ sub splitGene {
   my @genes = split (/[\,]/, $genes);
   my %tmp;
   foreach my $gene (@genes) {
-    $tmp{$gene} = "";
+    my @geneSemi = split (/\;/, $gene);
+    foreach my $geneSemi (@geneSemi){
+      $tmp{$geneSemi} = "";
+    }
   }
   @genes = keys %tmp;
   return(@genes);

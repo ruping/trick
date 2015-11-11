@@ -35,7 +35,7 @@ print STDERR "sample Info processed\n";
 
 
 
-my $annotationdir = "/cygdrive/g/annotation";
+my $annotationdir = "/cygdrive/d/stanford_work/annotation";
 my $biomart = "$annotationdir/hg19.biomart.txt";
 my $gene2loc = "$annotationdir/entrez2loc.sorted.txt";
 my $genelength = "$annotationdir/hg19.gencode_GC_Len.txt";

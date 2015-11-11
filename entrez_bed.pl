@@ -2,6 +2,7 @@ use strict;
 
 my $biomart = shift;
 my $ensembl = shift;
+my $rpkm = shift;
 
 open IN, "$biomart";
 my %mapping;
@@ -17,12 +18,13 @@ close IN;
 
 open IN2, "$ensembl";
 while ( <IN2> ){
+   next if /^#/;
    chomp;
    my @cols = split /\t/;
-   my $ens = $cols[3];
-   my $length = $cols[8];
+   my $ens = ($rpkm eq '')? $cols[3]:$cols[0];
+   my $length = ($rpkm eq '')? $cols[8]:0;
    $ens =~ s/\.\d+$//;
-   my $count = round($cols[7]);
+   my $count = ($rpkm eq '')? round($cols[7]): $cols[1];
    if (exists ($mapping{$ens})){
      foreach my $entrez (keys %{$mapping{$ens}}){
          print "$ens\t$entrez\t$mapping{$ens}{$entrez}\t$count\t$length\n";

@@ -32,54 +32,86 @@ my %opt = (
            'clinical'     => undef,
            'tmpdir'       => "./",
            'prefix'       => undef,
+           'sampleInfo'   => undef,
+           'type'         => undef,
            'tolerance'    => 0,
           );
 
 GetOptions (
-           "chr|c=s"        => \$opt{'chr'},
-           "window|w=i"     => \$opt{'window'},
-	   "mutation|m=s"   => \$opt{'mutation'},
-           "mutationT|x=s"  => \$opt{'mutationT'},
-           "normaln=s"      => \$opt{'normal'},
-           "hetero|e"       => \$opt{'hetero'},
-           "indel|i=s"      => \$opt{'indel'},
-           "indelT|y=s"     => \$opt{'indelT'},
-	   "nonrepeat|r"    => \$opt{'nonrepeat'},
-           "nonrecurrent|u" => \$opt{'nonrecurrent'},
-           "nonselfchain|s" => \$opt{'nonselfchain'},
-           "nonsnp|p"       => \$opt{'nonsnp'},
-	   "denovo|d"       => \$opt{'denovo'},
-	   "common|o=s"     => \$opt{'common'},
-           "table|t"        => \$opt{'table'},
-           "recheck|k=s"    => \$opt{'recheck'},
-           "clinical=s"     => \$opt{'clinical'},
-           "tmpdir=s"       => \$opt{'tmpdir'},
-           "prefix=s"       => \$opt{'prefix'},
-           "tolerance=i"    => \$opt{'tolerance'},
-	   "help|h"         => sub {
-	                       print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
-                               print "\t--window\tthe window size of searching variations\n";
-                               print "\t--mutation[T]\tonly search for substitutions, 'T' for the already prepared mutation table\n";
-                               print "\t--normal\tthe sample id for normal or blood samples to decide somatic mutations\n";
-			       print "\t--hetero\tonly search for hetero substitutions.\n";
-                               print "\t--indel[T]\t\tsearch for partial indel and depth indel, 'T' for the already prepared indel table\n";
-                               print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, default, yes\n";
-                               print "\t--nonselfchain\toptionally choose whether allow variations in selfchain regions to be searched, default, yes\n";
-                               print "\t--nonrecurrent\tskip calls that are recurrent across samples.\n";
-                               print "\t--nonsnp\toptionally choose whether allow variations that are known in dbSNP to be searched, default, yes\n";
-			       print "\t--denovo\twhether substract Parents or not\n";
-			       print "\t--common\tthe number of the common patients\n";
-			       print "\t--help\t\tprint this help message\n";
-                               print "\t--table\t\tgenerate table of variants\n";
-                               print "\t--recheck\tthe dir whether recheck files are located under ./compared_\*/\n";
-                               print "\t--clinical\tjust overlay with the clinical related variants\n";
-                               print "\t--tolerance\tthe distance tolerance to be allowed for comparing indels for generating tables\n";
-                               print "\t--tmpdir\tthe temporary dir to write tmp files\n";
-                               print "\t--prefix\tthe prefix for sample IDs\n";
-                               print "\n";
-                               exit 0;
-       	                     },
+            "chr|c=s"        => \$opt{'chr'},
+            "window|w=i"     => \$opt{'window'},
+            "mutation|m=s"   => \$opt{'mutation'},
+            "mutationT|x=s"  => \$opt{'mutationT'},
+            "normaln=s"      => \$opt{'normal'},
+            "hetero|e"       => \$opt{'hetero'},
+            "indel|i=s"      => \$opt{'indel'},
+            "indelT|y=s"     => \$opt{'indelT'},
+            "nonrepeat|r=s"  => \$opt{'nonrepeat'},
+            "nonrecurrent|u" => \$opt{'nonrecurrent'},
+            "nonselfchain|s=s" => \$opt{'nonselfchain'},
+            "nonsnp|p"       => \$opt{'nonsnp'},
+            "denovo|d"       => \$opt{'denovo'},
+            "common|o=s"     => \$opt{'common'},
+            "table|t"        => \$opt{'table'},
+            "recheck|k=s"    => \$opt{'recheck'},
+            "clinical=s"     => \$opt{'clinical'},
+            "tmpdir=s"       => \$opt{'tmpdir'},
+            "prefix=s"       => \$opt{'prefix'},
+            "sampleInfo=s"   => \$opt{'sampleInfo'},
+            'type=s'         => \$opt{'type'},
+            "tolerance=i"    => \$opt{'tolerance'},
+            "help|h"         => sub {
+              print "usage: $0 [options]\n\nOptions:\n\t--chr\t\tthe chromosome name, like X, 22 etc.. if not set, search for all the chromosomes\n";
+              print "\t--window\tthe window size of searching variations\n";
+              print "\t--mutation[T]\tonly search for substitutions, 'T' for the already prepared mutation table\n";
+              print "\t--normal\tthe sample id for normal or blood samples to decide somatic mutations\n";
+              print "\t--hetero\tonly search for hetero substitutions.\n";
+              print "\t--indel[T]\tsearch for partial indel and depth indel, 'T' for the already prepared indel table\n";
+              print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, default, yes, provide rep file\n";
+              print "\t--nonselfchain\toptionally choose whether allow variations in selfchain regions to be searched, default, yes, provide sc file\n";
+              print "\t--nonrecurrent\tskip calls that are recurrent across samples.\n";
+              print "\t--nonsnp\toptionally choose whether allow variations that are known in dbSNP to be searched, default, yes\n";
+              print "\t--denovo\twhether substract Parents or not\n";
+              print "\t--common\tthe number of the common patients\n";
+              print "\t--help\t\tprint this help message\n";
+              print "\t--table\t\tgenerate table of variants\n";
+              print "\t--recheck\tthe dir whether recheck files are located under ./compared_\*/\n";
+              print "\t--clinical\tjust overlay with the clinical related variants\n";
+              print "\t--tolerance\tthe distance tolerance to be allowed for comparing indels for generating tables\n";
+              print "\t--sampleInfo\tthe sample infomation table (tumor normal each line sep by tab)\n";
+              print "\t--type\tthe type of mutation, somatic or germline\n";
+              print "\t--tmpdir\tthe temporary dir to write tmp files\n";
+              print "\t--prefix\tthe prefix for sample IDs\n";
+              print "\n";
+              exit 0;
+            },
            );
+
+
+my @prefix = split(',', $opt{'prefix'});
+my $prefixReg = join('|', @prefix);
+print STDERR "prefixReg is $prefixReg\n";
+
+print STDERR "gathering mutation type is $opt{type}\n";
+
+my %somatic;
+my %germline;   #may have multiple tumors
+if ($opt{'sampleInfo'}) {
+  open IN, "$opt{sampleInfo}" or die "$opt{sampleInfo} is not readable.\n";
+  while ( <IN> ) {
+    chomp;
+    s/[\s\n]$//;
+    my @columns = split /\t/;
+    my $tumor = $columns[0];
+    my $normal = $columns[1];
+    $somatic{$tumor} = $normal;
+    push(@{$germline{$normal}}, $tumor) if $normal ne 'undef';
+  }
+  close IN;
+  print STDERR "somatic Info is:\n";
+  print STDERR Dumper (\%somatic);
+  #print STDERR Dumper (\%germline);
+}
 
 
 my $bin = $RealBin;
@@ -123,7 +155,7 @@ my $ptr_rm;                     #pointer for repeatmask sub
 my $old_run_rm;
 
 if ($opt{nonrepeat}) {
-  open REP, "/ifs/data/c2b2/ac_lab/rs3412/annotation/hg19/hg19.repeats_UCSC.gff";
+  open REP, "$opt{nonrepeat}";
   while (<REP>) {
     next if /^#/;
     chomp;
@@ -146,7 +178,7 @@ my $ptr_selfChain;
 my $old_run_selfChain;
 
 if ($opt{nonselfchain}) {
-  open SELFCHAIN, "/ifs/data/c2b2/ac_lab/rs3412/annotation/hg19/hg19.SelfChain_UCSC.txt";
+  open SELFCHAIN, "$opt{nonselfchain}";
   while ( <SELFCHAIN> ) {
     next if /^#/;
     chomp;
@@ -479,6 +511,21 @@ if ($opt{mutationT}) {
       my $function;
       my $rep;
       my $sc;
+      my %sampleNeed;
+      if ($opt{type}){
+        for (my $i = 0; $i <= $#cols; $i++) {
+          if ($header{$i} eq $opt{type}) {
+            next if ($cols[$i] eq 'NA');
+            my @somaticSamps = split(',', $cols[$i]);
+            foreach my $somaticSamp (@somaticSamps) {
+              $somaticSamp =~ s/\[\w+\]//;
+              next unless (exists $somatic{$somaticSamp});
+              $sampleNeed{$somaticSamp}++;
+            }
+          }
+        }
+      } #judge which sample is needed
+
       for (my $i = 0; $i <= $#cols; $i++){
         if ($header{$i} eq 'chr'){
           $chr = $cols[$i];
@@ -504,19 +551,25 @@ if ($opt{mutationT}) {
         elsif ($header{$i} eq 'sc') {
           $sc = $cols[$i];
         }
-        elsif ($header{$i} =~ /^$opt{'prefix'}\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
+        elsif ($header{$i} =~ /^($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?maf/) {
           my $individual = $header{$i};
           (my $individualWithoutMAF = $individual) =~ s/maf$//;
           next if (exists $normals{$individualWithoutMAF});
+          next if (!exists $somatic{$individualWithoutMAF});
+          if ($opt{type}){
+            next if (!exists $sampleNeed{$individualWithoutMAF});
+          }
           my $maf = $cols[$i];
-          next if $maf < 0.05;  #skip where maf less than 0.05
-          my $depth;
-          if ($individual eq 'AC3T1'){$depth = $cols[$i+4]; $samples{$individual} = "";}
-          elsif ($individual eq 'AC3T2'){$depth = $cols[$i+3]; $samples{$individual} = "";}
-          elsif ($individual eq 'AC3U'){$depth = $cols[$i+2]; $samples{$individual} = "";}
-          else{$depth = $cols[$i+1]; $samples{$individual} = ""; $netcoh{$individual} = "";}
+          if ($maf =~ /^([0-9\.]+)\|/){
+            next if $1 <= 0.04;  #skip where maf less than 0.04
+          } else {
+            next if $maf == 0;
+          }
+          my $depth = $cols[$i+1];
+          $samples{$individualWithoutMAF} = "";
+          $netcoh{$individualWithoutMAF} = "";
           next if ($opt{'nonsnp'} and $id != ".");
-          $variations{$chr}{$pos}{$individual}{'SUB'}{'info'} = 'SNV:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
+          $variations{$chr}{$pos}{$individualWithoutMAF}{'SUB'}{'info'} = 'SNV:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
           $variations{$chr}{$pos}{'rep'} = $rep;
           $variations{$chr}{$pos}{'sc'} = $sc;
         }
@@ -823,6 +876,21 @@ if ($opt{indelT}) {
       my $function;
       my $rep;
       my $sc;
+      my %sampleNeed;
+      if ($opt{type}){
+        for (my $i = 0; $i <= $#cols; $i++) {
+          if ($header{$i} eq $opt{type}) {
+            next if ($cols[$i] eq 'NA');
+            my @somaticSamps = split(',', $cols[$i]);
+            foreach my $somaticSamp (@somaticSamps) {
+              $somaticSamp =~ s/\[\w+\]//;
+              next unless (exists $somatic{$somaticSamp});
+              $sampleNeed{$somaticSamp}++;
+            }
+          }
+        }
+      } #judge which sample is needed
+
       for (my $i = 0; $i <= $#cols; $i++){
         if ($header{$i} eq 'chr'){
           $chr = $cols[$i];
@@ -848,19 +916,25 @@ if ($opt{indelT}) {
         elsif ($header{$i} eq 'sc') {
           $sc = $cols[$i];
         }
-        elsif ($header{$i} =~ /^$opt{'prefix'}\d+maf$/ || $header{$i} =~ /^AC3[TU]/){
+        elsif ($header{$i} =~ /^($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?maf/){
           my $individual = $header{$i};
           (my $individualWithoutMAF = $individual) =~ s/maf$//;
           next if ($normals{$individualWithoutMAF});
+          next if (!exists $somatic{$individualWithoutMAF});
+          if ($opt{type}){
+            next if (!exists $sampleNeed{$individualWithoutMAF});
+          }
           my $maf = $cols[$i];
-          next if $maf <= 0.05;  #skip where maf less than 0.05
-          my $depth;
-          if ($individual eq 'AC3T1'){$depth = $cols[$i+4]; $samples{$individual} = "";}
-          elsif ($individual eq 'AC3T2'){$depth = $cols[$i+3]; $samples{$individual} = "";}
-          elsif ($individual eq 'AC3U'){$depth = $cols[$i+2]; $samples{$individual} = "";}
-          else{$depth = $cols[$i+1]; $samples{$individual} = ""; $netcoh{$individual} = "";}
+          if ($maf =~ /^([0-9\.]+)\|/){
+            next if $1 <= 0.04;  #skip where maf less than 0.04
+          } else {
+            next if $maf == 0;
+          }
+          my $depth = $cols[$i+1];
+          $samples{$individualWithoutMAF} = "";
+          $netcoh{$individualWithoutMAF} = "";
           next if ($opt{'nonsnp'} and $id != ".");
-          $variations{$chr}{$pos}{$individual}{'INDEL'}{'info'} = 'INDEL:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
+          $variations{$chr}{$pos}{$individualWithoutMAF}{'INDEL'}{'info'} = 'INDEL:'.$chr.':'.$pos.':'.$id.':'.$ref.'->'.$alt.':'.$maf.':'.$depth.':'.$function;
           $variations{$chr}{$pos}{'rep'} = $rep;
           $variations{$chr}{$pos}{'sc'} = $sc;
         }
@@ -907,16 +981,13 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
   my @starts;
 
   foreach my $start (@pre_starts) {
+
     my @n_individuals = keys %{$variations{$chr}{$start}};
-    my $n_individuals = ($opt{'mutationT'} or $opt{'indelT'})? scalar(@n_individuals)-2 : scalar(@n_individuals);
+    my $n_individuals = scalar(@n_individuals);
 
     if ($opt{nonrecurrent}) {
-      if ($n_individuals >= 2) {                                       #skip recurrent point mutation
-         my $recuflag = 0;
-         foreach my $indi (@n_individuals) {
-            $recuflag = 1 if exists($netcoh{$indi});
-         }
-         next if $recuflag == 1;
+      if ($n_individuals >= 2) {                                       #skip recurrent vars
+         next;
       }
     }
     if ($opt{nonselfchain}) {
@@ -1058,7 +1129,7 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
     my $individuals = join "..", (sort keys %result);
 
     my $np = 0;
-    while ($individuals =~ /AC/g) {
+    while ($individuals =~ /$prefixReg/g) {
       $np++;
     }
     print STDERR "$chr\t$start\t$np\n";
@@ -1066,20 +1137,7 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
     #checking and output
 
     if ((scalar(@common)==1 and $np >= $common[0]) or (scalar(@common)==2 and $np >= $common[0] and $np <= $common[1])) {
-      #my $flag = 0;
-      #foreach my $individual_here ( sort keys %result ) {
-      #  my $info;
-      #  foreach my $start_here (sort keys %{ $result{$individual_here}} ) {
-      #    foreach my $var_type_here (sort keys %{$result{$individual_here}{$start_here}}) {
-      #      $info .= $result{$individual_here}{$start_here}{$var_type_here}.';';
-      #    }
-      #  }
-      #  print "\t\t\t$individual_here\t$info\n" if ($flag == 1);
-      #  if ($flag == 0) {
-      #    print "$winregion\t$individual_here\t$info\n";
-      #    $flag++;
-      #  }
-      #}                         #foreach individual
+
       if ($start > $last_found_window_end) { #this window is NOT overlapping with previous window
         $n_result_regions++;  #add region
         $merged{$start}{'end'} = $winend;
