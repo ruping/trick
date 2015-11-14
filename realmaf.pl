@@ -66,7 +66,7 @@ foreach my $file (@list) {
   }
   if ($name ne '') {
     $samples{$name} = '';
-    $chrJumper{$name} = getchrpos($file);
+    $chrJumper{$file} = getchrpos($file);   #remember the chr start for each file
   }
 }
 
@@ -116,7 +116,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
 
 
   my %somatic;
-  foreach my $file (@list) {
+  foreach my $file (@list) {       #foreach file
     my $name;
     if ($prefix ne '' and $file =~ /(($prefixReg)([A-Za-z0-9\-\_]+)?)$/) {
       $name = $1;
@@ -126,7 +126,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
 
     print STDERR "$name\n";
 
-    my $jumperI = $chrJumper{$name}->{$chrc};
+    my $jumperI = $chrJumper{$file}->{$chrc};    #rechecked file jumper
     my $djindex = 1;
     my $prevCoor = 'SRP';
     open IN, "$file";
