@@ -170,13 +170,14 @@ foreach my $file (@list) {
        next;
      }
 
-     if ($qualfilter) {     #if do qual filter
+     if ($qualfilter) {             #if do qual filter
        next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
      }
 
-     if ($task =~ /titan/) {    #for titan, pick good ones
+     if ($task =~ /titan/ or $task =~ /errorEst/) { #for titan, pick good ones
        next if ($qual ne '.' and $qual < $qualTitan);
      }
+
 
      if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
@@ -227,8 +228,15 @@ foreach my $file (@list) {
      #############################################################################decide somatic
 
      if ( $type eq 'indel' and $task =~ /strelka/ ) {                    #if clinvar, skip normal filter
-         goto PRODUCE;
+       goto PRODUCE;
      }
+     if ( $task =~ /errorEst/ ) {
+       if ($somatic == 1 or $id == ".") {                                #using known vars for estimation of errors
+         next;
+       }
+       goto PRODUCE;
+     }
+
 
      if ($id ne '.' or $info =~ /dbSNP/ or $info =~ /1KG\=/ or $info =~ /ESP\d+\=/) {  #snp in population, is it a somatic one?
 
@@ -381,6 +389,10 @@ foreach my $file (@list) {
        }
      }
      #depth filter
+
+     if ( $task =~ /errorEst/ ) {
+       next if ( $maf < 0.2 or $maf > 0.8 );
+     }
 
      # generate reference panel for her2 brca
      if ($task =~ /refpanel/) {
