@@ -24,7 +24,7 @@ GetOptions (
                                print "\t--original\tthe original mutation big table\n";
                                print "\t--prefix\tthe prefix of samples' names, comma separated\n";
                                print "\t--blood\t\tthe sample names of blood samples\n";
-                               print "\t--task\t\tthe task, such as tcga\n";
+                               print "\t--task\t\tthe task, such as tcga, or errorEst (estimate global sequencing error rate)\n";
                                print "\t--help\t\tprint this help message\n";
                                print "\n";
                                exit 0;
@@ -80,6 +80,8 @@ foreach my $name (sort {$a =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pa = 
 }
 print "\tcmeanav\tcmedianav\n";
 
+
+my %errorEst;                    #for the estimation of error rate
 foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
 
   my $jumperO = $chrJumper{'original'}->{$chrc};
@@ -178,13 +180,13 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         last if $chr ne $chrc;
 
         my $coor = $chr.':'.$pos;
-        if ($coor eq $prevCoor) {
+        if ($coor eq $prevCoor) {   #for the same coordinate but different var
           $djindex += 1;
         } else {
           $djindex = 1;
         }
 
-        if ( $somatic{$coor}{$djindex}{$name} ne '' and $somatic{$coor}{$djindex}{$name} !~ /^0\t/) {   #already detected with certain reads in a previous file, for merging purposes
+        if ( $somatic{$coor}{$djindex}{$name} ne '' and $somatic{$coor}{$djindex}{$name} !~ /^0\t/ ) {   #already detected with certain reads in a previous file, for merging purposes
           goto SEENB;
         }
 
@@ -192,6 +194,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         if ( $vard > 0 and $depth > 0 ) {
           if ( $OR{$coor}{$djindex} ne '' ) {
             my @information = split(",", $OR{$coor}{$djindex});
+            my $ref = $information[1];
             my $alt = $information[2];
             my $altd;
             my $strandRatio;
@@ -232,6 +235,31 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
             } else {
               $somatic{$coor}{$djindex}{$name} = 0;
             }
+
+            ####### here for errorEst #############################
+            if ($task =~ /errorEst/) {
+              if ($altd > 0) {
+                my $hsnpendratio = sprintf("%.4f", $vends/$vard);
+                my $hsnpmaf = sprintf("%.3f", $altd/$depth);
+                if ($hsnpmaf > 0.2 and $hsnpmaf < 0.8 and $hsnpendratio < 0.7 and $depth > 20 and ($cmean < 2 and $cmedian < 1.5)) { #only clean snp
+                  my %baseCounts;
+                  $baseCounts{'A'} = $A + $An;
+                  $baseCounts{'C'} = $C + $Cn;
+                  $baseCounts{'G'} = $G + $Gn;
+                  $baseCounts{'T'} = $T + $Tn;
+                  delete($baseCounts{$ref});
+                  delete($baseCounts{$alt});
+                  foreach my $errorBase (keys %baseCounts){
+                    if ($baseCounts{$errorBase} <= 1){
+                      $errorEst{$name}{'errorBase'} += $baseCounts{$errorBase};
+                    }
+                  } #error bases
+                  $errorEst{$name}{'totalBase'} += $depth;
+                }
+              }
+            }
+            ####### here for errorEst #############################
+
           } else {  #coor is not found in the original table
             print STDERR "error: coor is not found in the original file, must be found!\n";
             exit 22;
@@ -305,6 +333,18 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
     } #each identical coordinates
   } #each coor
 } #each chr
+
+
+if ($task =~ /errorEst/) {
+  open OUT, ">errorEst.tsv";
+  foreach my $sample (keys %errorEst) {
+    my $allbaseCount = $errorEst{$sample}{'totalBase'};
+    my $errbaseCount = $errorEst{$sample}{'errorBase'};
+    my $errorRate = sprintf("%.5f", $errbaseCount/$allbaseCount);
+    print OUT "$sample\t$allbaseCount\t$errbaseCount\t$errorRate\n";
+  }
+  close OUT;
+}
 
 exit 0;
 
