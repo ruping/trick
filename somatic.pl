@@ -231,7 +231,7 @@ foreach my $file (@list) {
        goto PRODUCE;
      }
      if ( $task =~ /errorEst/ ) {
-       if ($somatic == 1 or $id eq ".") {                                #using known vars for estimation of errors
+       if ($somatic == 1 or $id eq '.') {                                #using known vars for estimation of errors
          next;
        }
        goto PRODUCE;
@@ -391,6 +391,7 @@ foreach my $file (@list) {
      #depth filter
 
      if ( $task =~ /errorEst/ ) {
+       print STDERR "$maf\n";
        next if ( $maf < 0.2 or $maf > 0.8 );
      }
 
