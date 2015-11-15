@@ -174,7 +174,7 @@ foreach my $file (@list) {
        next if ($qual ne '.' and $qual < 30 and $pass ne 'PASS');
      }
 
-     if ($task =~ /titan/ or $task =~ /errorEst/) { #for titan, pick good ones
+     if ($task =~ /titan/ or $task =~ /errorEst/) {     #for titan, pick good ones
        next if ($qual ne '.' and $qual < $qualTitan);
      }
 
@@ -391,7 +391,6 @@ foreach my $file (@list) {
      #depth filter
 
      if ( $task =~ /errorEst/ ) {
-       print STDERR "$maf\n";
        next if ( $maf < 0.2 or $maf > 0.8 );
      }
 
