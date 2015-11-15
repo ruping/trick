@@ -231,7 +231,7 @@ foreach my $file (@list) {
        goto PRODUCE;
      }
      if ( $task =~ /errorEst/ ) {
-       if ($somatic == 1 or $id == ".") {                                #using known vars for estimation of errors
+       if ($somatic == 1 or $id eq ".") {                                #using known vars for estimation of errors
          next;
        }
        goto PRODUCE;
