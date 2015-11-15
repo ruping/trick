@@ -250,9 +250,9 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
                   delete($baseCounts{$ref});
                   delete($baseCounts{$alt});
                   foreach my $errorBase (keys %baseCounts){
-                    if ($baseCounts{$errorBase} <= 1){
+                    #if ($baseCounts{$errorBase} <= 1){
                       $errorEst{$name}{'errorBase'} += $baseCounts{$errorBase};
-                    }
+                    #}
                   } #error bases
                   $errorEst{$name}{'totalBase'} += $depth;
                 }
