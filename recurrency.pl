@@ -489,8 +489,15 @@ sub calTumorLOD {
   print STDERR "\t$e\t$f\t$v\t$d\t$r\t$Pr\t$Pm\t$Pr0\t$Pm0\t";
   if ($lref == 0) {
     return(1000);
+  } elsif ($lmut == 0) {
+    return(-1000);
   }
   my $lod = log10($lmut/$lref);
+  if ($lod eq 'inf'){
+    return(1000);
+  } elsif ($lod eq '-inf'){
+    return(-1000);
+  }
   return($lod);
 }
 
@@ -508,10 +515,17 @@ sub calNormalLOD {
   my $lref = ($Pr0**$r)*($Pm0**$v);
   my $lger = ($Prg**$r)*($Pmg**$v);
   print STDERR "\t$e\t$f\t$v\t$d\t$r\t$Pr0\t$Pm0\t$Prg\t$Pmg\t";
-  #if ($lref == 0) {
-  #  return(-1000);
-  #}
+  if ($lref == 0) {
+    return(-1000);
+  } elsif ($lger == 0) {
+    return(1000);
+  }
   my $lod = log10($lref/$lger);
+  if ($lod eq 'inf'){
+    return(1000);
+  } elsif ($lod eq '-inf'){
+    return(-1000);
+  }
   return($lod);
 }
 
