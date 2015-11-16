@@ -400,13 +400,17 @@ while ( <IN> ) {
 
           if (exists $somatic{$samp}) {       #it is tumor sample name
             if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01)) {
-              print STDERR "$samp\t$errorRate\t$maf\t$vard\t$depth\t";
-              ##############################################################################
-              my $tumorLOD = &calTumorLOD($errorRate, $maf, $vard, $depth);   #cal tumor LOD
-              ##############################################################################
-              print STDERR "$tumorLOD\n";
-              if ($tumorLOD >= $Th_tumorLOD) {
+              if ($vard >= 50) {              #must be sig anyway
                 $tumor{$samp} = $maf;
+              } else {                        #cal for less vard
+                print STDERR "$samp\t$errorRate\t$maf\t$vard\t$depth\t";
+                ##############################################################################
+                my $tumorLOD = &calTumorLOD($errorRate, $maf, $vard, $depth); #cal tumor LOD
+                ##############################################################################
+                print STDERR "$tumorLOD\n";
+                if ($tumorLOD >= $Th_tumorLOD) {
+                  $tumor{$samp} = $maf;
+                }
               }
             }
           } elsif (exists $germline{$samp}) { #it is blood
@@ -445,7 +449,7 @@ while ( <IN> ) {
         } elsif (exists($blood{$tumorSamp})) {
 
           my @bloodmafLOD = split(',',$blood{$tumorSamp});
-          if ( $blood{$tumorSamp} < 0.02 and $tumor{$tumorSamp}/$bloodmafLOD[0] >= 4 and $bloodmafLOD[1] > $Th_normalLOD ) {
+          if ( $bloodmafLOD[0] < 0.02 and $tumor{$tumorSamp}/$bloodmafLOD[0] >= 4 and $bloodmafLOD[1] > $Th_normalLOD ) {
             $stype = 'doubt';
             $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
