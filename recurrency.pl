@@ -405,7 +405,7 @@ while ( <IN> ) {
               my $tumorLOD = &calTumorLOD($errorRate, $maf, $vard, $depth);   #cal tumor LOD
               ##############################################################################
               print STDERR "$tumorLOD\n";
-              if ($tumorLOD >= $Th_tumorLOD){
+              if ($tumorLOD >= $Th_tumorLOD) {
                 $tumor{$samp} = $maf;
               }
             }
@@ -485,6 +485,9 @@ sub calTumorLOD {
   my $lmut = ($Pr**$r)*($Pm**$v);
   my $lref = ($Pr0**$r)*($Pm0**$v);
   print STDERR "\t$e\t$f\t$v\t$d\t$r\t$Pr\t$Pm\t$Pr0\t$Pm0\t";
+  if ($lref == 0) {
+    return(1000);
+  }
   my $lod = log10($lmut/$lref);
   return($lod);
 }
