@@ -484,7 +484,7 @@ sub calTumorLOD {
   my $Pm0 = $e/3;
   my $lmut = ($Pr**$r)*($Pm**$v);
   my $lref = ($Pr0**$r)*($Pm0**$v);
-  print STDERR "\tPr\tPm\tPr0\tPm0\t";
+  print STDERR "\t$e\t$f\t$v\t$d\t$r\t$Pr\t$Pm\t$Pr0\t$Pm0\t";
   my $lod = log10($lmut/$lref);
   return($lod);
 }
