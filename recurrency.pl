@@ -414,9 +414,11 @@ while ( <IN> ) {
               if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) { #it is originally called
                 $bloodcalled{$ct} = '';
               }
+              print STDERR "$samp\t$errorRate\t$maf\t$vard\t$depth\t";
               ##############################################################################
               my $normalLOD = &calNormalLOD($errorRate, $maf, $vard, $depth); #cal tumor LOD
               ##############################################################################
+              print STDERR "$normalLOD\n";
               if ( $maf == 0 ) {   #no blood alt found
                 if ( $normalLOD > $Th_normalLOD ) { #around 8 depth
                   $nonblood{$ct} = '';
@@ -505,6 +507,10 @@ sub calNormalLOD {
   my $Pmg = $fg*(1-$e) + (1-$fg)*($e/3);
   my $lref = ($Pr0**$r)*($Pm0**$v);
   my $lger = ($Prg**$r)*($Pmg**$v);
+  print STDERR "\t$e\t$f\t$v\t$d\t$r\t$Pr0\t$Pm0\t$Prg\t$Pmg\t";
+  #if ($lref == 0) {
+  #  return(-1000);
+  #}
   my $lod = log10($lref/$lger);
   return($lod);
 }
