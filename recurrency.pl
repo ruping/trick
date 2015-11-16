@@ -379,6 +379,7 @@ while ( <IN> ) {
 
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
+          print STDERR "$samp\t$errorRate\t$maf\t$vard\t$depth\n";
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
             if (($endsratio <= $Th_endsratio or ((1-$endsratio)*$vard >= $Th_vard)) and $badQualFrac <= $Th_badQualFrac and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < ($Th_cmeancmedian-0.3) or $cmedian <= $Th_cmedian)) { #true event
