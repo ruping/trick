@@ -379,7 +379,6 @@ while ( <IN> ) {
 
           my $depth = $cols[$i+1];
           my $vard = sprintf("%.1f", $maf*$depth);
-          print STDERR "$samp\t$errorRate\t$maf\t$vard\t$depth\n";
 
           if (exists $somatic{$samp}) {     #for tumor samples require some additional thing
             if (($endsratio <= $Th_endsratio or ((1-$endsratio)*$vard >= $Th_vard)) and $badQualFrac <= $Th_badQualFrac and ($strandRatio > 0 and $strandRatio < 1) and (($cmean+$cmedian) < ($Th_cmeancmedian-0.3) or $cmedian <= $Th_cmedian)) { #true event
@@ -401,9 +400,11 @@ while ( <IN> ) {
 
           if (exists $somatic{$samp}) {       #it is tumor sample name
             if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01)) {
+              print STDERR "$samp\t$errorRate\t$maf\t$vard\t$depth\t";
               ##############################################################################
               my $tumorLOD = &calTumorLOD($errorRate, $maf, $vard, $depth);   #cal tumor LOD
               ##############################################################################
+              print STDERR "$tumorLOD\n";
               if ($tumorLOD >= $Th_tumorLOD){
                 $tumor{$samp} = $maf;
               }
@@ -483,6 +484,7 @@ sub calTumorLOD {
   my $Pm0 = $e/3;
   my $lmut = ($Pr**$r)*($Pm**$v);
   my $lref = ($Pr0**$r)*($Pm0**$v);
+  print STDERR "\tPr\tPm\tPr0\tPm0\t";
   my $lod = log10($lmut/$lref);
   return($lod);
 }
