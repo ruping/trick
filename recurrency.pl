@@ -424,7 +424,7 @@ while ( <IN> ) {
               ##############################################################################
               print STDERR "$normalLOD\n";
               if ( $maf == 0 ) {   #no blood alt found
-                if ( $normalLOD > $Th_normalLOD ) { #around 8 depth
+                if ( $normalLOD > $Th_normalLOD and $depth >= 8 ) { #around 8 depth
                   $nonblood{$ct} = '';
                 } else {
                   $unknown{$ct} = '';
