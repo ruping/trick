@@ -34,7 +34,7 @@ GetOptions (
 
 my $Th_tumorLOD = 5.3;
 my $Th_normalLOD = 2.3;
-my $errorRate = 0.002;
+my $errorRate = 0.001;
 my $Th_maf = 0.03;
 my $Th_endsratio = 0.9;
 my $Th_vard = 2;
