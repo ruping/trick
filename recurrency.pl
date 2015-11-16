@@ -32,7 +32,9 @@ GetOptions (
                              },
            );
 
-
+my $Th_tumorLOD = 5.3;
+my $Th_normalLOD = 2.3;
+my $errorRate = 0.002;
 my $Th_maf = 0.03;
 my $Th_endsratio = 0.9;
 my $Th_vard = 2;
@@ -396,24 +398,36 @@ while ( <IN> ) {
 
           #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
-          if (exists $somatic{$samp}) {       #it is tumor
-             $tumor{$samp} = $maf if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01));
-          } elsif (exists $germline{$samp}) { #it is blood
-            foreach my $ct (@{$germline{$samp}}) {
-              if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) {       #it is originally called
-                $bloodcalled{$ct} = '';
-              }
-              if ( $maf == 0 and $depth >= 10 ) {      #at least 10 reads for blood
-                $nonblood{$ct} = '';
-              } elsif ( $maf == 0 and $depth < 10 ) {
-                $unknown{$ct} = '';
-              } else {                          #maf != 0
-                $blood{$ct} = $maf;
+          if (exists $somatic{$samp}) {       #it is tumor sample name
+            if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01)) {
+              ##############################################################################
+              my $tumorLOD = &calTumorLOD($errorRate, $maf, $vard, $depth);   #cal tumor LOD
+              ##############################################################################
+              if ($tumorLOD >= $Th_tumorLOD){
+                $tumor{$samp} = $maf;
               }
             }
-          } #it is blood
-        } #maf
-      } #each column
+          } elsif (exists $germline{$samp}) { #it is blood
+            foreach my $ct (@{$germline{$samp}}) {
+              if ($bloodCall eq 'yes' and $cols[$i-1] =~ /\|/) { #it is originally called
+                $bloodcalled{$ct} = '';
+              }
+              ##############################################################################
+              my $normalLOD = &calNormalLOD($errorRate, $maf, $vard, $depth); #cal tumor LOD
+              ##############################################################################
+              if ( $maf == 0 ) {   #no blood alt found
+                if ( $normalLOD > $Th_normalLOD ) { #around 8 depth
+                  $nonblood{$ct} = '';
+                } else {
+                  $unknown{$ct} = '';
+                }
+              } else {          #maf != 0
+                $blood{$ct} = $maf.','.$normalLOD;
+              }
+            }
+          }                     #it is blood
+        }                       #maf
+      }                         #each column
 
       my $soma = 'NA';
       my $germ = 'NA';
@@ -423,8 +437,11 @@ while ( <IN> ) {
           $stype = 'good';
           $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
           $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
+
         } elsif (exists($blood{$tumorSamp})) {
-          if ($blood{$tumorSamp} < 0.02 and $tumor{$tumorSamp}/$blood{$tumorSamp} >= 4) {
+
+          my @bloodmafLOD = split(',',$blood{$tumorSamp});
+          if ( $blood{$tumorSamp} < 0.02 and $tumor{$tumorSamp}/$bloodmafLOD[0] >= 4 and $bloodmafLOD[1] > $Th_normalLOD ) {
             $stype = 'doubt';
             $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
@@ -450,3 +467,43 @@ while ( <IN> ) {
   }
 }
 close IN;
+
+
+#calculate LOD scores for deciding somatic calls
+sub calTumorLOD {
+  my $e = shift;
+  my $f = shift;
+  my $v = shift;
+  my $d = shift;
+  my $r = $d-$v;
+  my $Pr = $f*($e/3) + (1-$f)*(1-$e);
+  my $Pm = $f*(1-$e) + (1-$f)*($e/3);
+  my $Pr0 = 1-$e;
+  my $Pm0 = $e/3;
+  my $lmut = ($Pr**$r)*($Pm**$v);
+  my $lref = ($Pr0**$r)*($Pm0**$v);
+  my $lod = log10($lmut/$lref);
+  return($lod);
+}
+
+sub calNormalLOD {
+  my $e = shift;
+  my $f = shift;
+  my $v = shift;
+  my $d = shift;
+  my $r = $d-$v;
+  my $fg = 0.5;
+  my $Pr0 = 1-$e;
+  my $Pm0 = $e/3;
+  my $Prg = $fg*($e/3) + (1-$fg)*(1-$e);
+  my $Pmg = $fg*(1-$e) + (1-$fg)*($e/3);
+  my $lref = ($Pr0**$r)*($Pm0**$v);
+  my $lger = ($Prg**$r)*($Pmg**$v);
+  my $lod = log10($lref/$lger);
+  return($lod);
+}
+
+sub log10 {
+  my $n = shift;
+  return log($n)/log(10);
+}
