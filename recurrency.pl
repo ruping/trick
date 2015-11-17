@@ -399,7 +399,7 @@ while ( <IN> ) {
           #print STDERR "$samp\t$maf\t$endsratio\t$cmean\t$cmedian\n";
 
           if (exists $somatic{$samp}) {       #it is tumor sample name
-            if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01)) {
+            if ($vard >= ($Th_vard+1) and $maf >= ($Th_maf+0.01) and $depth >= 8) {
               if ($vard >= 50) {              #must be sig anyway
                 $tumor{$samp} = $maf;
               } else {                        #cal for less vard
@@ -424,7 +424,7 @@ while ( <IN> ) {
               ##############################################################################
               print STDERR "$normalLOD\n";
               if ( $maf == 0 ) {   #no blood alt found
-                if ( $normalLOD > $Th_normalLOD and $depth >= 8 ) { #around 8 depth
+                if ( $normalLOD > $Th_normalLOD and $depth >= 8 ) {  #around 8 depth
                   $nonblood{$ct} = '';
                 } else {
                   $unknown{$ct} = '';
