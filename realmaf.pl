@@ -187,7 +187,12 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         }
 
         if ( $somatic{$coor}{$djindex}{$name} ne '' and $somatic{$coor}{$djindex}{$name} !~ /^0\t/ ) {   #already detected with certain reads in a previous file, for merging purposes
-          goto SEENB;
+          my @alreadyHave = split(/\t/, $somatic{$coor}{$djindex}{$name});
+          my @alreadyDepths = split(',', $alreadyHave[1]);
+          my $alreadyDepth = $alreadyDepths[0];
+          if ($alreadyDepths[0] > $depth){
+            goto SEENB;
+          }
         }
 
         ############################ here adding data ###########################################
