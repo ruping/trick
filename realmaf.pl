@@ -231,7 +231,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
                 } else {  #looks like artifact
                   #$somatic{$coor}{$djindex}{$name} = 0;
-                  $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", max($A,$C,$G,$T)/$depth);                   #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);                   #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
                   $cmean = 0; #reset for artifact like stuff
                   $cmedian = 0; #reset
