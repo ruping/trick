@@ -203,7 +203,7 @@ foreach my $file (@list) {
      if ($singlecalling eq 'no') {      #if it is paired calling
        if ($type eq 'snv') {            #for snp
          if ($task =~ /muTect/) {       #if mutect
-           if ($info =~ /SOMATIC/) {
+           if ($info =~ /SOMATIC/ or $pass eq 'PASS') {
              $somatic = 1;
            }
          } else {
