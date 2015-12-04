@@ -424,8 +424,13 @@ foreach my $file (@list) {
        next if ($function !~ /exonic/ and $function !~ /UTR[35]/ and $function !~ /splicing/);
      }
 
+     my $muTectLod = '';
+     if ($task =~ /muTect/ and $info =~ /t\_lod\_fstar\=(.+?)\;init\_n\_lod\=(.+?)\;/){
+       $muTectLod = $1.','.$2;
+     }
+
      #now start to store data
-     $somatic{$coor}{$name} = ($task =~ /muTect/)? $maf.'|'.$tdp : $maf.'|'.$qual;
+     $somatic{$coor}{$name} = ($task =~ /muTect/)? $maf.'|'.$tdp.'|'.$muTectLod : $maf.'|'.$qual;
 
      my $idrefalt = join("\t", ($id,$ref,$alt));
      $somatic{$coor}{'info'}{$idrefalt} = $function;  #not necessarily just one!
