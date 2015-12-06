@@ -1,6 +1,6 @@
 use strict;
 
-my $totalb = 17022800;
+my $totalb = 0;
 my $totalr = 0;
 
 my %lorenz;
@@ -11,6 +11,7 @@ while ( <IN> ) {
   $lorenz{$depth}{'cov'} += 1;
   $lorenz{$depth}{'read'} += $read;
   $totalr += $read;
+  $totalb += 1;
 }
 close IN;
 print STDERR "total bases (w) is $totalb\n";
