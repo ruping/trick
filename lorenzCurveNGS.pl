@@ -1,12 +1,11 @@
 use strict;
 
-my $totalb = 28647730;
+my $totalb = 17022800;
 my $totalr = 0;
 
 my %lorenz;
 open IN, shift;
-while ( <IN> ){
-  #chr1    1       100     0       0
+while ( <IN> ) {
   chomp;
   my ($chr, $start, $end, $depth, $read) = split /\t/;
   $lorenz{$depth}{'cov'} += 1;
