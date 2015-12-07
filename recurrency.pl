@@ -34,7 +34,7 @@ GetOptions (
            "task|k=s"          => \$task,             #task type
            "somaticInfo|s=s"   => \$somaticInfo,      #info for somatic sample pairs
            "bloodCall|b=s"     => \$bloodCall,        #bloodCall
-           "Th_cmeme=s"        => \$Th_cmeancmedian,  #cmeancmedian
+           "Th_cmeme=f"        => \$Th_cmeancmedian,  #cmeancmedian
            "rna|r=s"           => \$rna,              #rna info
            "help|h"         => sub {
                                print "usage: $0 final preparation of somatic/germline variant calls \n\nOptions:\n\t--file\t\tthe filename of the res file\n";
