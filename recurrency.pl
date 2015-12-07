@@ -12,12 +12,29 @@ my $somaticInfo;        # if for somatic judgement
 my $bloodCall;          # whether the blood is also single called
 my $rna;                # if for rna found
 
+my $Th_tumorLOD = 5.3;
+my $Th_normalLOD = 2.3;
+my $errorRate = 0.001;
+my $Th_maf = 0.03;
+my $Th_endsratio = 0.9;
+my $Th_vard = 2;
+my $Th_badQualFrac = 0.6;
+my $Th_cmeancmedian = 5.5;
+my $Th_cmedian = 2;
+if ($type eq 'indel') {
+  $Th_endsratio = 0.95;
+  $Th_cmeancmedian = 6.5;
+  $Th_cmedian = 3;
+}
+
+
 GetOptions (
            "file|f=s"          => \$file,             #filename
            "type|t=s"          => \$type,             #snv or indel
            "task|k=s"          => \$task,             #task type
            "somaticInfo|s=s"   => \$somaticInfo,      #info for somatic sample pairs
            "bloodCall|b=s"     => \$bloodCall,        #bloodCall
+           "Th_cmeme=s"        => \$Th_cmeancmedian,  #cmeancmedian
            "rna|r=s"           => \$rna,              #rna info
            "help|h"         => sub {
                                print "usage: $0 final preparation of somatic/germline variant calls \n\nOptions:\n\t--file\t\tthe filename of the res file\n";
@@ -32,20 +49,6 @@ GetOptions (
                              },
            );
 
-my $Th_tumorLOD = 5.3;
-my $Th_normalLOD = 2.3;
-my $errorRate = 0.001;
-my $Th_maf = 0.03;
-my $Th_endsratio = 0.9;
-my $Th_vard = 2;
-my $Th_badQualFrac = 0.6;
-my $Th_cmeancmedian = 6.2;
-my $Th_cmedian = 2;
-if ($type eq 'indel') {
-  $Th_endsratio = 0.95;
-  $Th_cmeancmedian = 6.5;
-  $Th_cmedian = 3;
-}
 
 print STDERR "Th_maf: $Th_maf\n";
 print STDERR "Th_endsratio: $Th_endsratio\n";
