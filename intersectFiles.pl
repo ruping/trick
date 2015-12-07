@@ -272,6 +272,7 @@ sub eatline {
   }
 
   chomp($line);
+  $line =~ s/[\s\n]$//;
   my @cols = split (/\t/, $line);
 
   my %variant;
