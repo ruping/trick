@@ -86,10 +86,12 @@ while ($isComment == 1) {
    #print comment
    if ($count == 1) {
      chomp($line);
+     $line =~ s/[\s\n]$//;
      my $maskadd = basename($maskfile);
      print "$line\t$maskadd\n";
    } elsif ($column ne '') {
      chomp($line);
+     $line =~ s/[\s\n]$//;
      my $maskadd = basename($maskfile);
      if (scalar(@columnIndex) == 1){
        print "$line\t$maskadd\.$column\n" if $csplit eq '';
@@ -100,7 +102,9 @@ while ($isComment == 1) {
        print "$line\t$maskadd\n";
      }
    } else {
-     print "$line";
+     chomp($line);
+     $line =~ s/[\s\n]$//;
+     print "$line\n";
    }
    $line = <ORI>;
    $isComment = eatline($line, \@variants);                            # eat a new line
