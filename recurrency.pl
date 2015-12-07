@@ -341,7 +341,7 @@ while ( <IN> ) {
       if ($rep == 1 and $sc == 1) {
         $status = ($endsratio < $Th_endsratio and $badQualFrac <= ($Th_badQualFrac-0.1) and (($cmean+$cmedian) < ($Th_cmeancmedian-1) or $cmedian < $Th_cmedian) and ($cmeanav + $cmedianav) < ($Th_cmeancmedian-0.3))? 'PASS':'FOUT';   #conservative for rep and sc
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < ($Th_cmeancmedian-0.5) or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < ($Th_cmeancmedian-0.3))? 'PASS':'FOUT';
+        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < ($Th_cmeancmedian-0.5) or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < ($Th_cmeancmedian-0.2))? 'PASS':'FOUT';
       } else {
         $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < $Th_cmeancmedian or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) < $Th_cmeancmedian)? 'PASS':'FOUT';
       }
@@ -460,6 +460,7 @@ while ( <IN> ) {
           } else {
             $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
           }
+
         } else { #unknown ones, all germ
           $germ = ($germ eq 'NA')? $tumorSamp.',':$germ.$tumorSamp.',';
         }
