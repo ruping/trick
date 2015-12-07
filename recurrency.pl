@@ -39,7 +39,7 @@ my $Th_maf = 0.03;
 my $Th_endsratio = 0.9;
 my $Th_vard = 2;
 my $Th_badQualFrac = 0.6;
-my $Th_cmeancmedian = 5.5;
+my $Th_cmeancmedian = 6.2;
 my $Th_cmedian = 2;
 if ($type eq 'indel') {
   $Th_endsratio = 0.95;
@@ -341,9 +341,9 @@ while ( <IN> ) {
       if ($rep == 1 and $sc == 1) {
         $status = ($endsratio < $Th_endsratio and $badQualFrac <= ($Th_badQualFrac-0.1) and (($cmean+$cmedian) < ($Th_cmeancmedian-1) or $cmedian < $Th_cmedian) and ($cmeanav + $cmedianav) <= ($Th_cmeancmedian-0.3))? 'PASS':'FOUT';   #conservative for rep and sc
       } elsif ($rep == 1 or $sc == 1) {
-        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < ($Th_cmeancmedian-0.5) or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) <= $Th_cmeancmedian)? 'PASS':'FOUT';
+        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) <= $Th_cmeancmedian or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) <= $Th_cmeancmedian)? 'PASS':'FOUT';
       } else {
-        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) < $Th_cmeancmedian or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) <= $Th_cmeancmedian)? 'PASS':'FOUT';
+        $status = ($endsratio < $Th_endsratio and $badQualFrac <= $Th_badQualFrac and (($cmean+$cmedian) <= $Th_cmeancmedian or $cmedian <= $Th_cmedian) and ($cmeanav + $cmedianav) <= $Th_cmeancmedian)? 'PASS':'FOUT';
       }
 
       if ($type eq 'indel' and $somaticCalled == 1){
