@@ -352,8 +352,12 @@ while ( <IN> ) {
       if ($type eq 'indel' and $somaticCalled == 1){
         $status = 'PASS';
       }
-      print "$_\t$status\n" if ($status eq 'PASS');
-      print STDERR "$_\t$status\n" if ($status eq 'FOUT');
+      if ($task !~ /keep/) {
+        print "$_\t$status\n" if ($status eq 'PASS');
+        print STDERR "$_\t$status\n" if ($status eq 'FOUT');
+      } else {
+        print "$_\t$status\n";
+      }
     } elsif ($task =~ /somatic/) {  #find somatic ones
       my %tumor;
       my %blood;
