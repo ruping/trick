@@ -263,6 +263,8 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
 sub eatline {
 
   my $line = shift;
+  chomp($line);
+  $line =~ s/[\s\n]$//;
   my $variants = shift;
 
   my $isComment = 0;
@@ -271,8 +273,6 @@ sub eatline {
     return $isComment;
   }
 
-  chomp($line);
-  $line =~ s/[\s\n]$//;
   my @cols = split (/\t/, $line);
 
   my %variant;
