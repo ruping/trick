@@ -9,16 +9,16 @@ while ( <IN> ) {
   $chr = 'chr'.$chr;
   $chr =~ s/chrMT/chrM/;
   my $out = 0;
-  if ($better >= 1){
+  if ($better > 1){
     $out = 1;
   }
   elsif ($chrom ne $chr){
     $out = 1;
   }
-  elsif ( abs($pos - $mstart) > 70 or abs($pos - $mstart) < 30 ){
+  elsif ( abs($pos - $mstart) > 70 or abs($pos - $mstart) < 30 ) {
     $out = 1;
   }
-  if ($out == 1){
+  if ($out == 1) {
     $tmp{$chr}{$pos} = $_;
   }
 }
