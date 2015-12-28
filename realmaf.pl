@@ -156,7 +156,7 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
         if ($vard > 0 and $depth > 0) {
           my $endratio = sprintf("%.4f", $vends/$vard);
           my $strandRatio = sprintf("%.4f", $vardp/$vard);
-          $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $vard/$depth);
+          $somatic{$coor}{$djindex}{$name} = sprintf("%.4f", $vard/$depth);
           $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
         } else {
           $somatic{$coor}{$djindex}{$name} = 0;
@@ -222,16 +222,16 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
             if ($altd > 0) {
               if (exists($blood{$name}) or $blood eq 'yes') { #it is blood
                 my $endratio = sprintf("%.4f", $vends/$vard);
-                $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
+                $somatic{$coor}{$djindex}{$name} = sprintf("%.4f", $altd/$depth);
                 $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
               } else {  #it is tumor
                 my $endratio = sprintf("%.4f", $vends/$vard);
                 if (($endratio <= 0.8 or ($altd - $vends) >= 2) and (($cmean+$cmedian) < 6 or $cmedian <= 2)) {  #limiting endsratio and mismatch stuff
-                  $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);
+                  $somatic{$coor}{$djindex}{$name} = sprintf("%.4f", $altd/$depth);
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
                 } else {  #looks like artifact
                   #$somatic{$coor}{$djindex}{$name} = 0;
-                  $somatic{$coor}{$djindex}{$name} = sprintf("%.3f", $altd/$depth);                   #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  $somatic{$coor}{$djindex}{$name} = sprintf("%.4f", $altd/$depth);                   #now accept everything for further filtration!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   $somatic{$coor}{$djindex}{$name} .= '|'.$endratio.'|'.$cmean.','.$cmedian.'|'.$strandRatio.'|'.$badqual;
                   $cmean = 0; #reset for artifact like stuff
                   $cmedian = 0; #reset
