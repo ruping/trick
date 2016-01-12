@@ -407,7 +407,7 @@ foreach my $file (@list) {
 
      #for titan purpose
      if ($task =~ /titan/) {
-       next if ($maf < 0.3 or $maf > 0.65);  #retain only heterozygous one
+       next if ($maf < 0.25 or $maf > 0.75);  #retain only heterozygous one
      }
      #for titan purpose
 
