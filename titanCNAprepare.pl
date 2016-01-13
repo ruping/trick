@@ -64,7 +64,7 @@ if ($split == 1) {
 
           if (exists($germline{$sample})) {  #it is a blood
             my $calledBlood = $cols[$i-1];
-            if ( $pairedCall ) {
+            if ( $pairedCall == 1 ) {
               $calledBlood = $cols[$colindex{${$germline{$sample}}[0]}];
             }
             if ($calledBlood =~ /\|/) {   #originally called
