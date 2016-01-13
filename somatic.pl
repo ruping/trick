@@ -407,7 +407,14 @@ foreach my $file (@list) {
 
      #for titan purpose
      if ($task =~ /titan/) {
-       next if ($maf < 0.25 or $maf > 0.75);  #retain only heterozygous one
+       if ($blood ne '') {
+         my @bloodInfo = split(/\:/, $blood);             #for titan, get blood info
+         if ( $bloodInfo[$formindex{'GT'}] !~ /0\/1/ ) {  #skip non-hetero sites
+           next;
+         }
+       } else {
+         next if ($maf < 0.25 or $maf > 0.75);           #retain only heterozygous one
+       }
      }
      #for titan purpose
 
