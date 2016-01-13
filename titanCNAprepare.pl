@@ -6,6 +6,7 @@ use File::Basename;
 
 my $data = shift;
 my $somaticInfo = shift;
+my $pairedCall = shift;
 my $split = 1;
 
 my %somatic;
@@ -63,6 +64,9 @@ if ($split == 1) {
 
           if (exists($germline{$sample})) {  #it is a blood
             my $calledBlood = $cols[$i-1];
+            if ( $pairedCall ) {
+              $calledBlood = $cols[$colindex{${$germline{$sample}}[0]}];
+            }
             if ($calledBlood =~ /\|/) {   #originally called
               if ($cols[$i] =~ /\|/) { #split the var surrounding information
                 my @infos = split(/\|/, $cols[$i]);
