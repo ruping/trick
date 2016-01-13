@@ -30,6 +30,10 @@ if ($somaticInfo ne '' and -s "$somaticInfo") {
 
 
 my $outdir = "./titan/";
+unless (-e "$outdir"){
+  system("mkdir -p $outdir");
+}
+
 
 if ($split == 1) {
 
@@ -59,7 +63,7 @@ if ($split == 1) {
 
           if (exists($germline{$sample})) {  #it is a blood
             my $calledBlood = $cols[$i-1];
-            if ($calledBlood =~ /\|/){   #originally called
+            if ($calledBlood =~ /\|/) {   #originally called
               if ($cols[$i] =~ /\|/) { #split the var surrounding information
                 my @infos = split(/\|/, $cols[$i]);
                 my $bmaf = $infos[0];
