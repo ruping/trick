@@ -3,6 +3,8 @@ use File::Glob ':glob';
 use List::Util qw[min max];
 use Data::Dumper;
 use Getopt::Long;
+use File::Basename;
+
 
 my $file;      #filename of all rechecked files
 my $type;
@@ -58,10 +60,11 @@ $chrJumper{'original'} = getchrpos($original);
 
 my %samples;
 foreach my $file (@list) {
+  my $filebase = basename($file);
   my $name;
-  if ($prefix ne '' and $file =~ /(($prefixReg)([A-Za-z0-9\-\_]+)?)$/) {
+  if ($prefix ne '' and $filebase =~ /(($prefixReg)([A-Za-z0-9\-\_]+)?)/) {
     $name = $1;
-  } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
+  } elsif ($task eq 'tcga' and $filebase =~ /((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
     $name = $1;
   }
   if ($name ne '') {
@@ -119,10 +122,11 @@ foreach my $chrc (sort keys %{$chrJumper{'original'}}) {
 
   my %somatic;
   foreach my $file (@list) {       #foreach file
+    my $filebase = basename($file);
     my $name;
-    if ($prefix ne '' and $file =~ /(($prefixReg)([A-Za-z0-9\-\_]+)?)$/) {
+    if ($prefix ne '' and $filebase =~ /(($prefixReg)([A-Za-z0-9\-\_]+)?)/) {
       $name = $1;
-    } elsif ($task eq 'tcga' and $file =~ /\/((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
+    } elsif ($task eq 'tcga' and $filebase =~ /((TCGA\-([^\-]+\-[^\-]+))\-[^\-]+\-[^\-]+\-[^\-]+\-\d+)$/) {
       $name = $1;
     }
 

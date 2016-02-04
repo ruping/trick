@@ -22,6 +22,15 @@ $headerAdd .= '##INFO=<ID=1KG.AFR,Number=1,Type=Integer,Description="1KG African
 $headerAdd .= '##INFO=<ID=1KG.EAS,Number=1,Type=Integer,Description="1KG East Asian Oct2014 score as reported by Annovar">'."\n";
 $headerAdd .= '##INFO=<ID=1KG.EUR,Number=1,Type=Integer,Description="1KG European Oct2014 score as reported by Annovar">'."\n";
 $headerAdd .= '##INFO=<ID=dbSNP,Number=0,Type=Flag,Description="dbSNP138 membership as reported by Annovar">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_ALL,Number=.,Type=String,Description="ExAC_ALL annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_AFR,Number=.,Type=String,Description="ExAC_AFR annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_AMR,Number=.,Type=String,Description="ExAC_AMR annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_EAS,Number=.,Type=String,Description="ExAC_EAS annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_FIN,Number=.,Type=String,Description="ExAC_FIN annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_NFE,Number=.,Type=String,Description="ExAC_NFE annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_OTH,Number=.,Type=String,Description="ExAC_OTH annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=ExAC_SAS,Number=.,Type=String,Description="ExAC_SAS annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=PopFreqMax,Number=.,Type=String,Description="PopFreqMax annotation provided by ANNOVAR">'."\n";
 $headerAdd .= '##INFO=<ID=function,Number=1,Type=String,Description="function as reported by Annovar">'."\n";
 $headerAdd .= '##INFO=<ID=functionClass,Number=1,Type=String,Description="functional Class as reported by Annovar">'."\n";
 $headerAdd .= '##INFO=<ID=geneName,Number=1,Type=String,Description="gene name as reported by Annovar">'."\n";
@@ -130,7 +139,7 @@ while ( <ANNOVARTABLE> ) {
     $info =~ s/(\;dbSNP)?\;function\=.+?$//;   #erase the previous annotation
     $info .= ';';
 
-    for (my $i = 0; $i <= $colindex{'Otherinfo'}; $i++) {
+    for (my $i = 0; $i <= $colindex{'Otherinfo'}; $i++) {  #each annotation by annovar
       next if ($colnames{$i} eq 'Chr');
       next if ($colnames{$i} eq 'Start');
       next if ($colnames{$i} eq 'End');
