@@ -69,7 +69,10 @@ $headerAdd .= '##INFO=<ID=phyloP46way_placental,Number=.,Type=String,Description
 $headerAdd .= '##INFO=<ID=phyloP100way_vertebrate,Number=.,Type=String,Description="phyloP100way_vertebrate annotation provided by ANNOVAR">'."\n";
 $headerAdd .= '##INFO=<ID=SiPhy_29way_logOdds,Number=.,Type=String,Description="SiPhy_29way_logOdds annotation provided by ANNOVAR">'."\n";
 $headerAdd .= '##INFO=<ID=clinvar_20150629,Number=.,Type=String,Description="clinvar_20150629 annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=clinvar_20150330,Number=.,Type=String,Description="clinvar_20150330 annotation provided by ANNOVAR">'."\n";
 $headerAdd .= '##INFO=<ID=ALLELE_END,Number=0,Type=Flag,Description="Flag the end of ANNOVAR annotation for one alternative allele">'."\n";
+$headerAdd .= '##INFO=<ID=nci60,Number=1,Type=Float,Description="nci60 annotation provided by ANNOVAR">'."\n";
+$headerAdd .= '##INFO=<ID=avsnp144,Number=.,Type=String,Description="avsnp144 annotation provided by ANNOVAR">'."\n";
 
 
 my %mapping;
@@ -81,10 +84,16 @@ $mapping{'AAChange.refGene'} = 'AAChange';
 $mapping{'genomicSuperDups'} = 'segdup.score';
 $mapping{'phastConsElements46way'} = 'phastCons'; #score and lod
 $mapping{'esp6500siv2_all'} = 'ESP6500';
-$mapping{'1000g2014oct_all'} = '1KG';
+$mapping{'1000g2015aug_all'} = '1KG';
+$mapping{'1000g2015aug_all'} = '1KG';
 $mapping{'1000g2014oct_afr'} = '1KG.AFR';
+$mapping{'1000g2015aug_afr'} = '1KG.AFR';
 $mapping{'1000g2014oct_eas'} = '1KG.EAS';
+$mapping{'1000g2015aug_eas'} = '1KG.EAS';
 $mapping{'1000g2014oct_eur'} = '1KG.EUR';
+$mapping{'1000g2015aug_eur'} = '1KG.EUR';
+$mapping{'1000g2014oct_eur'} = '1KG.SAS';
+$mapping{'1000g2015aug_eur'} = '1KG.SAS';
 $mapping{'snp138'} = 'dbSNP';
 
 my $headerbuffer;
@@ -130,9 +139,9 @@ while ( <ANNOVARTABLE> ) {
     for (my $j = $colindex{'Otherinfo'}+3; $j <= $#item; $j++) {
       push(@subItem, $item[$j]);
     }
-    $buffer.= "$subItem[0]\t$subItem[1]\t";                                                    #Chr,Pos
-    $buffer.= "$item[$colindex{'snp138'}]\t";                                                  #ID
-    $buffer.="$item[$colindex{'Ref'}]\t$item[$colindex{'Alt'}]\t$subItem[5]\t$subItem[6]\t";   #Ref,Alt,Qual,Filter
+    $buffer.= "$subItem[0]\t$subItem[1]\t";                                                                                                                        #Chr,Pos
+    $buffer.= (exists($colindex{'snp138'}))? "$item[$colindex{'snp138'}]\t" : ((exists($colindex{'avsnp144'}))? "$item[$colindex{'avsnp144'}]\t": "\.\t");         #ID
+    $buffer.="$item[$colindex{'Ref'}]\t$item[$colindex{'Alt'}]\t$subItem[5]\t$subItem[6]\t";                                                                       #Ref,Alt,Qual,Filter
 
     ## Update INFO with annotations
     my $info="$subItem[7]";
@@ -154,10 +163,10 @@ while ( <ANNOVARTABLE> ) {
       #cols needs care
       if ($attr eq 'geneDetail') {
         $item[$i] =~ s/\;/\,/;
-        if ($item[$i] =~ /^(dist\=.+?)\,(dist\=.+?)$/){
+        if ($item[$i] =~ /^(dist\=.+?)\,(dist\=.+?)$/) {
           my $dist1 = $1;
           my $dist2 = $2;
-          if ($info =~ /\,/){
+          if ($info =~ /\,/) {
             $info =~ s/geneName\=(.+?)\,(.+?)\;/geneName\=\1\($dist1\)\,\2\($dist2\)\;/;
           } else {
             print STDERR "inconsistent geneName with dists: $item[$i]\t$info\n";
