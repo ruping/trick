@@ -64,7 +64,7 @@ while ( <MU> ) {
   my $n_alt_count = $cols[$colindex{'n_alt_count'}];
   my $t_alt_max_mapq = $cols[$colindex{'t_alt_max_mapq'}];
   my $tumor_f = $cols[$colindex{'tumor_f'}];
-  my $normal_f = $cols[$colindex{'normal_f'}];
+  my $normal_f = (exists($colindex{'normal_f'}))? $cols[$colindex{'normal_f'}]:0;
   my $t_dp = $t_ref_count + $t_alt_count;
   my $n_dp = $n_ref_count + $n_alt_count;
   my $tumor = '0/1:'."$t_ref_count,$t_alt_count\:"."$t_alt_max_mapq\:"."$t_dp\:"."$tumor_f";
