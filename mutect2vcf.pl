@@ -63,10 +63,10 @@ while ( <MU> ) {
   my $n_ref_count = $cols[$colindex{'n_ref_count'}];
   my $n_alt_count = $cols[$colindex{'n_alt_count'}];
   my $t_alt_max_mapq = $cols[$colindex{'t_alt_max_mapq'}];
-  my $tumor_f = $cols[$colindex{'tumor_f'}];
-  my $normal_f = (exists($colindex{'normal_f'}))? $cols[$colindex{'normal_f'}]:0;
   my $t_dp = $t_ref_count + $t_alt_count;
   my $n_dp = $n_ref_count + $n_alt_count;
+  my $tumor_f = $cols[$colindex{'tumor_f'}];
+  my $normal_f = (exists($colindex{'normal_f'}))? $cols[$colindex{'normal_f'}]: (($n_dp > 0)? sprintf("%.5f", $n_alt_count/$n_dp):0);
   my $tumor = '0/1:'."$t_ref_count,$t_alt_count\:"."$t_alt_max_mapq\:"."$t_dp\:"."$tumor_f";
   my $normal = '0:'."$n_ref_count,$n_alt_count\:".'.:'."$n_dp\:"."$normal_f";
   printf("%s\n", join("\t", $chr, $pos, $id, $ref, $alt, $qual, $filter, $info, $format, $tumor, $normal));
