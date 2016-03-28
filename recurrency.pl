@@ -456,7 +456,7 @@ while ( <IN> ) {
         } elsif (exists($blood{$tumorSamp})) {
 
           my @bloodmafLOD = split(',',$blood{$tumorSamp});
-          if ( $bloodmafLOD[0] < 0.02 and $tumor{$tumorSamp}/$bloodmafLOD[0] >= 4 and $bloodmafLOD[1] > $Th_normalLOD ) {
+          if ( $bloodmafLOD[0] <= 0.05 and $tumor{$tumorSamp}/$bloodmafLOD[0] >= 4 and $bloodmafLOD[1] > $Th_normalLOD ) {
             $stype = 'doubt';
             $stype .= ($tumor{$tumorSamp} < 0.1)? 'Sub' : '';  #add subclonal info
             $soma = ($soma eq 'NA')? $tumorSamp."\[$stype\]".',':$soma.$tumorSamp."\[$stype\]".',';
