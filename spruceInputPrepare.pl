@@ -35,12 +35,14 @@ $n = max(@allmutindex)+1;
 print "$m #m\n$n #n\n$print";
 
 foreach my $sample (sort {$a <=> $b} keys %segs){
+  my $linked;
   foreach my $seg (sort {$a <=> $b} keys %{$segs{$sample}}) {
-    my $linked = $segs{$sample}{$seg};
-    $linked =~ s/\s$//;
-    print STDERR "$linked ";
+    my $cl= $segs{$sample}{$seg};
+    $cl =~ s/\s$//;
+    $linked .= "$cl\t"
   }
-  print STDERR "\n";
+  $linked =~ s/\t$//;
+  print STDERR "$linked\n";
 }
 
 exit 0;
