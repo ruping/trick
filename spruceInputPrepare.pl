@@ -7,6 +7,7 @@ my $m;
 my $n;
 my @allsampindex;
 my @allmutindex;
+my %segs;
 while ( <IN> ){
   chomp;
   if (/^sample\_index/){   #header
@@ -21,6 +22,10 @@ while ( <IN> ){
     $print .= $buffer."\n";
     push(@allsampindex, $sample_index);
     push(@allmutindex, $character_label);
+
+    if ($seg != 0){
+      $segs{$sample_index}{$seg} .= $character_label." ";
+    }
   }
 }
 close IN;
@@ -28,3 +33,14 @@ close IN;
 $m = max(@allsampindex)+1;
 $n = max(@allmutindex)+1;
 print "$m #m\n$n #n\n$print";
+
+foreach my $sample (sort {$a <=> $b} keys %segs){
+  foreach my $seg (sort {$a <=> $b} keys %{$segs{$sample}}) {
+    my $linked = $segs{$sample}{$seg};
+    $linked =~ s/\s$//;
+    print STDERR "$linked ";
+  }
+  print STDERR "\n";
+}
+
+exit 0;
