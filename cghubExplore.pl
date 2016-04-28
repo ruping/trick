@@ -32,7 +32,7 @@ while ( <IN> ) {
     } elsif ($_ =~ /^\s+filename\s+\:\s+(.+?\.bai)$/) {
       $baifile = $1;
     } elsif ($_ =~ /^\s+analysis\_data\_uri/) { #save
-      print "$sampleId\n";
+      #print "$sampleId\n";
       $need{$sampleId}{'aid'} = $analysisId;
       $need{$sampleId}{'bam'} = $bamfile;
       $need{$sampleId}{'bai'} = $baifile;
