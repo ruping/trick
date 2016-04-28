@@ -1,15 +1,17 @@
 use strict;
 
-open IN, shift;
+my $id = "SRP";
+my $sampleId = "SRP";
+my $analysisId = "SRP";
+my $study = "SRP";
+my $bamfile = "SRP";
+my $baifile = "SRP";
 my %need;
+
+open IN, shift;
+
 while ( <IN> ) {
   chomp;
-  my $id;
-  my $sampleId;
-  my $analysisId;
-  my $study;
-  my $bamfile;
-  my $baifile;
   if ($_ =~ /^\s+(Analysis\s+\d+)$/) {
     $id = $1;
   } else {
