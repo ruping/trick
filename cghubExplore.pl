@@ -6,6 +6,7 @@ my $analysisId = "SRP";
 my $study = "SRP";
 my $bamfile = "SRP";
 my $baifile = "SRP";
+my $center = "SRP";
 my %need;
 
 open IN, shift;
@@ -23,6 +24,8 @@ while ( <IN> ) {
       $analysisId = $1;
     } elsif ($_ =~ /^\s+study\s+\:\s+(.+?)$/) {
       $study = $1;
+    } elsif ($_ =~ /^\s+center_name\s+\:\s+(\S+)$/) {
+      $center = $1;
     } elsif ($_ =~ /^\s+filename\s+\:\s+(.+?\.bam)$/) {
       $bamfile = $1;
       next if $bamfile =~ /^CCLE/;
@@ -33,6 +36,7 @@ while ( <IN> ) {
       $need{$sampleId}{'aid'} = $analysisId;
       $need{$sampleId}{'bam'} = $bamfile;
       $need{$sampleId}{'bai'} = $baifile;
+      $need{$sampleId}{'cen'} = $center;
     }
   }
 }
@@ -41,6 +45,7 @@ close IN;
 foreach my $sampleId (sort keys %need) {
   my $bam = $need{$sampleId}{'bam'};
   my $aid = $need{$sampleId}{'aid'};
+  my $cen = $need{$sampleId}{'cen'};
   print "$aid\t$bam\n";
 }
 
