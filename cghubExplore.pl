@@ -4,6 +4,12 @@ open IN, shift;
 my %need;
 while ( <IN> ) {
   chomp;
+  my $id;
+  my $sampleId;
+  my $analysisId;
+  my $study;
+  my $bamfile;
+  my $baifile;
   if ($_ =~ /^\s+(Analysis\s+\d+)$/) {
     $id = $1;
   } else {
