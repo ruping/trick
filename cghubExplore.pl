@@ -46,7 +46,7 @@ foreach my $sampleId (sort keys %need) {
   my $bam = $need{$sampleId}{'bam'};
   my $aid = $need{$sampleId}{'aid'};
   my $cen = $need{$sampleId}{'cen'};
-  print "$aid\t$bam\n";
+  print "$aid\t$bam\t$cen\n";
 }
 
 exit 0;
