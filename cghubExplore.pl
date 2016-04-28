@@ -38,6 +38,7 @@ close IN;
 foreach my $sampleId (sort keys %need) {
   my $bam = $need{$sampleId}{'bam'};
   my $aid = $need{$sampleId}{'aid'};
+  print "$aid\t$bam\n";
 }
 
 exit 0;
