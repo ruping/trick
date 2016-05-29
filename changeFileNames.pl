@@ -13,7 +13,7 @@ print STDERR "changed: $changed\n";
 
 
 foreach my $file (@files){
-  next if $files !~ /$pattern/;
+  next if $file !~ /$pattern/;
   my $basename = basename($file);
   my $dirname = dirname($file);
   $basename =~ s/$pattern/$changed/;
