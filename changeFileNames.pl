@@ -10,7 +10,7 @@ my $changed = shift;
 my @files = bsd_glob("$dir/*$pattern*");
 print STDERR "pattern: $pattern\n";
 print STDERR "changed: $changed\n";
-print STDERR (\@files);
+print STDERR Dumper(\@files);
 
 foreach my $file (@files){
   my $basename = basename($file);
