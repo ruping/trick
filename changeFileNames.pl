@@ -7,12 +7,13 @@ my $dir = shift;
 my $pattern = shift;
 my $changed = shift;
 
-my @files = bsd_glob("$dir/*$pattern*");
+my @files = bsd_glob("$dir/*");
 print STDERR "pattern: $pattern\n";
 print STDERR "changed: $changed\n";
-print STDERR Dumper(\@files);
+
 
 foreach my $file (@files){
+  next if $files !~ /$pattern/;
   my $basename = basename($file);
   my $dirname = dirname($file);
   $basename =~ s/$pattern/$changed/;
