@@ -9,7 +9,7 @@ my $outdir = shift;
 my @files = bsd_glob("$dir/*");
 
 foreach my $f (@files){
-  my $b = basename($b);
+  my $b = basename($f);
   next if $b !~ /$pattern/;
   my $cmd = "touch $outdir/$b";
   system($cmd);
