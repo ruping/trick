@@ -4,16 +4,26 @@ use File::Glob ':glob';
 use File::Basename;
 
 my $dir = shift;
+my $suffix = shift;
+my $sdir = shift;
+my $sdirsuffix = shift;
 
-my @logs = bsd_glob("$dir/*.run.log");
+if ($dir eq '' or $suffix eq '' or $sdir eq ''){
+  print "usage: moveRunLogs.pl dir suffix outdir outdirsuffix\n\n";
+  exit 22;
+}
 
-foreach my $log (@logs){
+my @logs = bsd_glob("$dir/*$suffix");
+
+foreach my $log (@logs) {
   my $b = basename($log);
-  $b =~ /^(.+?)\.run\.log$/;
-  (my $sd = $log) =~ s/\.run\.log$//;
+  $b =~ /^(.+?)\.$suffix$/;
   my $sample = $1;
-  my $cmd = "mv $log $sd";
-  if (-e "$sd"){
+
+  $sdir .= $sample.'/'.$sdirsuffix;
+  my $sfile = $sdir.$b;
+  my $cmd = "mv $log $sfile";
+  if (-e "$sfile"){
     system($cmd);
   }
 }
