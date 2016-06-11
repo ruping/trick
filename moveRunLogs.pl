@@ -22,9 +22,15 @@ foreach my $log (@logs) {
   $b =~ /^(.+?)\.$suffix$/;
   my $sample = $1;
 
+  print STDERR "$sample\n";
+
   $sdir .= $sample.'/'.$sdirsuffix;
   my $sfile = $sdir.$b;
+
+  print STDERR "destination file: $sfile\n";
+
   my $cmd = "mv $log $sfile";
+
   if (-e "$sfile"){
     system($cmd);
   }
