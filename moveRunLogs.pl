@@ -8,12 +8,14 @@ my $suffix = shift;
 my $sdir = shift;
 my $sdirsuffix = shift;
 
-if ($dir eq '' or $suffix eq '' or $sdir eq ''){
+if ($dir eq '' or $suffix eq '' or $sdir eq '') {
   print "usage: moveRunLogs.pl dir suffix outdir outdirsuffix\n\n";
   exit 22;
 }
 
 my @logs = bsd_glob("$dir/*$suffix");
+print STDERR Dumper(\@logs);
+print STDERR "$sdir\t$sdirsuffix\n";
 
 foreach my $log (@logs) {
   my $b = basename($log);
