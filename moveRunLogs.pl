@@ -24,14 +24,15 @@ foreach my $log (@logs) {
 
   print STDERR "$sample\n";
 
-  $sdir .= $sample.'/'.$sdirsuffix;
-  my $sfile = $sdir.$b;
+  my $ddir = $sdir;
+  $ddir .= $sample.'/'.$sdirsuffix;
+  my $sfile = $ddir.$b;
 
-  print STDERR "destination file: $sfile\n";
+  print STDERR "original file: $log\ndestination file: $sfile\n";
 
   my $cmd = "mv $log $sfile";
 
-  if (-e "$sfile"){
+  unless (-e "$sfile") {
     system($cmd);
   }
 }
