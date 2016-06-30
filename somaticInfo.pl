@@ -3,7 +3,8 @@ use Data::Dumper;
 use File::Glob ':glob';
 use File::Basename;
 
-my @files = bsd_glob("./*.bam");
+my $dir = shift;
+my @files = bsd_glob("$dir/*.bam");
 my %data;
 
 foreach my $bam (@files) {
@@ -22,11 +23,15 @@ foreach my $bam (@files) {
 
 foreach my $id (keys %data) {
   foreach my $tumor (@{$data{$id}{'T'}}) {
-    my @normal = @{$data{$id}{'N'}};
-    if ($#normal > 0){
-      die("more than one normal for $id");
+    if ($data{$id}{'N'} ne '') {
+      my @normal = @{$data{$id}{'N'}};
+      if ($#normal > 0) {
+        die("more than one normal for $id");
+      }
+      print "$tumor\t$normal[0]\n";
+    } else {
+      print STDERR "$id does not have normal!!!\n";
     }
-    print "$tumor\t$normal[0]\n";
   }
 }
 
