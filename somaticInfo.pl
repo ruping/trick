@@ -22,7 +22,7 @@ foreach my $bam (@files) {
 
 foreach my $id (keys %data) {
   foreach my $tumor (@{$data{$id}{'T'}}) {
-    my @normal = @{$data{$id}{'T'}};
+    my @normal = @{$data{$id}{'N'}};
     if ($#normal > 0){
       die("more than one normal for $id");
     }
