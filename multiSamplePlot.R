@@ -1,5 +1,6 @@
 # plot multi sample mutation Table
-source("/tools/TRUP/src/smkey.R")
+script.dir <- dirname(sys.frame(1)$ofile)
+source(paste(script.dir, "smkey.R", sep="/"))
 
 getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
     rindexTF = vector()
@@ -247,7 +248,7 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
 
 
 
-adjust.ccf.titan.single <- function(sampAB, cnv.inputA, minAF=0.05) {
+adjust.ccf.titan.single <- function(sampAB, cnv.inputA, minAF=0.05) {    #may not be working, needs revision
     cnvA = read.delim(cnv.inputA)
     cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]
     cnvA$nt = cnvA$copynumber
