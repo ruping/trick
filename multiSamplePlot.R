@@ -132,8 +132,14 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               }
 
               totalMaf = sum(as.numeric(resVector[grepl("mafc", names(resVector))]))
-              resVector = c(resVector, totalMaf)
-              names(resVector)[length(resVector)] = "totalMaf"
+              totalAlt = sum(as.numeric(resVector[grepl("altc", names(resVector))]))
+              totalRef = sum(as.numeric(resVector[grepl("refc", names(resVector))]))
+              mergeMAFC = round(totalAlt/(totalAlt+totalRef), 4)
+              mergeMAFA = mergeMAFC
+              mergedCCF = mergeMAFC
+              mergedCCFsd = mergeMAFC
+              resVector = c(resVector, totalMaf, totalAlt, totalRef, mergeMAFC, mergeMAFA, mergedCCF, mergedCCFsd)
+              names(resVector)[(length(resVector)-6):length(resVector)] = c("totalMaf", "totalAlt", "totalRef", "mergeMAFC", "mergeMAFA", "mergeCCF", "mergeCCFsd")
 
               resVector                #return the result
 
@@ -152,6 +158,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
 
 adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE) {
 
+    purities = vector()
+    
     for (i in 1:length(samples)) {
         sn = samples[i]
         message(sn)
@@ -188,6 +196,8 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         con1 = as.numeric(cnvA$normalproportion[1])
         pu1 = 1 - (con1 + (1-max(as.numeric(pa1)))*(1-con1))
         message(pu1)
+        purities = append(purities, pu1)
+        names(purities)[length(purities)] = sn
         nt1 = sapply(1:dim(sampAB)[1], function(x) {
                          if (x %in% queryHits(foA)){cnvA$nt[subjectHits(foA)[match(x, queryHits(foA))]]} else {2}})
         nb1 = sapply(1:dim(sampAB)[1], function(x) {
@@ -201,6 +211,7 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         }
     }
 
+    
     for( i in 1:dim(sampAB)[1]) {  # rescale the maf and calculate CCF
         
         foundSites = 0 #count how many sites found
@@ -217,7 +228,7 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         #message(foundSites)
         for (j in 1:length(samples)) {
             sn = samples[j]
-            #message(sn)
+
             pa1 = as.numeric(sampAB[i, match(paste(sn, "pa", sep=""), colnames(sampAB))])
             nt1 = as.numeric(sampAB[i, match(paste(sn, "nt", sep=""), colnames(sampAB))])
             nb1 = as.numeric(sampAB[i, match(paste(sn, "nb", sep=""), colnames(sampAB))])
@@ -241,7 +252,25 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
                     sampAB[i, match(paste(sn, "mafa", sep=""), colnames(sampAB))] = as.numeric(CCF1[1])/2
                 }
             }
-        }
+
+            if ( sn == names(purities)[which.max(purities)] ) {       #rescale for merged MAF
+                maf1 = as.numeric(sampAB[i, match("mergeMAFC", colnames(sampAB))])
+                if (maf1 > 0) {
+                    if (maf1 > t & foundSites >= 2) {
+                        CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,nt1,nb1,"unknown")
+                        sampAB[i, match("mergeCCF", colnames(sampAB))] = as.numeric(CCF1[3])
+                        sampAB[i, match("mergeCCFsd", colnames(sampAB))] = as.numeric(CCF1[4])
+                        sampAB[i, match("mergeMAFA", colnames(sampAB))] = as.numeric(CCF1[1])/2
+                    } else {
+                        CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,nt1,nb1,"late")
+                        sampAB[i, match("mergeCCF", colnames(sampAB))] = as.numeric(CCF1[3])
+                        sampAB[i, match("mergeCCFsd", colnames(sampAB))] = as.numeric(CCF1[4])
+                        sampAB[i, match("mergeMAFA", colnames(sampAB))] = as.numeric(CCF1[1])/2
+                    }
+                }
+            } #for merged MAF
+        }     #for each sample
+        
     }
     return(sampAB)
 }
@@ -1280,7 +1309,7 @@ dNdS <- function(sampAB, g.dnds) {
     cadd.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$CADD_phred != '.' & sampAB$CADD_phred >= 20))
     cadd.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$CADD_phred != '.' & sampAB$CADD_phred < 20))
     res.cadd2 = (cadd.f.more2/cadd.f.less2)/cadd.g.norm2
-
+    
     res = c(res.dnds1, nonsyn1, syn1, g.norm1, res.dnds2, nonsyn2, syn2, g.norm2, res.cadd1, cadd.f.more1, cadd.f.less1, cadd.g.norm1, res.cadd2, cadd.f.more2, cadd.f.less2, cadd.g.norm2)
     names(res) = c("pub.dnds", "pub.nonsyn", "pub.syn", "pub.norm", "sub.dnds", "sub.nonsyn", "sub.syn", "sub.norm", "pub.dmfdlf", "pub.mf", "pub.lf", "pub.cadd.norm", "sub.dmfdlf", "sub.mf", "sub.lf", "sub.cadd.norm")
     return(res)
