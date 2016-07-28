@@ -10,7 +10,8 @@ plotLorenz <- function(need, outFile, legend, otype="pdf") {
 
     colorGroup = decideColorGroup(legend, FALSE)
     if (length(legend) > 22){
-        stop("length of legend is greater than 22")
+        colorGroup = decideColorGroup(legend)
+        #stop("length of legend is greater than 22")
     }
 
     if (otype == "pdf"){
@@ -64,7 +65,8 @@ medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pd
 
     colorGroup = decideColorGroup(legend, FALSE)
     if (length(legend) > 22){
-        stop("length of legend is greater than 22")
+        colorGroup = decideColorGroup(legend)
+        #stop("length of legend is greater than 22")
     }
     
     if (otype == "pdf") {
@@ -110,7 +112,8 @@ plotInsBox <- function(needBox, ofile, legend, otype = "pdf") {
 
     colorGroup = decideColorGroup(legend, FALSE)
     if (length(legend) > 22){
-        stop("length of legend is greater than 22")
+        colorGroup = decideColorGroup(legend)
+        #stop("length of legend is greater than 22")
     }
 
     box = vector()
@@ -148,7 +151,8 @@ propMouseBar <- function(needpropm, ofile, legend, otype = "pdf") {
     
     colorGroup = decideColorGroup(legend, FALSE)
     if (length(legend) > 22){
-        stop("length of legend is greater than 22")
+        colorGroup = decideColorGroup(legend)
+        #stop("length of legend is greater than 22")
     }
     
     propm = vector()
@@ -180,11 +184,12 @@ propMouseBar <- function(needpropm, ofile, legend, otype = "pdf") {
 #  Purity and ploidy plot                               ###
 ###########################################################
 
-purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples = c("none")){
-    
+purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples = c("none")) {
+
     colorGroup = decideColorGroup(legend, FALSE)
     if (length(legend) > 22){
-        stop("length of legend is greater than 22")
+        #stop("length of legend is greater than 22")
+        colorGroup = decideColorGroup(legend, TRUE)
     }
     
     pp = data.frame(purity=rep(1,length(needpp)), ploidy=rep(1,length(needpp)))
@@ -237,7 +242,7 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
 decideColorGroup <- function(legend, random=TRUE) {
 
     colorGroup = data.frame(legend=legend, col=rep(rgb(0,0,0,1/2), length(legend)))
-    if (random == TRUE){
+    if (random == TRUE) {
         allColors = sampleColors(length(legend))
     } else {
         allColors = c(brewer.pal(12, "Set3"), brewer.pal(8, "Set2"), brewer.pal(9, "Set1"), "black")
@@ -275,7 +280,10 @@ sampleColors <- function(n) {
 
     qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
     col_vector = unlist( mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals) ))
-    #pie(rep(1,n), col=sample(col_vector, n))
+
+    if (n > length(col_vector)) {
+        col_vector = rep(col_vector, 2)
+    }
     return(sample(col_vector, n))
 
 }

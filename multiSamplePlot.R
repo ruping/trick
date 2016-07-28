@@ -24,10 +24,13 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
     glindex = match("geneLoc", colnames(d))
     gfindex = match("functionalClass", colnames(d))
     caddindex = match("CADD_phred", colnames(d))
+    gerpindex = match("GERP_RS", colnames(d))
+    siftindex = match("SIFT_score", colnames(d))
+    polyphenindex = match("Polyphen2_HVAR_pred", colnames(d))
     somindex = match("somatic", colnames(d))
 
     if (! is.na(caddindex)) {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,dronindex,somindex,ncindex)]
+        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,somindex,ncindex)]
     } else {
         res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,somindex,ncindex)]
     }
@@ -442,23 +445,19 @@ plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF
       par(mar=c(4.5,5,4.5,0))
 
       plot( sampAh, col=rgb(0,0,0,1/4), xlim=c(0, 1), ylim=c(ylimdown,ylimup), border=F, ylab="# of Mutations", xlab="Allele Frequency", axes = F, main = sampName,cex.lab = 2.3, cex.main = 2.3 )  # first histogram
-      #plot( sampAhsub, col=rgb(242/255,108/255,108/255,1), add=T, border=F )   #subclonal red
       plot( sampAhsub, col=rgb(178/255,223/255,138/255,1), add=T, border=F )    #subclonal green set border
-      #plot( sampAhss, col=rgb(248/255,181/255,53/255,1), add=T, border=F )     #site specific yellow
       plot( sampAhss, col=rgb(31/255,120/255,180/255,1), add=T, border=F )      #site specific blue
 
       
       plot( sampBh,col=rgb(0,0,0,1/4), border=F, add=T )  # second histogram
-      #plot( sampBhsub, col=rgb(242/255,108/255,108/255,1), add=T, border=F )   #subclonal red
       plot( sampBhsub, col=rgb(178/255,223/255,138/255,1), add=T, border=F )    #subclonal green
-      #plot( sampBhss, col=rgb(43/255,98/255,223/255,1), add=T, border=F)       #site specific blue old
       plot( sampBhss, col=rgb(31/255,120/255,180/255,1), add=T, border=F )      #site specific blue
       sampAhss$counts = 0                                  #make black line
       sampBhss$counts = 0                                  #make black line
       plot( sampAhss, col="black", add=T, border=F)        #make black line
       plot( sampBhss, col="black", add=T, border=F)        #make black line
-      fitxBstart = sampBh$breaks[match(max(sampBh$density[1:10]),sampBh$density)]
-      fitxB = seq(fitxBstart,0.25,by=0.01)
+      #fitxBstart = sampBh$breaks[match(max(sampBh$density[1:10]),sampBh$density)]
+      #fitxB = seq(fitxBstart,0.25,by=0.01)
 
 
       sn1s = gsub(".+(Core\\d+)","\\1",sn1, perl=T, ignore.case=T)
@@ -854,7 +853,7 @@ pmf <- function(muts, minAF=0.04) {                          # calculate the pro
 
     for(k in 1:length(mfreq)) {
         if(mfreq[k]==0) {
-            mfreq[k] = 0.000001
+            mfreq[k] = 0.00000001
         }
     }
     return(mfreq)
@@ -863,11 +862,9 @@ pmf <- function(muts, minAF=0.04) {                          # calculate the pro
 
 JS.divergence <- function(sub1,sub2, minAF=0.04) {
     sub1 = sub1[which(sub1 <= 0.8 & sub1 >= minAF)]
-    sub2 = sub2[which(sub2 <= 0.8 & sub2 >= minAF)]
+    sub2 = sub2[which(sub1 <= 0.8 & sub2 >= minAF)]
     freqs1 = pmf(sub1, minAF)
-    #message(paste(freqs1,"",sep=" "))
     freqs2 = pmf(sub2, minAF)
-    #message(paste(freqs2,"",sep=" "))
     m<-0.5*(freqs1 + freqs2)
     JS<-0.5*(sum(freqs1*log(freqs1/m)) + sum(freqs2*log(freqs2/m)))
     return(JS)
@@ -961,7 +958,7 @@ pubOrSub <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minD
     VAFaboveQua = vector()          #pub
     aboveContri = vector()
     
-    for (i in 1:length(samples)) {                                     #get subclonal ones 1st round: Raw
+    for (i in 1:length(samples)) {                                      #get subclonal ones 1st round: Raw
         sn = samples[i]
         message(sn)
         ccfi = match(paste(sn, "ccf", sep=""), colnames(sampAB))
@@ -972,15 +969,15 @@ pubOrSub <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minD
 
         depthQualTmp = sampAB[,depthi] >= minDep
 
-        CCFbelowOneTmp = (sampAB[,ccfi]+2.58*sampAB[,ccfsdi]) < 1      #at least one site is below CCF+sd < 1
+        CCFbelowOneTmp = (sampAB[,ccfi]+2.58*sampAB[,ccfsdi]) < 1        #at least one site is below CCF+sd < 1
         if ( length(CCFbelowOne) > 0 ) {
             CCFbelowOne = CCFbelowOne | (CCFbelowOneTmp & depthQualTmp)
         } else {
             CCFbelowOne = CCFbelowOneTmp & depthQualTmp
         }
 
-        CCFaboveOneND = (sampAB[,ccfi]+2.58*sampAB[,ccfsdi]) >= 1
-        CCFaboveOneTmp = CCFaboveOneND | sampAB[,depthi] <= 6
+        CCFaboveOneND = (sampAB[,ccfi]+2.58*sampAB[,ccfsdi]) >= 1        #CCF above one  (public)
+        CCFaboveOneTmp = CCFaboveOneND | sampAB[,depthi] <= 6 | (sampAB[,mafai] == 0 & sampAB[,nbi] == 0)
         if ( length(CCFaboveOne) > 0 ) {
             CCFaboveOne = CCFaboveOne & CCFaboveOneTmp
             aboveContri = aboveContri + as.numeric(CCFaboveOneND)
@@ -989,28 +986,26 @@ pubOrSub <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minD
             aboveContri = as.numeric(CCFaboveOneND)
         }
         
-        VAFbelowQuaTmp = sampAB[,mafai] < 0.25                         #and one site is below VAF 0.25
+        VAFbelowQuaTmp = sampAB[,mafai] < 0.25                           #and one site is below VAF 0.25
         if ( length(VAFbelowQua) > 0 ) {
             VAFbelowQua = VAFbelowQua | (VAFbelowQuaTmp & depthQualTmp)
         } else {
             VAFbelowQua = VAFbelowQuaTmp & depthQualTmp
         }
 
-        VAFaboveQuaTmp = sampAB[,mafai] >= 0.25 | sampAB[,depthi] <= 6
+        VAFaboveQuaTmp = sampAB[,mafai] >= 0.25 | sampAB[,depthi] <= 6 | (sampAB[,mafai] == 0 & sampAB[,nbi] == 0)   #VAF above 0.25 (public)
         if ( length(VAFaboveQua) > 0 ) {
             VAFaboveQua = VAFaboveQua & VAFaboveQuaTmp
         } else {
             VAFaboveQua = VAFaboveQuaTmp
         }
     }
-    #message(CCFbelowOne[222])
-    #message(VAFbelowQua[222])
-    #message(CCFaboveOne[222])
-    #message(VAFaboveQua[222])
+
     submutIndex = list()
     submutMafa = list()
     allsubclone = CCFbelowOne & VAFbelowQua
     allpubclone = (CCFaboveOne | VAFaboveQua) & (aboveContri >= 2)
+    #specialLOH = rep(FALSE, length(allubclone))                        #special LOH events
     for (i in 1:length(samples)) {                                     #get subclonal ones 2nd round: Refine
         sn = samples[i]
         mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
@@ -1021,7 +1016,7 @@ pubOrSub <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minD
         noDifferLOH = vector()
         
         for (j in 1:length(samples)) {
-            if (i != j) {
+            if ( i != j )  {
                 mafaJi = match(paste(samples[j], "mafa", sep=""), colnames(sampAB))
                 nbJi = match(paste(samples[j], "nb", sep=""), colnames(sampAB))
                 depthJi = match(paste(samples[j], "d", sep=""), colnames(sampAB))
@@ -1043,7 +1038,7 @@ pubOrSub <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minD
 
     pstype = sapply(1:dim(sampAB)[1], function(x, pub, sub) {
                         pstype = "unknown"
-                        if (x %in% pub){
+                        if (x %in% pub) {
                             pstype = "public"
                         } else {
                             for(j in 1:length(submutIndex)){
@@ -1059,145 +1054,16 @@ pubOrSub <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minD
                         }
                         pstype
                     }, pub=which(allpubclone), sub=submutIndex)
-    
-    sampAB = data.frame(sampAB, pubOrSub=pstype)
 
-    colnames(sampAB) = c(originalColNames,"pubOrSub")
+    if ("pubOrSub" %in% originalColNames) {
+        sampAB$pubOrSub = pstype
+    } else {
+        sampAB = data.frame(sampAB, pubOrSub=pstype)
+        colnames(sampAB) = c(originalColNames,"pubOrSub")
+    }
     
     return(sampAB)
 
-}
-
-
-
-subclonalMutAll <- function(sampAB, samples, minAF=0.08, statsAF=0.08, highAF=0.2, minDep=10, ratio=1)   {                  #determinine subclonal mutations
-
-    combinations = combn(length(samples),2)
-    
-    CCFbelowOne = vector()          #sub
-    VAFbelowQua = vector()          #sub
-    CCFaboveOne = vector()          #pub
-    VAFaboveQua = vector()          #pub
-    
-    for (i in 1:length(samples)) {                                     #get subclonal ones 1st round: Raw
-        sn = samples[i]
-        ccfi = match(paste(sn, "ccf", sep=""), colnames(sampAB))
-        ccfsdi = match(paste(sn, "ccfSD", sep=""), colnames(sampAB))
-        mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
-        nbi = match(paste(sn, "nb", sep=""), colnames(sampAB))
-        depthi = match(paste(sn, "d", sep=""), colnames(sampAB))
-
-        depthQualTmp = sampAB[,depthi] >= minDep
-        CCFbelowOneTmp = (sampAB[,ccfi]+2.58*sampAB[,ccfsdi]) < 1      #at least one site is below CCF+sd 1
-        CCFbelowOne = CCFbelowOne | (CCFbelowOneTmp & depthQualTmp)
-        CCFaboveOneTmp = ((sampAB[,ccfi]+2.58*sampAB[,ccfsdi]) >= 1) | sampAB[,depthi] <= 3
-        CCFaboveOne = CCFaboveOne & CCFaboveOneTmp
-        
-        VAFbelowQuaTmp = sampAB[,mafai] < 0.25                         #and one site is below VAF 0.25
-        VAFbelowQua = VAFbelowQua | (VAFbelowQuaTmp & depthQualTmp)
-        VAFaboveQuaTmp = sampAB[,mafai] >= 0.25 | sampAB[,depthi] <= 3
-        VAFaboveQua = VAFaboveQua & VAFaboveQuaTmp
-    }
-
-
-    submutIndex = list()
-    submutMafa = list()
-    allsubclone = CCFbelowOne & VAFbelowQua
-    allpubclone = CCFaboveOne | VAFaboveQua
-    for (i in 1:length(samples)) {                                     #get subclonal ones 2nd round: Refine
-        sn = samples[i]
-        mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
-        nbi = match(paste(sn, "nb", sep=""), colnames(sampAB))
-        depthi = match(paste(sn, "d", sep=""), colnames(sampAB))
-
-        mafaQualTmp = sampAB[,mafai] >= minAF
-        noDifferLOH = vector()
-        
-        for (j in 1:length(samples)) {
-            if (i != j) {
-                mafaJi = match(paste(samples[j], "mafa", sep=""), colnames(sampAB))
-                nbJi = match(paste(samples[j], "nb", sep=""), colnames(sampAB))
-                depthJi = match(paste(samples[j], "d", sep=""), colnames(sampAB))
-                noDifferLOHTmp = (sampAB[,mafaJi] == 0 & (sampAB[,nbJi] != 0 | sampAB[,nbi] == 0)) | sampAB[,mafaJi] != 0    #the other site VAF > 0 or VAF == 0 (either not LOH or the other side is the same LOH)
-                noDifferLOH = noDifferLOH & noDifferLOHTmp
-            }
-        }   #another sample
-        subi = which(allsubclone & mafaQualTmp & noDifferLOH)
-        mafa = sampAB[subi,mafai]/ratio
-        submutIndex = append(submutIndex, list(subi))
-        names(submutIndex)[length(submutIndex)] = paste(sn, "Subi", sep="")
-        submutMafa = append(submutMafa, list(mafa))
-        names(submutMafa)[length(submutMafa)] = paste(sn, "mafa", sep="")
-    }
-    
-    # for JSD
-    JSD = vector()
-    for (i in 1:dim(combinations)[2]) {
-      JSD = c(JSD, JS.divergence(submutMafa[[combinations[1,i]]], submutMafa[[combinations[2,i]]], minAF=statsAF))
-      names(JSD)[length(JSD)] = paste("JSD",samples[combinations[1,i]],samples[combinations[2,i]], sep="_")
-    }
-
-    
-    # for mutational function dNdS
-    subTi = vector()
-    for (i in 1:length(submutIndex)){
-        subTi = union(subTi, submutIndex[[i]])
-    }
-    pubTi = allpubclone
-        
-    gNIndex = match("geneName",colnames(sampAB))
-    gLIndex = match("geneLoc",colnames(sampAB))
-    fCIndex = match("functionalClass",colnames(sampAB))
-    subMutGeneFunc = sampAB[subTi, c(gNIndex, gLIndex, fCIndex)]
-    pubMutGeneFunc = sampAB[pubTi, c(gNIndex, gLIndex, fCIndex)]
-
-    
-    # for FST
-    FST = vector()
-    for (i in 1:dim(combinations)[2]) {
-      mutsSubPair = which()
-      FST = c(FST, mean(fst.wc84(mutsSubPair, minAF=statsAF)))
-      names(JSD)[length(JSD)] = paste("JSD",samples[combinations[1,i]],samples[combinations[2,i]], sep="_")
-    }
-
-    mutsSub = sampAB[which((sampAB[,mafaAi] >= statsAF | sampAB[,mafaBi] >= statsAF) & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 &
-                     ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 & (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
-                     (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),]
-    mutsSub = data.frame(maf1 = mutsSub[,mafaAi], depth1=mutsSub[,depthAi], maf2 = mutsSub[,mafaBi], depth2=mutsSub[,depthBi])
-    FST = mean(fst.wc84(mutsSub, minAF=statsAF))
-
-
-    # for other stats
-    mutsA2 = sampAB[which( sampAB[,mafaAi] >= statsAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaAi]
-    mutsAh2 = sampAB[which( sampAB[,mafaAi] >= highAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaAi]
-    mutsASp2 = sampAB[which( sampAB[,mafaAi] >= statsAF & sampAB[,mafaBi] == 0 &
-                               sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15),mafaAi]
-    mutsASph2 = sampAB[which( sampAB[,mafaAi] >= highAF & sampAB[,mafaBi] == 0 &
-                               sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15),mafaAi]
-    mutsB2 = sampAB[which( sampAB[,mafaBi] >= statsAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaBi]
-    mutsBh2 = sampAB[which( sampAB[,mafaBi] >= highAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaBi]
-    mutsBSp2 = sampAB[which( sampAB[,mafaBi] >= statsAF & sampAB[,mafaAi] == 0 &
-                               sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 ),mafaBi]
-    mutsBSph2 = sampAB[which( sampAB[,mafaBi] >= highAF & sampAB[,mafaAi] == 0 &
-                                 sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 ),mafaBi]
-        
-    # list for output
-    muts = list(submutIndex=submutIndex, submutMafa=submutMafa, subMutGeneFunc=subMutGeneFunc, pubMutGeneFunc=pubMutGeneFunc)
-    muts = list(A=mutsA,B=mutsB,subAi=subAi,subBi=subBi, fstInput=mutsSub,
-        lenSubA=length(mutsA2),lenSubAh=length(mutsAh2),ratioHighSubA=length(mutsAh2)/length(mutsA2),
-        lenSubB=length(mutsB2),lenSubBh=length(mutsBh2),ratioHighSubB=length(mutsBh2)/length(mutsB2),
-        lenSsA=length(mutsASp2),lenHighSsA=length(mutsASph2),ratioHighSsA=length(mutsASph2)/length(mutsASp2),pSsA=length(mutsASp2)/length(mutsA2),
-        lenSsB=length(mutsBSp2),lenHighSsB=length(mutsBSph2),ratioHighSsB=length(mutsBSph2)/length(mutsBSp2),pSsB=length(mutsBSp2)/length(mutsB2),
-        FST=FST, JSD=JSD, subMutGeneFunc = subMutGeneFunc, pubMutGeneFunc = pubMutGeneFunc)
-    return(muts)
 }
 
 
@@ -1238,7 +1104,8 @@ fst.nei86 <- function(af) {
        }
        return(fst_array)
 }
-fst.hudson <- function(af){
+
+fst.hudson <- function(af) {
     fst_array = c()
      for(k in 1:nrow(af)){
             n1 = af$depth1[k]
@@ -1254,7 +1121,11 @@ fst.hudson <- function(af){
 }
 
 
-dNdS <- function(sampAB, g.dnds) {
+dNdS <- function(sampAB, g.dnds, ndriver = 220) {
+
+    g.dnds2 = g.dnds[which(g.dnds$MFLFsift < 100),]
+    
+    # pub dNdS
     g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" &
                                      (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
     g.table1 = g.table1[which(g.table1 > 0)]
@@ -1271,17 +1142,58 @@ dNdS <- function(sampAB, g.dnds) {
     res.dnds1 = nonsyn1/syn1
     res.dnds1 = res.dnds1/g.norm1
 
-    cadd.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & sampAB$CADD_phred != '.')])
+    # pub cadd
+    cadd.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$CADD_phred))])
     cadd.g.table1 = cadd.g.table1[which(cadd.g.table1 > 0)]
     cadd.g.table1 = cadd.g.table1[names(cadd.g.table1) %in% g.dnds$gene]
-    subset.cadd1 = g.dnds$MFLF[match(names(cadd.g.table1),g.dnds$gene)]
+    subset.cadd1 = g.dnds$MFLFcadd[match(names(cadd.g.table1),g.dnds$gene)]            #MFLFcadd
     cadd.g.total1 = sum(cadd.g.table1)
     cadd.g.frac1 = cadd.g.table1/cadd.g.total1
     cadd.g.norm1 = sum(cadd.g.frac1*subset.cadd1)
-    cadd.f.more1 = length(which(sampAB$pubOrSub == "public" & sampAB$CADD_phred != '.' & sampAB$CADD_phred >= 20))
-    cadd.f.less1 = length(which(sampAB$pubOrSub == "public" & sampAB$CADD_phred != '.' & sampAB$CADD_phred < 20))
+    cadd.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred >= 20))
+    cadd.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred < 20))
     res.cadd1 = (cadd.f.more1/cadd.f.less1)/cadd.g.norm1
+
+    # pub GERP
+    gerp.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$GERP_RS))])
+    gerp.g.table1 = gerp.g.table1[which(gerp.g.table1 > 0)]
+    gerp.g.table1 = gerp.g.table1[names(gerp.g.table1) %in% g.dnds$gene]
+    subset.gerp1 = g.dnds$MFLFgerp[match(names(gerp.g.table1),g.dnds$gene)]
+    gerp.g.total1 = sum(gerp.g.table1)
+    gerp.g.frac1 = gerp.g.table1/gerp.g.total1
+    gerp.g.norm1 = sum(gerp.g.frac1*subset.gerp1)
+    gerp.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS >= 5.2))
+    gerp.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS < 5.2))
+    res.gerp1 = (gerp.f.more1/gerp.f.less1)/gerp.g.norm1
+
+
+    # pub SIFT
+    sift.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$SIFT_score))])
+    sift.g.table1 = sift.g.table1[which(sift.g.table1 > 0)]
+    sift.g.table1 = sift.g.table1[names(sift.g.table1) %in% g.dnds2$gene]
+    subset.sift1 = g.dnds2$MFLFsift[match(names(sift.g.table1),g.dnds2$gene)]
+    sift.g.total1 = sum(sift.g.table1)
+    sift.g.frac1 = sift.g.table1/sift.g.total1
+    sift.g.norm1 = sum(sift.g.frac1*subset.sift1)
+    sift.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score <= 0.05))
+    sift.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score > 0.05))
+    res.sift1 = (sift.f.more1/sift.f.less1)/sift.g.norm1
+
+
+    # pub POLYPHEN
+    polyphen.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$Polyphen2_HVAR_pred))])
+    polyphen.g.table1 = polyphen.g.table1[which(polyphen.g.table1 > 0)]
+    polyphen.g.table1 = polyphen.g.table1[names(polyphen.g.table1) %in% g.dnds$gene]
+    subset.polyphen1 = g.dnds$MFLFpolyphen[match(names(polyphen.g.table1),g.dnds$gene)]
+    polyphen.g.total1 = sum(polyphen.g.table1)
+    polyphen.g.frac1 = polyphen.g.table1/polyphen.g.total1
+    polyphen.g.norm1 = sum(polyphen.g.frac1*subset.polyphen1)
+    polyphen.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred != "B"))
+    polyphen.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred == "B"))
+    res.polyphen1 = (polyphen.f.more1/polyphen.f.less1)/polyphen.g.norm1
+
     
+    # sub dNdS
     g.table2 = table(sampAB$geneName[which(sampAB$pubOrSub != "public" & sampAB$pubOrSub != "unknown" &
                                          (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
     g.table2 = g.table2[which(g.table2 > 0)]
@@ -1299,21 +1211,81 @@ dNdS <- function(sampAB, g.dnds) {
     res.dnds2 = nonsyn2/syn2
     res.dnds2 = res.dnds2/g.norm2
 
-    cadd.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & sampAB$CADD_phred != '.')])
+    # sub cadd
+    cadd.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$CADD_phred))])
     cadd.g.table2 = cadd.g.table2[which(cadd.g.table2 > 0)]
     cadd.g.table2 = cadd.g.table2[names(cadd.g.table2) %in% g.dnds$gene]
-    subset.cadd2 = g.dnds$MFLF[match(names(cadd.g.table2),g.dnds$gene)]
+    subset.cadd2 = g.dnds$MFLFcadd[match(names(cadd.g.table2),g.dnds$gene)]                   #MFLFcadd
     cadd.g.total2 = sum(cadd.g.table2)
     cadd.g.frac2 = cadd.g.table2/cadd.g.total2
     cadd.g.norm2 = sum(cadd.g.frac2*subset.cadd2)
-    cadd.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$CADD_phred != '.' & sampAB$CADD_phred >= 20))
-    cadd.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$CADD_phred != '.' & sampAB$CADD_phred < 20))
+    cadd.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred >= 20))
+    cadd.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred < 20))
     res.cadd2 = (cadd.f.more2/cadd.f.less2)/cadd.g.norm2
+
+    # sub gerp
+    gerp.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$GERP_RS))])
+    gerp.g.table2 = gerp.g.table2[which(gerp.g.table2 > 0)]
+    gerp.g.table2 = gerp.g.table2[names(gerp.g.table2) %in% g.dnds$gene]
+    subset.gerp2 = g.dnds$MFLFgerp[match(names(gerp.g.table2),g.dnds$gene)]                   #MFLFgerp
+    gerp.g.total2 = sum(gerp.g.table2)
+    gerp.g.frac2 = gerp.g.table2/gerp.g.total2
+    gerp.g.norm2 = sum(gerp.g.frac2*subset.gerp2)
+    gerp.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS >= 5.2))
+    gerp.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS < 5.2))
+    res.gerp2 = (gerp.f.more2/gerp.f.less2)/gerp.g.norm2
+
+    # sub sift
+    sift.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$SIFT_score))])
+    sift.g.table2 = sift.g.table2[which(sift.g.table2 > 0)]
+    sift.g.table2 = sift.g.table2[names(sift.g.table2) %in% g.dnds2$gene]
+    subset.sift2 = g.dnds2$MFLFsift[match(names(sift.g.table2),g.dnds2$gene)]                   #MFLFsift
+    sift.g.total2 = sum(sift.g.table2)
+    sift.g.frac2 = sift.g.table2/sift.g.total2
+    sift.g.norm2 = sum(sift.g.frac2*subset.sift2)
+    sift.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score <= 0.05))
+    sift.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score > 0.05))
+    res.sift2 = (sift.f.more2/sift.f.less2)/sift.g.norm2
+
+
+    # sub polyphen
+    polyphen.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$Polyphen2_HVAR_pred))])
+    polyphen.g.table2 = polyphen.g.table2[which(polyphen.g.table2 > 0)]
+    polyphen.g.table2 = polyphen.g.table2[names(polyphen.g.table2) %in% g.dnds$gene]
+    subset.polyphen2 = g.dnds$MFLFpolyphen[match(names(polyphen.g.table2),g.dnds$gene)]                   #MFLFpolyphen
+    polyphen.g.total2 = sum(polyphen.g.table2)
+    polyphen.g.frac2 = polyphen.g.table2/polyphen.g.total2
+    polyphen.g.norm2 = sum(polyphen.g.frac2*subset.polyphen2)
+    polyphen.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred != "B"))
+    polyphen.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred == "B"))
+    res.polyphen2 = (polyphen.f.more2/polyphen.f.less2)/polyphen.g.norm2
+
+
+    # ndriver
+    npub = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
+    npubDriver = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron == 1))
+    nsub = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
+    nsubDriver = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron == 1))
+    pub.driver.enrich.p = phyper(npubDriver, ndriver, 20000-ndriver, npub, lower.tail=F)
+    sub.driver.enrich.p = phyper(nsubDriver, ndriver, 20000-ndriver, nsub, lower.tail=F)
     
-    res = c(res.dnds1, nonsyn1, syn1, g.norm1, res.dnds2, nonsyn2, syn2, g.norm2, res.cadd1, cadd.f.more1, cadd.f.less1, cadd.g.norm1, res.cadd2, cadd.f.more2, cadd.f.less2, cadd.g.norm2)
-    names(res) = c("pub.dnds", "pub.nonsyn", "pub.syn", "pub.norm", "sub.dnds", "sub.nonsyn", "sub.syn", "sub.norm", "pub.dmfdlf", "pub.mf", "pub.lf", "pub.cadd.norm", "sub.dmfdlf", "sub.mf", "sub.lf", "sub.cadd.norm")
+    
+    res = c(res.dnds1, nonsyn1, syn1, g.norm1, res.dnds2, nonsyn2, syn2, g.norm2,
+        res.cadd1, cadd.f.more1, cadd.f.less1, cadd.g.norm1, res.cadd2, cadd.f.more2, cadd.f.less2, cadd.g.norm2,
+        res.gerp1, gerp.f.more1, gerp.f.less1, gerp.g.norm1, res.gerp2, gerp.f.more2, gerp.f.less2, gerp.g.norm2,
+        res.sift1, sift.f.more1, sift.f.less1, sift.g.norm1, res.sift2, sift.f.more2, sift.f.less2, sift.g.norm2,
+        res.polyphen1, polyphen.f.more1, polyphen.f.less1, polyphen.g.norm1, res.polyphen2, polyphen.f.more2, polyphen.f.less2, polyphen.g.norm2,
+        npub, npubDriver, nsub, nsubDriver, pub.driver.enrich.p, sub.driver.enrich.p)
+    names(res) = c("pub.dnds", "pub.nonsyn", "pub.syn", "pub.norm", "sub.dnds", "sub.nonsyn", "sub.syn", "sub.norm",
+             "pub.dmfdlf.cadd", "pub.mf.cadd", "pub.lf.cadd", "pub.cadd.norm", "sub.dmfdlf.cadd", "sub.mf.cadd", "sub.lf.cadd", "sub.cadd.norm",
+             "pub.dmfdlf.gerp", "pub.mf.gerp", "pub.lf.gerp", "pub.gerp.norm", "sub.dmfdlf.gerp", "sub.mf.gerp", "sub.lf.gerp", "sub.gerp.norm",
+             "pub.dmfdlf.sift", "pub.mf.sift", "pub.lf.sift", "pub.sift.norm", "sub.dmfdlf.sift", "sub.mf.sift", "sub.lf.sift", "sub.sift.norm",
+             "pub.dmfdlf.polyphen", "pub.mf.polyphen", "pub.lf.polyphen", "pub.polyphen.norm", "sub.dmfdlf.polyphen", "sub.mf.polyphen", "sub.lf.polyphen", "sub.polyphen.norm",
+             "npub", "npubDriver", "nsub", "nsubDriver", "pub.driver.enrich.p", "sub.driver.enrich.p")
     return(res)
 }
+
+
 
 
 pycloneTable <- function(sampAB, samples, outdir, minAF = 0.05, minDepth = 30) {
@@ -1345,6 +1317,7 @@ pycloneTable <- function(sampAB, samples, outdir, minAF = 0.05, minDepth = 30) {
         write.table(otsv, file=outTsv, row.names=F, quote=F, sep="\t")
     }
 }
+
 
 
 scicloneTable <- function(sampAB, samples, outdir, minAF = 0.05, minDepth = 30, titanPath="./titan/") {
@@ -1423,6 +1396,7 @@ prepareLichee <- function(samples, nmaf, SampAB) {
 }
 
 
+
 generateUpSetList <- function(sampAB, samples, minAF=0.08) {
     outlist = list()
     for(i in 1:length(samples)) {
@@ -1434,6 +1408,7 @@ generateUpSetList <- function(sampAB, samples, minAF=0.08) {
     names(outlist) = samples
     return(outlist)
 }
+
 
 
 spruceInput <- function(samp, samples, minMaf) {
@@ -1491,6 +1466,7 @@ spruceInput <- function(samp, samples, minMaf) {
                 "vaf_lb","vaf_mean","vaf_ub","x","y","mu","x","y","mu","seg")
     return(result)
 }
+
 
 #lod calculation
 calLOD <- function(e,v,d) {
