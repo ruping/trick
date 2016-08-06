@@ -1,3 +1,4 @@
+
 .smoothScatterCalcDensity1 <- function(x, nbin, bandwidth, range.x) {
   
   if (length(nbin) == 1)
@@ -49,8 +50,7 @@ image.plot2 = function (..., add = FALSE, nlevel = 64, legend.shrink = 0.9,
         image(..., add = add, col = col)
         box()
 	
-        big.par <- par(no.readonly = TRUE)
-	
+        big.par <- par(no.readonly = TRUE)	
     }
     if ((smallplot[2] < smallplot[1]) | (smallplot[4] < smallplot[3])) {
         par(old.par)
@@ -65,7 +65,7 @@ image.plot2 = function (..., add = FALSE, nlevel = 64, legend.shrink = 0.9,
     iz <- matrix(iy, nrow = 1, ncol = length(iy))
     breaks <- list(...)$breaks
     par(new = TRUE, pty = "m", plt = smallplot, err = -1)
-    if (!horizontal) {
+    if (!horizontal) {                         #for the scale bar
         if (is.null(breaks)) {
             image(ix, iy, iz, xaxt = "n", yaxt = "n", xlab = "", 
                 ylab = "", col = col)
@@ -157,10 +157,7 @@ smkey <- function(x, y=NULL,
   xm   <- map$x1
   ym   <- map$x2
   dens <- map$fhat
-  dens <- array(transformation(dens), dim=dim(dens))	
-  
-
-	
+  dens <- array(transformation(dens), dim=dim(dens))
   	  
   ## plot color image
   image.plot2(xm, ym, z=dens, legend.shrink = 1.0,
@@ -180,3 +177,131 @@ smkey <- function(x, y=NULL,
     points(x[sel,1:2], pch=pch, cex=cex, col=col)
   }
 }
+
+
+scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=cex, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE,
+                               drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(), colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
+                               legend=c("Public","Pvt-Shared","Pvt-Site Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE){
+
+    if (length(groups) > 0) {
+        colLegends = list()
+        if (layout == TRUE) {
+            layout(matrix(rep(1:2, c(7,1)), nrow=1))
+            par(mar=c(4.5,5,5.5,0))
+        }
+        else {
+            par(mar=c(4.5,5,5,3))
+        }
+        for (i in 1:length(groups)) {   #plot dense scatter for each group
+            colpanel = groupColors[[i]]
+            indexes = groups[[i]]
+            nbinx = round((max(x[indexes]) - min(x[indexes]))/div)
+            nbiny = round((max(y[indexes]) - min(y[indexes]))/div)
+            #if (nbinx < 20) {
+            #    nbinx = 20
+            #}
+            #if (nbiny < 20) {
+            #    nbiny = 20
+            #}
+            message(nbinx)
+            message(nbiny)
+            denscolor = densCols(x[indexes], y[indexes], colramp = colorRampPalette(colpanel), nbin=c(nbinx,nbiny))
+            
+            dd = grDevices:::.smoothScatterCalcDensity(cbind(x[indexes], y[indexes]), nbin=c(nbinx,nbiny))
+            dens <- as.numeric(dd$fhat)
+            dens <- dens[dens>0]
+            ktotal = length(x[indexes])
+            dens = ktotal/sum(dens) * dens
+
+            colLegend <- data.frame(density=ceiling(seq(min(dens), max(dens), len=5)+0.8),0,
+                                    color=I(colorRampPalette(colpanel)(5)))
+            colLegend = subset(colLegend,!duplicated(colLegend$density))
+            colLegends[[i]] = colLegend
+            if (i == 1) {
+                if (length(xaxisat) > 0) {
+                    plot(x[indexes],y[indexes],col=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main, axes = F)
+                    axis(side=1, at=xaxisat, labels=xaxislb, cex.axis=cex.axis)
+                    axis(side=2, at=yaxisat, labels=yaxislb, cex.axis=cex.axis)
+                    box("plot")
+                    #segments(xaxisat[1], yaxisat[length(yaxisat)], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
+                    #segments(xaxisat[length(xaxisat)], yaxisat[1], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
+                } else {
+                    plot(x[indexes],y[indexes],col=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
+                }
+            } else {
+                points(x[indexes],y[indexes],col=denscolor, pch=19, cex=cex)
+            }
+        }
+        if (abline == TRUE){
+            abline(0,1,lty=3,col=rgb(0,0,0,2/3))
+        }
+        if (length(drlabels) > 0) {
+            points(drx,dry,col=rgb(238/255,59/255,59/255,2/3), pch=1, cex=cex+.3)
+            if (layout == TRUE){
+                pointLabel(drx, dry, labels=drlabels, col=rgb(238/255,59/255,59/255,3/5), cex=cex.axis)
+            }
+        }
+        if (layout == TRUE) {
+            nbottomright = length(which(x > 0.6 & y < 0.2))
+            ntopleft = length(which(x < 0.4 & y > 0.8))
+            lposition = "topleft"
+            if (ntopleft > nbottomright) {
+                lposition = "bottomright"
+            }
+            legend(lposition, legend=legend, col=legendCol, pch=19, bty="n", cex=cex.axis-.3)
+        }
+        if (layout == TRUE) {
+            par(mar=c(4,1,4,0))
+            for (i in rev(1:length(colLegends))) {
+                si = 5*(length(colLegends)-i)+1
+                ri = dim(colLegends[[i]])[1]
+                if (i == length(colLegends)) {
+                    plot(NA, xlim=c(0,5), ylim=c(0,5*(length(colLegends)+1)), type="n", ann=FALSE, axes=FALSE)
+                    rect(0, si:(si+ri-1), 1, (si+1):(si+ri), border=NA, col=colLegends[[i]]$col)
+                    text(2, si:(si+ri-1)+0.5, signif(colLegends[[i]]$density, 2), adj=0, cex=cex.axis)
+                } else {                
+                    rect(0, si:(si+ri-1), 1, (si+1):(si+ri), border=NA, col=colLegends[[i]]$col)
+                    text(2, si:(si+ri-1)+0.5, signif(colLegends[[i]]$density, 2), adj=0, cex=cex.axis)
+                }
+            }
+            text(1, 5*(length(colLegends)+1)-2, label=colScaleLabel, srt=90, cex=cex.axis)
+        }
+    } else {
+
+        colpanel = rev(brewer.pal(11, "RdYlBu"))[2:11]    #RdYlBu as default
+        #colpanel = rev(brewer.pal(11, "RdBu"))[2:11]
+        #colpanel = brewer.pal(9, "Greys")[2:9]
+        #colpanel = brewer.pal(9, "GnBu")[3:9]
+        #colpanel = rev(rainbow(20, end = 4/6))
+        
+        #determine dense color
+        if (length(denscolor) == 0){
+            denscolor = densCols(x, y, colramp = colorRampPalette(colpanel))
+        }
+
+        
+        #determine density range
+        dd = grDevices:::.smoothScatterCalcDensity(cbind(x, y), nbin=128)
+        dens <- as.numeric(dd$fhat)
+        dens <- dens[dens>0]
+        ktotal = length(x)
+        dens = ktotal/sum(dens) * dens
+
+        colLegend <- data.frame(density=ceiling(seq(min(dens), max(dens), len=7)),0,
+                                color=I(colorRampPalette(colpanel)(7)))
+        layout(matrix(rep(1:2, c(7,1)), nrow=1))
+        par(mar=c(4.5,5,5.5,0))
+        plot(x,y,col=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
+        abline(0,1,lty=3)
+        if (length(drlabels) > 0) {
+            pointLabel(drx, dry, labels=drlabels, col=rgb(1,0,0,1/4), cex=cex.axis)
+        }
+        
+        par(mar=c(4,1,4,0))
+        plot(NA, xlim=c(0,7), ylim=c(0,8), type="n", ann=FALSE, axes=FALSE)
+        rect(0, 0:6, 1, 1:7, border=NA, col=colLegend$col)
+        text(2, (0:6)+0.5, signif(colLegend$density, 2), adj=0, cex=cex.axis)
+        #text(1, -.1, label="Density", srt=90, cex=cex.axis)
+    }
+}
+

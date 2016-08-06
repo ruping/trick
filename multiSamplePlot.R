@@ -326,44 +326,60 @@ adjust.ccf.titan.single <- function(sampAB, cnv.inputA, minAF=0.05) {    #may no
 
 # plot pair-wise multi sample plot
 
-plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16) {
+plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotType = "AF") {
     combinations = combn(length(samples),2)
     nplots = dim(combinations)[2]
     ndims = length(samples)-1
 
     resStats = list()
-    pdf(file = paste(sroot,"multi_hist.pdf",sep=""), width=pdfsize, height=pdfsize)
-    par(mfcol=c(ndims,ndims))
+    outfile = paste(sroot,"multi_hist.pdf",sep="")
+    if (plotType == "Scatter"){
+        outfile = paste(sroot,"multi_scatter.pdf",sep="")
+    }
+    if (plotType == "Density"){
+        outfile = paste(sroot,"multi_density.pdf",sep="")
+    }
+    pdf(file = outfile, width=pdfsize, height=pdfsize)
+    layout(matrix(seq(1,ndims^2), ndims, ndims, byrow = FALSE))
+    #par(mfcol=c(ndims,ndims))
     pindex = 0
-    for (ci in 1:ndims) {                          #for each column
+    for (ci in 1:ndims) {                           #for each column
         noplotRow = vector()
         if (ci > 1) {
             noplotRow = (1:ndims)[1:(ci-1)]         #which row do not plot?
         }
         for (ri in 1:ndims) {                       #for each row
-            if (ri %in% noplotRow) {               #no plot
+            if (ri %in% noplotRow) {                #no plot
                 plot(NULL,NULL,axes=FALSE,xlim=c(0,1),ylim=c(0,1),xlab="",ylab="")
-            } else {                               #plot
+            } else {                                #plot
                 pindex = pindex + 1
                 pair = combinations[,pindex]
-                sn1 = samples[pair[1]]             #samplename1
+                sn1 = samples[pair[1]]              #samplename1
                 sn1mafa = paste(sn1, "mafa",sep="")
                 sn1d = paste(sn1, "d",sep="")
                 sn1short = gsub("CRCTumor","",sn1)
                 sn1short = gsub("Recurrence","Rec",sn1short)
+                sn1short = gsub("Primary","Pri",sn1short)
                 sn1short = gsub(paste(sroot,"_",sep=""),"",sn1short)
                 sn1short = gsub(paste(sroot,"-",sep=""),"",sn1short)
-                sn2 = samples[pair[2]]             #samplename2
+                sn2 = samples[pair[2]]              #samplename2
                 sn2mafa = paste(sn2, "mafa",sep="")
                 sn2d = paste(sn2, "d",sep="")
                 sn2short = gsub("CRCTumor","",sn2)
                 sn2short = gsub("Recurrence","Rec",sn2short)
+                sn2short = gsub("Primary","Pri",sn2short)
                 sn2short = gsub(paste(sroot,"_",sep=""),"",sn2short)
                 sn2short = gsub(paste(sroot,"-",sep=""),"",sn2short)
                 main.title = paste(sroot,sn1short,sn2short,"a.", sep=" ")
                 statName = paste(sroot, sn1short, sn2short, "stats", sep="_")
-                resStats[[statName]] = plotRes.multi.pdf(sampAB[which(sampAB[,sn1d] >= 15 & sampAB[,sn2d] >= 15),], main.title, sn1mafa, sn2mafa, 0.05, plotDepth=F, plotDensity=F, pdf=F)
-                #names(resStats)[length(resStats)] = statName
+                if (plotType == "AF") {
+                    resStats[[statName]] = plotRes.multi.pdf(sampAB[which(sampAB[,sn1d] >= 15 & sampAB[,sn2d] >= 15),], main.title, sn1mafa, sn2mafa, 0.05, plotDepth=F, plotDensity=F, plotScatter=F, pdf=F)
+                    #names(resStats)[length(resStats)] = statName
+                } else if (plotType == "Scatter") {
+                    resStats[[statName]] = plotRes.multi.pdf(sampAB[which(sampAB[,sn1d] >= 15 & sampAB[,sn2d] >= 15),], main.title, sn1mafa, sn2mafa, 0.05, plotDepth=F, plotDensity=F, plotAF=F, pdf=F)
+                } else if (plotType == "Density") {
+                    resStats[[statName]] = plotRes.multi.pdf(sampAB[which(sampAB[,sn1d] >= 15 & sampAB[,sn2d] >= 15),], main.title, sn1mafa, sn2mafa, 0.05, plotDepth=F, plotScatter=F, plotAF=F, pdf=F)
+                }
             }
         }
     }
@@ -373,7 +389,7 @@ plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16) {
 
 
 
-plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotDepth=TRUE, pdf=TRUE) {
+plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotDepth=TRUE, plotScatter=TRUE, pdf=TRUE) {
 
   sn1s = gsub("mafc","",sn1)
   sn1s = gsub("mafa","",sn1s)
@@ -415,6 +431,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF
   
 
   allB_Rows = which(sampAB[,maf2Index] > minAF & sampAB[,mafa2Index] > minAF & sampAB[,maf2Index] <= 1)
+  allAB_Rows = union(allA_Rows,allB_Rows)
   subB_Rows = intersect(subMuts$subBi, which(sampAB[,maf2Index] > minAF & sampAB[,maf2Index] <= 1))
   ssB_Rows  = intersect(subMuts$subBi, which(sampAB[,maf2Index] > minAF & sampAB[,maf2Index] <= 1 & sampAB[,maf1Index] == 0))
   sampBh = hist(sampAB[allB_Rows, maf2Index]/ratio, breaks=(max(sampAB[allB_Rows, maf2Index]/ratio)-min(sampAB[allA_Rows, maf2Index]/ratio)+0.01)/0.02, plot=F)
@@ -437,7 +454,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF
   ssfs = as.vector(sapply(ssfr, function(x, sAB, maf1I, maf2I){ length(which((sAB[,maf1I] >= x & sAB[, maf1I] < x+0.01 & sAB[, maf2I] == 0) | (sAB[,maf2I] >= x & sAB[, maf2I] < x+0.01 & sAB[, maf1I] == 0)))/
                                              length(which((sAB[,maf1I] >= x & sAB[, maf1I] < x+0.01) | (sAB[,maf2I] >= x & sAB[, maf2I] < x+0.01)))}, sAB = sampAB, maf1I=maf1Index, maf2I=maf2Index))
   
-  if (plotAF == TRUE){
+  if (plotAF == TRUE) {
 
       if (pdf == TRUE) {
           pdf(file = paste(sampName, "hist.pdf", sep="_"), width = 8, height = 8)
@@ -503,17 +520,22 @@ plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF
       text(x=0.6,y=1*ylimup/2, labels=bquote(paste("FST"["sub"], " = ", .(fst))),cex=2.2)
 
       npub = length(which(sampAB[,mafa1Index] > minAF)) - length(subMuts$subAi)
-      legend(0.65,ylimdown/4, legend=c(paste("Public ","(",npub,")",sep=""),"Shared Sub","Site Specific"),
-             col=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)),pch=15,bty="n",cex=1.7)
+      legend(0.6,ylimdown/4, legend=c(paste("Public ","(",npub,")",sep=""),"Pvt-Shared","Pvt-Site Specific"),
+             col=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), pch=15, bty="n", cex=1.7)
       if (pdf == TRUE) {
           dev.off()
       }
   }
 
-  if (plotDensity == TRUE){
+  if (plotDensity == TRUE) {
       #two way density plot
-      pdf(file = paste(sampName, "density.pdf", sep="_"), width = 8, height = 8)
+      if (pdf == TRUE) {
+          pdf(file = paste(sampName, "density.pdf", sep="_"), width = 8, height = 8)
+      }
       par(mar=c(4.5,5,4.5,2))
+      if (pdf == FALSE) {
+          par(mar=c(5,5,5,4))
+      }
       smkey(sampAB[,maf1Index],sampAB[,maf2Index],xlab=paste("MAF",sn1s,sep=" "), ylab=paste("MAF",sn2s,sep=" "),
             main = sampName, xlim=c(0,1), ylim=c(0,1),cex.lab = 2.3, cex.main = 2.3,cex.axis=1.7)
       if (length(which(sampAB$dron == 1)) > 0) {
@@ -522,11 +544,53 @@ plotRes.multi.pdf <- function(sampAB, sampName, sn1, sn2, minAF, ratio=1, plotAF
                      col=decideDriverColor(sampAB[dronindex,maf1Index],sampAB[dronindex,maf2Index]),cex=1.7,font=2)
       }
       segments(0,0,0.8,0.8)
-      dev.off()
+      if (pdf == TRUE) {
+          dev.off()
+      }
   }
 
+  if (plotScatter == TRUE) {
+      #scatter plot with density color
+      if (pdf == TRUE) {
+          pdf(file = paste(sampName, "scatter.pdf", sep="_"), width = 5, height = 5, useDingbats=FALSE)
+      }
+      drx = vector()
+      dry = vector()
+      drlabels = vector()
+      if (length(which(sampAB$dron == 1)) > 0) {
+          dronindex = which(sampAB$dron != 0)
+          knownDronIndex = which(sampAB$dron == 2)
+          knownDrivers = as.character(sampAB$geneName[knownDronIndex])          #only for known drivers
+          dronindex = intersect(allAB_Rows, dronindex)
+          drx = sampAB[dronindex,maf1Index]
+          dry= sampAB[dronindex,maf2Index]
+          drlabels = as.character(sampAB$geneName[dronindex])
+          drlabels = as.vector(sapply(drlabels, function(x, knownDrivers){if (x %in% knownDrivers){x} else {""}}, knownDrivers=knownDrivers))
+      }
+      pub_Rows = setdiff(allAB_Rows, union(subA_Rows, subB_Rows))
+      pub_Rows = match(pub_Rows, allAB_Rows)
+      shared_Rows = setdiff(union(subA_Rows, subB_Rows), union(ssA_Rows, ssB_Rows))
+      shared_Rows = match(shared_Rows, allAB_Rows)
+      ssAB_Rows = union(ssA_Rows, ssB_Rows)
+      ssAB_Rows = match(ssAB_Rows, allAB_Rows)
+      allSub_Rows = match(union(subA_Rows, subB_Rows), allAB_Rows)
+      if (pdf == TRUE) {
+          scatterDensityPlot(sampAB[allAB_Rows,maf1Index],sampAB[allAB_Rows,maf2Index],xlab=paste("MAF",sn1s,sep=" "), ylab=paste("MAF",sn2s,sep=" "),
+                             main = sampName, cex=1.2, cex.lab = 2.3, cex.main = 2.3, cex.axis=1.7, drx=drx, dry=dry, drlabels = drlabels,
+                             groups=list(a=pub_Rows, b=shared_Rows, c=ssAB_Rows),
+                             groupColors=list(a=brewer.pal(9, "Greys")[3:9], b=brewer.pal(9, "Greens")[2:5], c=brewer.pal(9, "Blues")[3:9]))
+      } else {
+          scatterDensityPlot(sampAB[allAB_Rows,maf1Index],sampAB[allAB_Rows,maf2Index],xlab=paste("MAF",sn1s,sep=" "), ylab=paste("MAF",sn2s,sep=" "),
+                             main = sampName, cex=1.2, cex.lab = 2.3, cex.main = 2.3, cex.axis=1.7, drx=drx, dry=dry, drlabels = drlabels, layout = FALSE,
+                             groups=list(a=pub_Rows, b=shared_Rows, c=ssAB_Rows),
+                             groupColors=list(a=brewer.pal(9, "Greys")[3:9], b=brewer.pal(9, "Greens")[2:5], c=brewer.pal(9, "Blues")[3:9]))
+      }
+      if (pdf == TRUE) {
+          dev.off()
+      }
+  }
 
-   if (plotDepth == TRUE) {
+  if (plotDepth == TRUE) {
       pdf(file = paste(sampName, "depth.pdf", sep="_"), width = 10, height = 6.6)
       par(mfrow=c(2,3))
       ymaxdepth = max(quantile(sampAB[which(sampAB[,mafa1Index] > minAF),dp1i], prob=seq(0,1,0.05))["95%"],
@@ -611,7 +675,7 @@ decideTickAt <- function(ylimdown, ylimup) {  #assuming they are equal in abs
 
 
 allAbs <- function(x) {
-    for (i in 1:length(x)){
+    for (i in 1:length(x)) {
         x[i] = abs(x[i])
     }
     return(x)
@@ -847,7 +911,7 @@ effectivePurity <- function(p, Nt) {
 
 
 pmf <- function(muts, minAF=0.04) {                          # calculate the probability distribution from AF data
-    bin = seq(minAF,0.8,0.02)                     # the bins I used
+    bin = seq(minAF,1,0.02)                     # the bins I used
     mhist = hist(muts, breaks = bin, plot=F)
     mfreq = mhist$counts/sum(mhist$counts)
 
@@ -861,12 +925,12 @@ pmf <- function(muts, minAF=0.04) {                          # calculate the pro
 
 
 JS.divergence <- function(sub1,sub2, minAF=0.04) {
-    sub1 = sub1[which(sub1 <= 0.8 & sub1 >= minAF)]
-    sub2 = sub2[which(sub1 <= 0.8 & sub2 >= minAF)]
+    sub1 = sub1[which(sub1 <= 1 & sub1 >= minAF)]
+    sub2 = sub2[which(sub2 <= 1 & sub2 >= minAF)]
     freqs1 = pmf(sub1, minAF)
     freqs2 = pmf(sub2, minAF)
     m<-0.5*(freqs1 + freqs2)
-    JS<-0.5*(sum(freqs1*log(freqs1/m)) + sum(freqs2*log(freqs2/m)))
+    JS<-0.5*(sum(freqs1*log2(freqs1/m)) + sum(freqs2*log2(freqs2/m)))
     return(JS)
 }
 
@@ -893,20 +957,23 @@ subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2,
             (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)) &                                               #or one side is below VAF 0.25
                 ((sampAB[,mafaBi] == 0 & (sampAB[,nbBi] != 0 | sampAB[,nbAi] == 0)) | sampAB[,mafaBi] != 0) )  #and the other side VAF > 0 or VAF == 0 (either not LOH or the other side is the same LOH)
     mutsA = sampAB[subAi,mafaAi]/ratio
-
+    ssAi  = intersect(subAi, which( sampAB[,mafaAi] > minAF & sampAB[,mafaBi] == 0 ))
+    
     subBi = which( sampAB[,mafaBi] > minAF &
             (((sampAB[,ccfAi]+2.58*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+2.58*sampAB[,ccfsdBi]) < 1) &       #either one side is below CCF+sd 1
             (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)) &                                               #or one side is below VAF 0.25
-            ((sampAB[,mafaAi] == 0 & (sampAB[,nbAi] != 0 | sampAB[,nbBi] == 0)) | sampAB[,mafaAi] != 0))       #and the other side VAF > 0 or VAF == 0 (either not LOH or the other side is the same LOH)
+            ((sampAB[,mafaAi] == 0 & (sampAB[,nbAi] != 0 | sampAB[,nbBi] == 0)) | sampAB[,mafaAi] != 0) )      #and the other side VAF > 0 or VAF == 0 (either not LOH or the other side is the same LOH)
     mutsB = sampAB[subBi,mafaBi]/ratio
-    JSD = JS.divergence(mutsA, mutsB, minAF=statsAF)
+    ssBi  = intersect(subBi, which( sampAB[,mafaBi] > minAF & sampAB[,mafaAi] == 0 ))
+    JSD = JS.divergence( mutsA, mutsB, minAF=statsAF )
+    
 
     # for mutational function dNdS
-    subTi = union(subAi, subBi)
+    #subTi = union(subAi, subBi)
     pubTi = which( ((sampAB[,ccfAi]+2.58*sampAB[,ccfsdAi]) >= 1 & (sampAB[,ccfBi]+2.58*sampAB[,ccfsdBi]) >= 1) |
                       (sampAB[,mafaAi] >= 0.25 & sampAB[,mafaBi] >= 0.25) )
-    subMutGeneFunc = sampAB[subTi, c(gNIndex, gLIndex, fCIndex)]
-    pubMutGeneFunc = sampAB[pubTi, c(gNIndex, gLIndex, fCIndex)]
+    #subMutGeneFunc = sampAB[subTi, c(gNIndex, gLIndex, fCIndex)]
+    #pubMutGeneFunc = sampAB[pubTi, c(gNIndex, gLIndex, fCIndex)]
 
     # for FST
     mutsSub = sampAB[which((sampAB[,mafaAi] >= statsAF | sampAB[,mafaBi] >= statsAF) & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 &
@@ -938,12 +1005,12 @@ subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2,
                                  sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 ),mafaBi]
         
     # list for output    
-    muts = list(A=mutsA,B=mutsB,subAi=subAi,subBi=subBi, fstInput=mutsSub,
+    muts = list(A=mutsA,B=mutsB,subAi=subAi,subBi=subBi, ssAi=ssAi, ssBi=ssBi, pubTi=pubTi, fstInput=mutsSub,
         lenSubA=length(mutsA2),lenSubAh=length(mutsAh2),ratioHighSubA=length(mutsAh2)/length(mutsA2),
         lenSubB=length(mutsB2),lenSubBh=length(mutsBh2),ratioHighSubB=length(mutsBh2)/length(mutsB2),
         lenSsA=length(mutsASp2),lenHighSsA=length(mutsASph2),ratioHighSsA=length(mutsASph2)/length(mutsASp2),pSsA=length(mutsASp2)/length(mutsA2),
         lenSsB=length(mutsBSp2),lenHighSsB=length(mutsBSph2),ratioHighSsB=length(mutsBSph2)/length(mutsBSp2),pSsB=length(mutsBSp2)/length(mutsB2),
-        FST=FST, JSD=JSD, subMutGeneFunc = subMutGeneFunc, pubMutGeneFunc = pubMutGeneFunc)
+        FST=FST, JSD=JSD) #subMutGeneFunc = subMutGeneFunc, pubMutGeneFunc = pubMutGeneFunc)
     return(muts)
 }
 
@@ -1137,7 +1204,7 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
     g.norm1 = sum(g.frac1*subset.dnds1)
     f.table1 = table(sampAB$functionalClass[which(sampAB$pubOrSub == "public" &
                                                  (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
-    nonsyn1 = as.numeric(f.table1["nonsynonymous SNV"] + f.table1["stopgain"] + f.table1["stoploss"])
+    nonsyn1 = as.numeric(sum(as.numeric(f.table1[which(names(f.table1) != "synonymous SNV" & names(f.table1) != "unknown")])))
     syn1 = as.numeric(f.table1["synonymous SNV"])
     res.dnds1 = nonsyn1/syn1
     res.dnds1 = res.dnds1/g.norm1
@@ -1205,8 +1272,7 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
     g.norm2 = sum(g.frac2*subset.dnds2)
     f.table2 = table(sampAB$functionalClass[which(sampAB$pubOrSub != "public" & sampAB$pubOrSub != "unknown" &
                                                       (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
-
-    nonsyn2 = as.numeric(f.table2["nonsynonymous SNV"] + f.table2["stopgain"] + f.table2["stoploss"])
+    nonsyn2 = as.numeric(sum(as.numeric(f.table2[which(names(f.table2) != "synonymous SNV" & names(f.table2) != "unknown")])))
     syn2 = as.numeric(f.table2["synonymous SNV"])
     res.dnds2 = nonsyn2/syn2
     res.dnds2 = res.dnds2/g.norm2
@@ -1263,9 +1329,9 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
 
     # ndriver
     npub = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
-    npubDriver = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron == 1))
+    npubDriver = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron != 0))
     nsub = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
-    nsubDriver = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron == 1))
+    nsubDriver = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron != 0))
     pub.driver.enrich.p = phyper(npubDriver, ndriver, 20000-ndriver, npub, lower.tail=F)
     sub.driver.enrich.p = phyper(nsubDriver, ndriver, 20000-ndriver, nsub, lower.tail=F)
     
@@ -1409,6 +1475,47 @@ generateUpSetList <- function(sampAB, samples, minAF=0.08) {
     return(outlist)
 }
 
+
+generateUpSetList2 <- function(sampAB, sn1, sn2, samples) {
+    
+    outlist = list()
+    
+    submuts = subclonalMut(sampAB, sn1, sn2, minAF=0.01)
+
+    needr = vector()
+    for (i in 1:length(samples)) {
+        sn = samples[i]
+        depi = match(paste(sn, "d", sep=""), colnames(sampAB))
+        nbi = match(paste(sn, "nb", sep=""), colnames(sampAB))
+        nbSN1i = match(paste(sn1, "nb", sep=""), colnames(sampAB))
+        nbSN2i = match(paste(sn2, "nb", sep=""), colnames(sampAB))
+        if (length(needr) == 0){
+            needr = which(as.numeric(sampAB[,depi]) >= 15 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0))
+        } else {
+            needr = intersect(needr, which(as.numeric(sampAB[,depi]) >= 15 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0)) )
+        }
+    }
+
+    pubTi = intersect(needr, submuts$pubTi)
+    ssAi = intersect(needr, submuts$ssAi)
+    ssBi = intersect(needr, submuts$ssBi)
+    outlist[[1]] = paste(sampAB$chr[pubTi],sampAB$pos[pubTi],sampAB$ref[pubTi],sampAB$alt[pubTi],sep=":")
+    outlist[[2]] = paste(sampAB$chr[ssAi],sampAB$pos[ssAi],sampAB$ref[ssAi],sampAB$alt[ssAi],sep=":")
+    outlist[[3]] = paste(sampAB$chr[ssBi],sampAB$pos[ssBi],sampAB$ref[ssBi],sampAB$alt[ssBi],sep=":")
+    needallr = union(pubTi,union(ssAi,ssBi))
+    
+    for (i in 1:length(samples)) {
+        sn = samples[i]
+        mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
+        foundr = which(as.numeric(sampAB[,mafai]) >= 0.1)
+        sampler = intersect(foundr, needallr)
+        outlist[[i+3]] = paste(sampAB$chr[sampler],sampAB$pos[sampler],sampAB$ref[sampler],sampAB$alt[sampler],sep=":")
+    }
+    
+    names(outlist) = c(paste(sn1,sn2,"public",sep="_"),paste(sn1,"specific",sep="_"),paste(sn2,"specific",sep="_"),samples)
+    return(outlist)
+
+}
 
 
 spruceInput <- function(samp, samples, minMaf) {
