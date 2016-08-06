@@ -11,7 +11,9 @@ g++ changeBamRG.cpp
 ******************************************************************************/
 
 #include <api/BamReader.h>
+#include <api/BamWriter.h>
 #include <api/BamMultiReader.h>
+
 using namespace BamTools;
 
 #include <iostream>
@@ -24,6 +26,9 @@ using namespace BamTools;
 #include <cstring>
 #include <sstream>
 #include "changeBamRG.h"
+#include <iomanip>
+#include "boost/regex.hpp"
+using namespace boost;
 using namespace std;
 
 
