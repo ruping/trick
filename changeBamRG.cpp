@@ -36,10 +36,6 @@ int main ( int argc, char *argv[] ) {
   struct parameters *param = 0;
   param = interface(param, argc, argv);
 
-  //region file input (the region file should be sorted as the same way as the bam file)
-  ifstream region_f;
-  region_f.open(param->region_f, ios_base::in);  // the region file is opened
-
 
   //bam input and generate index if not yet 
   //-------------------------------------------------------------------------------------------------------+
