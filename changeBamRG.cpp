@@ -4,10 +4,10 @@
   ruping@stanford.edu
 
 
-g++ grep_starts.cpp
+g++ changeBamRG.cpp
 -I/srv/gsfs0/projects/curtis/ruping/tools/bamtools/include/ -I/srv/gsfs0/projects/curtis/ruping/tools/zlib/current/include/ -I/srv/gsfs0/projects/curtis/ruping/tools/boost/current/include/ 
 -L/srv/gsfs0/projects/curtis/ruping/tools/bamtools/lib/ -L/srv/gsfs0/projects/curtis/ruping/tools/zlib/current/lib/ -L/srv/gsfs0/projects/curtis/ruping/tools/boost/current/lib/ 
--lbamtools -lz -Wl,-rpath,/srv/gsfs0/projects/curtis/ruping/tools/bamtools/lib/:/srv/gsfs0/projects/curtis/ruping/tools/boost/current/lib/ -lboost_regex -o grep_starts
+-lbamtools -lz -Wl,-rpath,/srv/gsfs0/projects/curtis/ruping/tools/bamtools/lib/:/srv/gsfs0/projects/curtis/ruping/tools/boost/current/lib/ -lboost_regex -o changeBamRG
 ******************************************************************************/
 
 #include <api/BamReader.h>
