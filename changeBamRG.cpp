@@ -121,7 +121,7 @@ int main ( int argc, char *argv[] ) {
   BamAlignment bam;
   while (reader.GetNextAlignment(bam)) { //change RG 
 
-    bam.EditTag("RG","Z",1)
+    bam.EditTag("RG","Z",1);
 
     writer.SaveAlignment(bam);
     
