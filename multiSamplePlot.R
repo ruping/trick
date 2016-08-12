@@ -41,6 +41,9 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               maxTlod = 0
               ssb = 0                    #combined strand bias check
               ssbc = 0
+              ssbp = 0
+              refdav = 0
+              altdav = 0
               for (j in seq(6,(3+length(cindex)), by=3)) {   #foreach sample get maxMaf
                   ss = strsplit(as.character(x[j+1]), "\\|")
                   mafTmp = as.numeric(ss[[1]][1])
@@ -76,26 +79,34 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
                   mafTmp = as.numeric(ss[[1]][1])
                   cmeme = strsplit(ss[[1]][3], ",")
                   endBias = as.numeric(ss[[1]][2])
-                  strandBias = as.numeric(ss[[1]][4])
+                  strandBiases = strsplit(ss[[1]][4], ",")
+                  strandBias = as.numeric(strandBiases[[1]][1])
+                  strandBiasRef = 0
+                  strandBiasFisherP = -1
+                  if (length(strandBiases[[1]]) > 1){
+                      strandBiasRef = as.numeric(strandBiases[[1]][2])
+                      strandBiasFisherP = as.numeric(strandBiases[[1]][3])
+                  }
                   mappingBias = as.numeric(ss[[1]][5])
                   cmedianav = as.numeric(cmeme[[1]][2])
                   cmemeSum = sum(as.numeric(cmeme[[1]]))
-
-                  
-                  if ( mafTmp > 0 ) {
-                      ssb = ssb+strandBias
-                      ssbc = ssbc + 1
-                  }
                   
                   #decide a b allele count
                   refnow = round(as.numeric(x[j+2])*(1-mafTmp))
                   altnow = round(as.numeric(x[j+2])*mafTmp)
 
+                  if ( mafTmp > 0 ) {
+                      ssb = ssb + strandBias*altnow
+                      ssbp = ssbp + strandBiasFisherP*altnow
+                      refdav = refdav + refnow
+                      altdav = altdav + altnow
+                      ssbc = ssbc + 1
+                  }
+                  
                   #decide mafNow
                   if ( mafTmp == 0 ) {
                       mafNow = mafTmp
-                  } else if (endBias < 0.9 & strandBias != 1 & strandBias != 0 & mappingBias < 0.8 & cmemeSum < 5.2 & cmedianav < cmedianTh) {
-                  #} else if (endBias < 0.9 & mappingBias < 0.99 & cmemeSum < 7.5 & cmedianav < cmedianTh) {    
+                  } else if (endBias < 0.9 & ((strandBias != 0 & strandBias != 1) | (strandBiasFisherP > 0.7 & refnow >= 10 & altnow >= 5 & mafTmp >= 0.1)) & mappingBias < 0.8 & cmemeSum < 5.2 & cmedianav < cmedianTh) {  
                       mafNow = mafTmp
                       if (original > 0) {   #if oriLod
                           if (oriTlod < original) {
@@ -125,8 +136,13 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
                   names(resVector)[(length(resVector)-5):length(resVector)] = c(sampleNameMaf,sampleNameMafa,sampleNameCcf,sampleNameCcfSD,sampleNameRef,sampleNameAlt)
               } #for each sample
               
-              ssb = ssb/ssbc
-              if (ssb >= 0.95 | ssb <= 0.05) {
+              ssb = ssb/altdav
+              ssbp = ssbp/altdav
+              #message(paste(x[1],x[2], sep="  "))
+              #message(paste(ssb, ssbp, sep="  "))
+              altdav = altdav/ssbc
+              refdav = refdav/ssbc
+              if ((ssb >= 0.95 | ssb <= 0.05) | ssbp < 0.001) {                                        #multiple sample strand bias
                   for (j in seq(6,(3+length(cindex)), by=3)) {
                       sampleName = resColnames[j]
                       sampleNameMaf = paste(sampleName, "mafc", sep="")
@@ -935,7 +951,7 @@ JS.divergence <- function(sub1,sub2, minAF=0.04) {
 }
 
 
-subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2, ratio=1)   {                  #determinine subclonal mutations
+subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2, ratio=1)  {                   #determinine subclonal mutations
     ccfAi = match(paste(snA, "ccf", sep=""), colnames(sampAB))
     ccfBi = match(paste(snB, "ccf", sep=""), colnames(sampAB))
     ccfsdAi = match(paste(snA, "ccfSD", sep=""), colnames(sampAB))
@@ -1439,26 +1455,99 @@ prepareLichee <- function(samples, nmaf, SampAB) {
     for (i in 1:length(depthCols)) {  #Depth
         licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= 20
     }
-    #for (i in 1:length(samples)) {  #LOH
-    #    sn = samples[i]
-    #   if (grepl("CRCTumor", sn)){
-    #        next
-    #    } else {
-    #        nbCol = paste(samples[i], "nb", sep="")
-    #        licheeRow = licheeRow & SampAB[,match(nbCol, colnames(SampAB))] != 0
-    #    }
-    #}
+    
     licheeInput = SampAB[licheeRow,match(licheeCol,colnames(SampAB))]
     licheeInput = data.frame(licheeInput, name=paste(licheeInput$geneName,
                   paste(licheeInput$chr,licheeInput$pos,licheeInput$ref,sep=":"), licheeInput$alt, sep="_"))
     licheeInput = licheeInput[,match(c("chr","pos","name",nmaf,paste(samples,"mafa",sep="")),colnames(licheeInput))]
     licheeInput[,4] = 0
-    #for (i in 5:dim(licheeInput)[2]) {
-    #    licheeInput[,i] = as.numeric(licheeInput[,i])/2
-    #}
+    
     colnames(licheeInput) = gsub("mafa", "", colnames(licheeInput))
     colnames(licheeInput) = gsub("maf", "", colnames(licheeInput))
     return(licheeInput)
+}
+
+
+prepareLichee2 <- function(samples, sgSamples, nmaf, sampAB) {
+    
+    licheeCol = c("chr","pos","ref","alt","geneName",nmaf,paste(c(samples, sgSamples),"mafa",sep=""))
+    sn1 = samples[1]
+    sn2 = samples[2]
+    submuts = subclonalMut(sampAB, sn1, sn2, minAF=0.01)
+    needr = vector()
+    sgHighi = vector()
+
+    depthSample = vector()
+    for (i in 1:length(samples)) {  #Depth of original samples
+        sn = samples[i]
+        depi = match(paste(sn, "d", sep=""), colnames(sampAB))
+        if (length(depthSample) > 0) {
+            depthSample = (depthSample & sampAB[,depi] >= 20)
+        } else {
+            depthSample = (sampAB[,depi] >= 20)
+        }
+    }
+    
+    for (i in 1:length(sgSamples)) {
+        sn = sgSamples[i]
+        mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
+        depi = match(paste(sn, "d", sep=""), colnames(sampAB))
+        nbi = match(paste(sn, "nb", sep=""), colnames(sampAB))
+        nbSN1i = match(paste(sn1, "nb", sep=""), colnames(sampAB))
+        nbSN2i = match(paste(sn2, "nb", sep=""), colnames(sampAB))
+        if (length(needr) == 0) {
+            sgHighi = which(as.numeric(sampAB[,mafai]) > 0.15)
+            needr = which(as.numeric(sampAB[,depi]) >= 20 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0))
+        } else {
+            sgHighi = union(sgHighi, which(as.numeric(sampAB[,mafai]) > 0.15))
+            needr = intersect(needr, which(as.numeric(sampAB[,depi]) >= 20 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0)) )
+        }
+    }
+
+    
+    pubTi = intersect(needr, submuts$pubTi)
+    subAi = intersect(needr, submuts$subAi)
+    subBi = intersect(needr, submuts$subBi)
+    sgHighi = intersect(needr, sgHighi)
+    licheeRow = union(sgHighi, union(pubTi, union(subAi, subBi)))
+    licheeRow = intersect(licheeRow, which(depthSample))
+    licheeRow = intersect(licheeRow, which(!grepl("chrM", sampAB$chr)))
+
+    
+    licheeInput = sampAB[licheeRow,match(licheeCol,colnames(sampAB))]
+    licheeInput = data.frame(licheeInput, name=paste(licheeInput$geneName,
+                  paste(licheeInput$chr,licheeInput$pos,licheeInput$ref,sep=":"), licheeInput$alt, sep="_"))
+    licheeInput = licheeInput[,match(c("chr","pos","name",nmaf,paste(c(samples,sgSamples),"mafa",sep="")),colnames(licheeInput))]
+    licheeInput[,4] = 0
+
+    colnames(licheeInput) = gsub("mafa", "", colnames(licheeInput))
+    colnames(licheeInput) = gsub("maf", "", colnames(licheeInput))
+    colnames(licheeInput) = gsub("ccf", "", colnames(licheeInput))
+
+    profile = as.vector(apply(licheeInput, 1, function(x, samps, sgSamples, colnames) {
+                        profile = rep(0, length(c(samples,sgSamples)))
+                        profile[which(as.numeric(x[match(samps, colnames)]) > 0.015)] = 1
+                        profile[length(samps) + which(as.numeric(x[match(sgSamples, colnames)]) > 0.15)] = 1
+                        profile = paste(profile, sep="", collapse="")
+                        profile
+                    }, colnames = colnames(licheeInput), samps = samples, sgSamples = sgSamples))
+    licheeInput = data.frame(licheeInput, profile=paste("0",profile,sep=""))
+    licheeInput = licheeInput[,match(c("chr","pos","name","profile",colnames(licheeInput)[4],c(samples,sgSamples)),colnames(licheeInput))]
+
+    needProfile = names(table(licheeInput$profile)[which(table(licheeInput$profile) >= 4)])
+    needProfile = needProfile[which(grepl("1", needProfile))]
+    licheeInput = licheeInput[licheeInput$profile %in% needProfile,]
+
+    clusters = vector()
+    for (i in 1:length(needProfile)) {
+        cpro = needProfile[i]
+        rowsi = which(licheeInput$profile == cpro)
+        rows = paste(rowsi, sep=",", collapse=",")
+        cdata = licheeInput[rowsi, match(c(colnames(licheeInput)[5], samples,sgSamples), colnames(licheeInput))]
+        colmeans = as.vector(apply(cdata, 2, median))
+        clusters = rbind(clusters, c(cpro, colmeans, rows))
+    }
+    return(list(li=licheeInput, cl=clusters))
 }
 
 
@@ -1480,39 +1569,60 @@ generateUpSetList2 <- function(sampAB, sn1, sn2, samples) {
     
     outlist = list()
     
-    submuts = subclonalMut(sampAB, sn1, sn2, minAF=0.01)
+    submuts = subclonalMut(sampAB, sn1, sn2, minAF=0.015)
+    depthBulkSample = vector()
+    for (i in 1:length(c(sn1,sn2))) {  #Depth of original samples
+        sn = c(sn1,sn2)[i]
+        depi = match(paste(sn, "d", sep=""), colnames(sampAB))
+        if (length(depthBulkSample) > 0) {
+            depthBulkSample = (depthBulkSample & sampAB[,depi] >= 20)
+        } else {
+            depthBulkSample = (sampAB[,depi] >= 20)
+        }
+    }
+    depthBulkSampleGoodi = which(depthBulkSample)
+    
 
     needr = vector()
+    sgHighi = vector()
     for (i in 1:length(samples)) {
         sn = samples[i]
         depi = match(paste(sn, "d", sep=""), colnames(sampAB))
+        mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
         nbi = match(paste(sn, "nb", sep=""), colnames(sampAB))
         nbSN1i = match(paste(sn1, "nb", sep=""), colnames(sampAB))
         nbSN2i = match(paste(sn2, "nb", sep=""), colnames(sampAB))
-        if (length(needr) == 0){
-            needr = which(as.numeric(sampAB[,depi]) >= 15 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0))
+        if (length(needr) == 0) {
+            sgHighi = which(as.numeric(sampAB[,mafai]) > 0.15)
+            needr = which(as.numeric(sampAB[,depi]) >= 20 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0))
         } else {
-            needr = intersect(needr, which(as.numeric(sampAB[,depi]) >= 15 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0)) )
+            sgHighi = union(sgHighi, which(as.numeric(sampAB[,mafai]) > 0.15))
+            needr = intersect(needr, which(as.numeric(sampAB[,depi]) >= 20 & (as.numeric(sampAB[,nbi]) != 0 | as.numeric(sampAB[,nbSN1i]) == 0 | as.numeric(sampAB[,nbSN2i]) == 0)) )
         }
     }
 
-    pubTi = intersect(needr, submuts$pubTi)
-    ssAi = intersect(needr, submuts$ssAi)
-    ssBi = intersect(needr, submuts$ssBi)
+    sgHighi = intersect(depthBulkSampleGoodi, intersect(needr, sgHighi))
+    pubTi = intersect(intersect(needr,depthBulkSampleGoodi), submuts$pubTi)
+    ssAi = intersect(intersect(needr,depthBulkSampleGoodi), submuts$ssAi)
+    ssBi = intersect(intersect(needr,depthBulkSampleGoodi), submuts$ssBi)
+    allSubi = intersect(intersect(needr,depthBulkSampleGoodi), union(submuts$subAi,submuts$subBi))
+    sharedi = setdiff(allSubi,union(ssAi,ssBi))
     outlist[[1]] = paste(sampAB$chr[pubTi],sampAB$pos[pubTi],sampAB$ref[pubTi],sampAB$alt[pubTi],sep=":")
-    outlist[[2]] = paste(sampAB$chr[ssAi],sampAB$pos[ssAi],sampAB$ref[ssAi],sampAB$alt[ssAi],sep=":")
-    outlist[[3]] = paste(sampAB$chr[ssBi],sampAB$pos[ssBi],sampAB$ref[ssBi],sampAB$alt[ssBi],sep=":")
-    needallr = union(pubTi,union(ssAi,ssBi))
+    outlist[[2]] = paste(sampAB$chr[sharedi],sampAB$pos[sharedi],sampAB$ref[sharedi],sampAB$alt[sharedi],sep=":")
+    outlist[[3]] = paste(sampAB$chr[ssAi],sampAB$pos[ssAi],sampAB$ref[ssAi],sampAB$alt[ssAi],sep=":")
+    outlist[[4]] = paste(sampAB$chr[ssBi],sampAB$pos[ssBi],sampAB$ref[ssBi],sampAB$alt[ssBi],sep=":")
+    needallr = union(sharedi, union(pubTi,union(ssAi,ssBi)))
+    needallr = union(sgHighi,needallr)
     
     for (i in 1:length(samples)) {
         sn = samples[i]
         mafai = match(paste(sn, "mafa", sep=""), colnames(sampAB))
-        foundr = which(as.numeric(sampAB[,mafai]) >= 0.1)
+        foundr = which(as.numeric(sampAB[,mafai]) > 0.15)
         sampler = intersect(foundr, needallr)
-        outlist[[i+3]] = paste(sampAB$chr[sampler],sampAB$pos[sampler],sampAB$ref[sampler],sampAB$alt[sampler],sep=":")
+        outlist[[i+4]] = paste(sampAB$chr[sampler],sampAB$pos[sampler],sampAB$ref[sampler],sampAB$alt[sampler],sep=":")
     }
     
-    names(outlist) = c(paste(sn1,sn2,"public",sep="_"),paste(sn1,"specific",sep="_"),paste(sn2,"specific",sep="_"),samples)
+    names(outlist) = c(paste(sn1,sn2,"public",sep="_"),"Pvt_Shared",paste(sn1,"specific",sep="_"),paste(sn2,"specific",sep="_"),samples)
     return(outlist)
 
 }

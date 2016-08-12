@@ -236,9 +236,9 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
             abline(0,1,lty=3,col=rgb(0,0,0,2/3))
         }
         if (length(drlabels) > 0) {
-            points(drx,dry,col=rgb(238/255,59/255,59/255,2/3), pch=1, cex=cex+.3)
+            points(drx,dry,col=rgb(238/255,59/255,59/255,4/5), pch=1, cex=cex+.3)
             if (layout == TRUE){
-                pointLabel(drx, dry, labels=drlabels, col=rgb(238/255,59/255,59/255,3/5), cex=cex.axis)
+                pointLabel(drx, dry, labels=drlabels, col=rgb(238/255,59/255,59/255,1), cex=cex.axis)
             }
         }
         if (layout == TRUE) {
