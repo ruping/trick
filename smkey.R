@@ -1,3 +1,5 @@
+library(KernSmooth)
+library(fields)
 
 .smoothScatterCalcDensity1 <- function(x, nbin, bandwidth, range.x) {
   
@@ -181,7 +183,7 @@ smkey <- function(x, y=NULL,
 
 scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=cex, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE,
                                drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(), colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
-                               legend=c("Public","Pvt-Shared","Pvt-Site Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE){
+                               legend=c("Public","Pvt-Shared","Pvt-Site Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1){
 
     if (length(groups) > 0) {
         colLegends = list()
@@ -206,6 +208,7 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
             message(nbinx)
             message(nbiny)
             denscolor = densCols(x[indexes], y[indexes], colramp = colorRampPalette(colpanel), nbin=c(nbinx,nbiny))
+            denscolor = add.alpha(denscolor, alpha)
             
             dd = grDevices:::.smoothScatterCalcDensity(cbind(x[indexes], y[indexes]), nbin=c(nbinx,nbiny))
             dens <- as.numeric(dd$fhat)
@@ -219,20 +222,20 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
             colLegends[[i]] = colLegend
             if (i == 1) {
                 if (length(xaxisat) > 0) {
-                    plot(x[indexes],y[indexes],col=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main, axes = F)
+                    plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main, axes = F)
                     axis(side=1, at=xaxisat, labels=xaxislb, cex.axis=cex.axis)
                     axis(side=2, at=yaxisat, labels=yaxislb, cex.axis=cex.axis)
                     box("plot")
                     #segments(xaxisat[1], yaxisat[length(yaxisat)], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
                     #segments(xaxisat[length(xaxisat)], yaxisat[1], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
                 } else {
-                    plot(x[indexes],y[indexes],col=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
+                    plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
                 }
             } else {
-                points(x[indexes],y[indexes],col=denscolor, pch=19, cex=cex)
+                points(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, cex=cex)
             }
         }
-        if (abline == TRUE){
+        if (abline == TRUE) {
             abline(0,1,lty=3,col=rgb(0,0,0,2/3))
         }
         if (length(drlabels) > 0) {
@@ -305,3 +308,61 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
     }
 }
 
+
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+
+
+
+## Add an alpha value to a colour
+add.alpha <- function(col, alpha=1) {
+    if(missing(col))
+        stop("Please provide a vector of colours.")
+    apply(sapply(col, col2rgb)/255, 2, 
+          function(x)
+              rgb(x[1], x[2], x[3], alpha=alpha))  
+}
