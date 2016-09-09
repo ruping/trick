@@ -16,27 +16,6 @@ library(kernlab)       # support vector machine
 library(pROC)	       # plot the ROC curves
 library(doMC)
 
-setwd(path)
-
-load("stats.merged.rda")
-
-features = c("fHsub","fHss","FST","KSD","rAUC")
-data = stats.merged2
-colnames = colnames(data)
-combns2 = combn(5,2)
-combns3 = combn(5,3)
-combns4 = combn(5,4)
-combns5 = combn(5,5)
-seeds = 1943:1962      #20 times each
-
-
-featureRes = list()
-#featureRes = featureComparison(data, lent, combns2, features, colnames, seeds, featureRes)
-#featureRes = featureComparison(data, lent, combns3, features, colnames, seeds, featureRes)
-featureRes = featureComparison(data, lent, combns4, features, colnames, seeds, featureRes)
-#featureRes = featureComparison(data, lent, combns5, features, colnames, seeds, featureRes)
-save(res, file="featureResCombn3.rda")
-
 
 featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {
     for (i in 1:dim(combns)) {
@@ -145,3 +124,24 @@ trainSVM <- function(data, lent, featureCols=2:5, classCol=1, ncores=2, trainY="
     }
     return(svm.tune)
 }
+
+
+setwd(path)
+load("stats.merged.rda")
+
+features = c("fHsub","fHss","FST","KSD","rAUC")
+data = stats.merged2
+colnames = colnames(data)
+combns2 = combn(5,2)
+combns3 = combn(5,3)
+combns4 = combn(5,4)
+combns5 = combn(5,5)
+seeds = 1943:1962      #20 times each
+
+
+featureRes = list()
+#featureRes = featureComparison(data, lent, combns2, features, colnames, seeds, featureRes)
+#featureRes = featureComparison(data, lent, combns3, features, colnames, seeds, featureRes)
+featureRes = featureComparison(data, lent, combns4, features, colnames, seeds, featureRes)
+#featureRes = featureComparison(data, lent, combns5, features, colnames, seeds, featureRes)
+save(res, file="featureResCombn3.rda")
