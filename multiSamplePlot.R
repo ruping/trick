@@ -490,7 +490,7 @@ plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotT
 
 
 
-plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="", sn1, sn2, minAF, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotDepth=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0) {
+plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="", sn1, sn2, minAF, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotDepth=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0, widthadj=0, heightadj=0) {
 
   sn1s = gsub("mafc","",sn1)
   sn1s = gsub("mafa","",sn1s)
@@ -597,7 +597,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
   if (plotAF == TRUE) {
 
       if (pdf == TRUE) {
-          pdf(file = paste(sampName, "hist.pdf", sep="_"), width = 8, height = 8, useDingbats=FALSE)
+          pdf(file = paste(sampName, "hist.pdf", sep="_"), width = 8+widthadj, height = 8+heightadj, useDingbats=FALSE)
       }
       par(mar=c(4.5,5,4.5,0))
 
@@ -678,7 +678,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
   if (plotDensity == TRUE) {
       #two way density plot
       if (pdf == TRUE) {
-          pdf(file = paste(sampName, "density.pdf", sep="_"), width = 8, height = 8, useDingbats=FALSE)
+          pdf(file = paste(sampName, "density.pdf", sep="_"), width = 8+widthadj, height = 8+heightadj, useDingbats=FALSE)
       }
       par(mar=c(4.5,5,4.5,2))
       if (pdf == FALSE) {
@@ -700,7 +700,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
   if (plotScatter == TRUE) {
       #scatter plot with density color
       if (pdf == TRUE) {
-          pdf(file = paste(sampName, "scatter.pdf", sep="_"), width = 5, height = 5, useDingbats=FALSE)
+          pdf(file = paste(sampName, "scatter.pdf", sep="_"), width = 5 + widthadj/2, height = 5 + heightadj/2, useDingbats=FALSE)
       }
       drx = vector()
       dry = vector()
@@ -723,12 +723,12 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
       ssAB_Rows = match(ssAB_Rows, allAB_Rows)
       allSub_Rows = match(union(subA_Rows, subB_Rows), allAB_Rows)
       if (pdf == TRUE) {
-          scatterDensityPlot(sampAB[allAB_Rows,maf1Index],sampAB[allAB_Rows,maf2Index],xlab=paste("MAF",sn1s,sep=" "), ylab=paste("MAF",sn2s,sep=" "),
+          scatterDensityPlot(sampAB[allAB_Rows,maf1Index],sampAB[allAB_Rows,maf2Index],xlab=paste("VAF",sn1s,sep=" "), ylab=paste("VAF",sn2s,sep=" "),
                              main = main, cex=1.2, cex.lab = 2.3, cex.main = 2.3, cex.axis=1.7, drx=drx, dry=dry, drlabels = drlabels,
                              groups=list(a=pub_Rows, b=shared_Rows, c=ssAB_Rows),alpha=alpha,
                              groupColors=list(a=brewer.pal(9, "Greys")[3:9], b=brewer.pal(9, "Greens")[2:5], c=brewer.pal(9, "Blues")[3:9]))
       } else {
-          scatterDensityPlot(sampAB[allAB_Rows,maf1Index],sampAB[allAB_Rows,maf2Index],xlab=paste("MAF",sn1s,sep=" "), ylab=paste("MAF",sn2s,sep=" "),
+          scatterDensityPlot(sampAB[allAB_Rows,maf1Index],sampAB[allAB_Rows,maf2Index],xlab=paste("VAF",sn1s,sep=" "), ylab=paste("VAF",sn2s,sep=" "),
                              main = main, cex=1.2, cex.lab = 2.3, cex.main = 2.3, cex.axis=1.7, drx=drx, dry=dry, drlabels = drlabels, layout = FALSE,
                              groups=list(a=pub_Rows, b=shared_Rows, c=ssAB_Rows),alpha=alpha,
                              groupColors=list(a=brewer.pal(9, "Greys")[3:9], b=brewer.pal(9, "Greens")[2:5], c=brewer.pal(9, "Blues")[3:9]))
@@ -979,22 +979,22 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
             ccf2 <- Ms.A$M1                             #dbinom
             sd <- Ms.A$SD
         } else if (maxType == "pEarly.b" & prior != "late") {
-            ccf = (f/pu)*nc - (nb - 1)* pa      #early A2
+            ccf = (f/pu)*nc - (nb - 1)* pa         #early A2
             ff.B <- pu*(cc - pa + nb * pa)/nc      #dbinom
             Ms.B <- computeSD(N, S, ff.B)          #dbinom
-            ccf2 <- Ms.B$M1                         #dbinom
+            ccf2 <- Ms.B$M1                        #dbinom
             sd <- Ms.B$SD
         } else {
-            ccf = (f/pu)*nc                     #other
+            ccf = (f/pu)*nc                        #other
             ff.C <- pu*cc/nc                       #dbinom
             Ms.C <- computeSD(N, S, ff.C)          #dbinom
-            ccf2 <- Ms.C$M1                         #dbinom
+            ccf2 <- Ms.C$M1                        #dbinom
             sd <- Ms.C$SD
         }
     }
     if ( f > 0.1 & ccf >= overadj ) {    #correct for over-adjustment
         if (evoType != "A1") {
-            if ( (nt-nb) >= 3 ){
+            if ( (nt-nb) >= 3 ) {
                 ccf = (f/pu)*2
             } else if ( nt >= 2 & (nt-nb) < 3 ) {
                 ccf = (f/pu)*nc - (nt - nb - 1)*pa
@@ -1075,7 +1075,7 @@ JS.divergence <- function(sub1,sub2, minAF=0.04) {
 }
 
 
-subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2, ratio=1)  {                   #determinine subclonal mutations
+subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2, ratio=1, crv=2.58)  {                   #determinine subclonal mutations
     ccfAi = match(paste(snA, "ccf", sep=""), colnames(sampAB))
     ccfBi = match(paste(snB, "ccf", sep=""), colnames(sampAB))
     ccfsdAi = match(paste(snA, "ccfSD", sep=""), colnames(sampAB))
@@ -1093,7 +1093,7 @@ subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2,
     
     # for JSD and KSD
     subAi = which( sampAB[,mafaAi] > minAF &
-                      (((sampAB[,ccfAi]+2.58*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+2.58*sampAB[,ccfsdBi]) < 1) &       #either one side is below CCF+sd 1
+                      (((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &       #either one side is below CCF+sd 1
                            (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)) &                                               #or one side is below VAF 0.25
                           ((sampAB[,mafaBi] == 0 & (sampAB[,nbBi] != 0 | sampAB[,nbAi] == 0)) | sampAB[,mafaBi] != 0) )  #and the other side VAF > 0 or VAF == 0 (either not LOH or the other side is the same LOH)
     subArow = rownames(sampAB)[subAi]
@@ -1101,7 +1101,7 @@ subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2,
     ssAi  = intersect(subAi, which( sampAB[,mafaAi] > minAF & sampAB[,mafaBi] == 0 ))
     
     subBi = which( sampAB[,mafaBi] > minAF &
-                      (((sampAB[,ccfAi]+2.58*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+2.58*sampAB[,ccfsdBi]) < 1) &       #either one side is below CCF+sd 1
+                      (((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &       #either one side is below CCF+sd 1
                            (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)) &                                               #or one side is below VAF 0.25
                           ((sampAB[,mafaAi] == 0 & (sampAB[,nbAi] != 0 | sampAB[,nbBi] == 0)) | sampAB[,mafaAi] != 0) )      #and the other side VAF > 0 or VAF == 0 (either not LOH or the other side is the same LOH)
     subBrow = rownames(sampAB)[subBi]
@@ -1121,14 +1121,14 @@ subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2,
 
     # for mutational function dNdS
     #subTi = union(subAi, subBi)
-    pubTi = which( ((sampAB[,ccfAi]+2.58*sampAB[,ccfsdAi]) >= 1 & (sampAB[,ccfBi]+2.58*sampAB[,ccfsdBi]) >= 1) |
+    pubTi = which( ((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) >= 1 & (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) >= 1) |
                       (sampAB[,mafaAi] >= 0.25 & sampAB[,mafaBi] >= 0.25) )
     #subMutGeneFunc = sampAB[subTi, c(gNIndex, gLIndex, fCIndex)]
     #pubMutGeneFunc = sampAB[pubTi, c(gNIndex, gLIndex, fCIndex)]
 
     # for FST
     mutsSub = sampAB[which((sampAB[,mafaAi] > statsAF | sampAB[,mafaBi] >= statsAF) & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 &
-                     ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 & (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
+                     ((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 & (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &
                      (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),]
     mutsSub = data.frame(maf1 = mutsSub[,mafaAi], depth1=mutsSub[,depthAi], maf2 = mutsSub[,mafaBi], depth2=mutsSub[,depthBi])
     FST = mean(fst.wc84(mutsSub, minAF=statsAF))
@@ -1136,20 +1136,20 @@ subclonalMut <- function(sampAB, snA, snB, minAF=0.08, statsAF=0.08, highAF=0.2,
     
     # for other stats
     mutsA2 = sampAB[which( sampAB[,mafaAi] > statsAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
+            ((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &
                 (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaAi]
     mutsAh2 = sampAB[which( sampAB[,mafaAi] > highAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
+            ((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &
                 (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaAi]
     mutsASp2 = sampAB[which( sampAB[,mafaAi] > statsAF & sampAB[,mafaBi] == 0 &
                                sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15),mafaAi]
     mutsASph2 = sampAB[which( sampAB[,mafaAi] > highAF & sampAB[,mafaBi] == 0 &
                                sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15),mafaAi]
     mutsB2 = sampAB[which( sampAB[,mafaBi] > statsAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
+            ((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &
                 (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaBi]
     mutsBh2 = sampAB[which( sampAB[,mafaBi] > highAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-            ((sampAB[,ccfAi]+3.09*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+3.09*sampAB[,ccfsdBi]) < 1) &
+            ((sampAB[,ccfAi]+crv*sampAB[,ccfsdAi]) < 1 | (sampAB[,ccfBi]+crv*sampAB[,ccfsdBi]) < 1) &
                 (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaBi]
     mutsBSp2 = sampAB[which( sampAB[,mafaBi] > statsAF & sampAB[,mafaAi] == 0 &
                                sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 ),mafaBi]
@@ -1901,13 +1901,13 @@ plotAFS <- function(muts, sn="sample", power=1, add=FALSE, color="black", lwd=2,
     }
     counts = counts/counts[1]
 
-    if ( length(countsup) > 0 ){
+    if ( length(countsup) > 0 ) {
         lines(bezierCurve(mafs, countsup, length(mafs)), col=colup, lwd=lwd, lty=lty)
         return(2)
     }
     
     if (add == FALSE) {
-        plot(bezierCurve(mafs,counts,length(mafs)), type="l", lwd=lwd,lty=lty, axes = F, xlab="f",xlim=c(down,up),ylim=c(0,1),
+        plot(bezierCurve(mafs,counts,length(mafs)), type="l", lwd=lwd,lty=lty, axes = F, xlab="f (merged VAF)",xlim=c(down,up),ylim=c(0,1),
              ylab="Fraction SNVs in [f, fmax]", col=color, main=sn, cex.main=1.6,cex.lab=1.5)
         axis(side=1,at=c(seq(down,0.25,by=0.02),0.25),labels=c(seq(down,0.25,by=0.02),0.25),las=2, cex=1.3)
         axis(side=2,at=seq(0,1,by=0.2),labels=seq(0,1,by=0.2))
