@@ -3,7 +3,7 @@
 ## this is for running SVM using different combination of features
 
 inputpar <- commandArgs(TRUE)
-if (length(inputpar) < 2) stop("Wrong number of input parameters: 'path sampleName alleleCount tumorWig normalWig gcWig mapWig plp plpe normalc normalcm symmetric exons(if WXS)'")
+if (length(inputpar) < 2) stop("Wrong number of input parameters")
 
 
 path <- inputpar[1]
@@ -31,11 +31,11 @@ seeds = 1943:1962      #20 times each
 
 
 featureRes = list()
-featureRes = featureComparison(data, lent, combns2, features, colnames, seeds, featureRes)
-featureRes = featureComparison(data, lent, combns3, features, colnames, seeds, featureRes)
+#featureRes = featureComparison(data, lent, combns2, features, colnames, seeds, featureRes)
+#featureRes = featureComparison(data, lent, combns3, features, colnames, seeds, featureRes)
 featureRes = featureComparison(data, lent, combns4, features, colnames, seeds, featureRes)
-featureRes = featureComparison(data, lent, combns5, features, colnames, seeds, featureRes)
-save(res, file="featureRes.rda")
+#featureRes = featureComparison(data, lent, combns5, features, colnames, seeds, featureRes)
+save(res, file="featureResCombn3.rda")
 
 
 featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {
