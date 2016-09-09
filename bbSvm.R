@@ -7,8 +7,7 @@ if (length(inputpar) < 2) stop("Wrong number of input parameters: 'path sampleNa
 
 
 path <- inputpar[1]
-data <- inputpar[2]
-lent <- inputpar[3]
+lent <- inputpar[2]
 
 
 library(caret)
@@ -19,7 +18,10 @@ library(doMC)
 
 setwd(path)
 
+load("stats.merged.rda")
+
 features = c("fHsub","fHss","FST","KSD","rAUC")
+data = stats.merged2
 colnames = colnames(data)
 combns2 = combn(5,2)
 combns3 = combn(5,3)
