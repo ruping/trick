@@ -3,12 +3,10 @@
 ## this is for running SVM using different combination of features
 
 inputpar <- commandArgs(TRUE)
-if (length(inputpar) < 2) stop("Wrong number of input parameters")
+if (length(inputpar) < 1) stop("Wrong number of input parameters")
 
 
 path <- inputpar[1]
-lent <- inputpar[2]
-
 
 library(caret)
 library(dplyr)         # Used by caret
@@ -18,7 +16,7 @@ library(doMC)
 
 
 featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {
-    for (i in 1:dim(combns)) {
+    for (i in 1:dim(combns)[2]) {
         fs = as.vector(combns[,i])
         fsn = features[fs]
         featureCols = match(fsn, colnames)
@@ -137,7 +135,7 @@ combns3 = combn(5,3)
 combns4 = combn(5,4)
 combns5 = combn(5,5)
 seeds = 1943:1962      #20 times each
-
+lent = 38
 
 featureRes = list()
 #featureRes = featureComparison(data, lent, combns2, features, colnames, seeds, featureRes)
