@@ -8,6 +8,7 @@ if (length(inputpar) < 1) stop("Wrong number of input parameters")
 
 path <- inputpar[1]
 comb <- inputpar[2]
+seeds <- inputpar[3]
 
 library(caret)
 library(dplyr)         # Used by caret
@@ -128,11 +129,12 @@ load("stats.merged.rda")
 features = c("fHsub","fHss","FST","KSD","rAUC")
 data = stats.merged8
 colnames = colnames(data)
-seeds = 1943:1962      #20 times each
+#seeds = 1913:1962      #20 times each
+seeds = as.numeric(seeds)
 lent = 38
 
 combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
 featureRes = featureComparison(data, lent, combns, features, colnames, seeds, featureRes)
-save(featureRes, file=paste("feature_", comb, ".rda", sep=""))
+save(featureRes, file=paste("feature_", comb, "_", seeds, ".rda", sep=""))
