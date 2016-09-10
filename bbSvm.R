@@ -135,4 +135,4 @@ combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
 featureRes = featureComparison(data, lent, combns, features, colnames, seeds, featureRes)
-save(res, file=paste("feature_", comb, ".rda", sep=""))
+save(featureRes, file=paste("feature_", comb, ".rda", sep=""))
