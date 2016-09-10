@@ -23,7 +23,7 @@ featureComparison <- function (data, lent, combns, features, colnames, seeds, re
         for (s in 1:length(seeds)) {
             seedn = seeds[s]
             rn = paste(fsn, collapse="_")
-            rn = paste(rn,s,sep="_")
+            rn = paste(rn,seedn,sep="_")
             message(rn)
             res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
         }
