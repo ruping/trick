@@ -7,6 +7,7 @@ if (length(inputpar) < 1) stop("Wrong number of input parameters")
 
 
 path <- inputpar[1]
+comb <- inputpar[2]
 
 library(caret)
 library(dplyr)         # Used by caret
@@ -15,18 +16,15 @@ library(pROC)	       # plot the ROC curves
 library(doMC)
 
 
-featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {
-    for (i in 1:dim(combns)[2]) {
-        fs = as.vector(combns[,i])
-        fsn = features[fs]
-        featureCols = match(fsn, colnames)
-        for (s in 1:length(seeds)) {
-            seedn = seeds[s]
-            rn = paste(fsn, collapse="_")
-            rn = paste(rn,seedn,sep="_")
-            message(rn)
-            res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
-        }
+featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {    
+    fsn = features[combns]
+    featureCols = match(fsn, colnames)
+    for (s in 1:length(seeds)) {
+        seedn = seeds[s]
+        rn = paste(fsn, collapse="_")
+        rn = paste(rn,seedn,sep="_")
+        message(rn)
+        res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
     }
     return(res)
 }
@@ -130,16 +128,11 @@ load("stats.merged.rda")
 features = c("fHsub","fHss","FST","KSD","rAUC")
 data = stats.merged2
 colnames = colnames(data)
-combns2 = combn(5,2)
-combns3 = combn(5,3)
-combns4 = combn(5,4)
-combns5 = combn(5,5)
 seeds = 1943:1962      #20 times each
 lent = 38
 
+combns = as.numeric(strsplit(comb,"")[[1]])
+
 featureRes = list()
-#featureRes = featureComparison(data, lent, combns2, features, colnames, seeds, featureRes)
-#featureRes = featureComparison(data, lent, combns3, features, colnames, seeds, featureRes)
-featureRes = featureComparison(data, lent, combns4, features, colnames, seeds, featureRes)
-#featureRes = featureComparison(data, lent, combns5, features, colnames, seeds, featureRes)
-save(res, file="featureResCombn3.rda")
+featureRes = featureComparison(data, lent, combns, features, colnames, seeds, featureRes)
+save(res, file=paste("feature_", comb, ".rda", sep=""))
