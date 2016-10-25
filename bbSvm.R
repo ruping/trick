@@ -118,9 +118,14 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
                       scaled = FALSE)
     roc = ""
     if (subSample == TRUE) {
-        pred = predict.train(svm.tune, testX, type="prob")
-        roc = roc(testY, as.numeric(pred))
-        svm.tune = list(svm.tune=svm.tune, roc = roc)
+        if (length(modelsNeed) > 2) {
+            pred = predict.train(svm.tune, testX)
+            roc = roc(testY, as.numeric(pred))
+            svm.tune = list(svm.tune=svm.tune, roc = roc)
+        } else {
+            pred = predict.train(svm.tune, testX, type="prob")
+            svm.tune = list(svm.tune=svm.tune, pred = pred)
+        }
     }
     return(svm.tune)
 }
