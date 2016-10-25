@@ -38,7 +38,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
         if ( length(modelsNeed) > 2 ) {
             trainY = sapply(trainY, function(x){if (x == "s=0.05" | x == "s=0.1"){"selection"} else {"eneutral"}})
         }
-        trainY = as.factor(trainY)
+        trainY = as.factor(as.character(trainY))
     } else {
         trainY = trainY
     }
@@ -141,6 +141,7 @@ featureComparison <- function (data, lent, model, combns, features, colnames, se
 setwd(path)
 load("stats.merged.rda")
 
+
 features = c("fHsub","fHss","FST","KSD","rAUC")
 data = stats.merged2
 colnames = colnames(data)
@@ -149,7 +150,8 @@ seeds = as.numeric(seeds)
 lent = 38
 
 combns = as.numeric(strsplit(comb,"")[[1]])
+modelsNeed = c(model, "neutral")
 
 featureRes = list()
-featureRes = featureComparison(data, lent, model, combns, features, colnames, seeds, featureRes)
+featureRes = featureComparison(data, lent, modelsNeed, combns, features, colnames, seeds, featureRes)
 save(featureRes, file=paste("feature_", comb, "_", model, "_", seeds, ".rda", sep=""))
