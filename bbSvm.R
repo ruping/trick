@@ -19,6 +19,7 @@ library(doMC)
 
 
 trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","s=0.01","s=0.05","s=0.1"), classCol=1, ncores=2, trainY="", subSample=FALSE, seed=1943) {
+    message(paste(modelsNeed, collapse=" "))
     registerDoMC(cores = ncores)
     
     x = apply(data[,featureCols], 2, as.numeric)
@@ -33,7 +34,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
     trainX = trainX[which(data$model[(lent+1):dim(data)[1]] %in% modelsNeed),]
     if (trainY == "") {
         trainY = y[(lent+1):length(y)]
-        trainY = trainY[which(data$model[(lent+1):dim(data)[1]] %in% modelsNeed),]
+        trainY = trainY[which(data$model[(lent+1):dim(data)[1]] %in% modelsNeed)]
         if ( length(modelsNeed) > 2 ) {
             trainY = sapply(trainY, function(x){if (x == "s=0.05" | x == "s=0.1"){"selection"} else {"eneutral"}})
         }
@@ -141,7 +142,7 @@ setwd(path)
 load("stats.merged.rda")
 
 features = c("fHsub","fHss","FST","KSD","rAUC")
-data = stats.merged8
+data = stats.merged2
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
