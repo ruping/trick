@@ -9,6 +9,7 @@ if (length(inputpar) < 1) stop("Wrong number of input parameters")
 path <- inputpar[1]
 comb <- inputpar[2]
 seeds <- inputpar[3]
+model <- inputpar[4]
 
 library(caret)
 library(dplyr)         # Used by caret
@@ -17,22 +18,22 @@ library(pROC)	       # plot the ROC curves
 library(doMC)
 
 
-featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {    
+featureComparison <- function (data, lent, model, combns, features, colnames, seeds, res) {    
     fsn = features[combns]
     featureCols = match(fsn, colnames)
     for (s in 1:length(seeds)) {
         seedn = seeds[s]
         rn = paste(fsn, collapse="_")
-        rn = paste(rn,seedn,sep="_")
+        rn = paste(rn, seedn, sep="_")
         message(rn)
-        res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
+        res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, subSample = TRUE, seed=seedn)
         #res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, seed=seedn)
     }
     return(res)
 }
 
 
-trainSVM <- function(data, lent, featureCols=2:5, classCol=1, ncores=2, trainY="", subSample=FALSE, seed=1943) {
+trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","s=0.01","s=0.05","s=0.1"), classCol=1, ncores=2, trainY="", subSample=FALSE, seed=1943) {
     registerDoMC(cores = ncores)
     
     x = apply(data[,featureCols], 2, as.numeric)
@@ -44,9 +45,13 @@ trainSVM <- function(data, lent, featureCols=2:5, classCol=1, ncores=2, trainY="
 
     y = data[,classCol]
     trainX = x[(lent+1):dim(x)[1],]
+    trainX = trainX[which(data$model[(lent+1):dim(data)[1]] %in% modelsNeed),]
     if (trainY == "") {
         trainY = y[(lent+1):length(y)]
-        trainY = sapply(trainY, function(x){if (x == "s=0.05" | x == "s=0.1"){"selection"} else {"eneutral"}})
+        trainY = trainY[which(data$model[(lent+1):dim(data)[1]] %in% modelsNeed),]
+        if ( length(modelsNeed) > 2 ) {
+            trainY = sapply(trainY, function(x){if (x == "s=0.05" | x == "s=0.1"){"selection"} else {"eneutral"}})
+        }
         trainY = as.factor(trainY)
     } else {
         trainY = trainY
@@ -57,6 +62,9 @@ trainSVM <- function(data, lent, featureCols=2:5, classCol=1, ncores=2, trainY="
         set.seed(seed)
         tSize = length(trainY)
         sSize = round(tSize/5)
+        if (length(modelsNeed) == 2) {
+            sSize = round(tSize/2)
+        }
         message(paste("testSize and trainSize:", tSize,sSize,sep=" "))
         testI = sample(tSize, sSize)
         keepI = setdiff(1:tSize, testI)
@@ -71,7 +79,12 @@ trainSVM <- function(data, lent, featureCols=2:5, classCol=1, ncores=2, trainY="
     # First pass
     set.seed(seed)
     # Setup for cross validation
+    cvk = 10
+    if (length(modelsNeed) == 2) {
+        cvk = 5
+    }
     ctrl <- trainControl(method="repeatedcv",                   # 10fold cross validation
+                         number=cvk,
                          repeats=5,		                # do 5 repititions of cv
                          summaryFunction=twoClassSummary,	# Use AUC to pick the best model
                          classProbs=TRUE)
@@ -116,7 +129,7 @@ trainSVM <- function(data, lent, featureCols=2:5, classCol=1, ncores=2, trainY="
                       scaled = FALSE)
     roc = ""
     if (subSample == TRUE) {
-        pred = predict.train(svm.tune, testX)
+        pred = predict.train(svm.tune, testX, type="prob")
         roc = roc(testY, as.numeric(pred))
         svm.tune = list(svm.tune=svm.tune, roc = roc)
     }
@@ -130,12 +143,12 @@ load("stats.merged.rda")
 features = c("fHsub","fHss","FST","KSD","rAUC")
 data = stats.merged8
 colnames = colnames(data)
-#seeds = 1913:1962      #20 times each
+seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
 lent = 38
 
 combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
-featureRes = featureComparison(data, lent, combns, features, colnames, seeds, featureRes)
-save(featureRes, file=paste("feature_", comb, "_", seeds, ".rda", sep=""))
+featureRes = featureComparison(data, lent, model, combns, features, colnames, seeds, featureRes)
+save(featureRes, file=paste("feature_", comb, "_", model, "_", seeds, ".rda", sep=""))

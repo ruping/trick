@@ -178,7 +178,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
 
 #adjust CCF titan for multi samples
 
-adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6) {
+adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6, sigTh=0.9) {
 
     purities = vector()
     
@@ -199,7 +199,7 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
                 1-((cnvA$allelicratio - cnvA$normalproportion*0.5)/(1-cnvA$normalproportion) - (1-cnvA$cellularprevalence)*0.5)
                 /cnvA$cellularprevalence))
         }
-        cnvA$cellularprevalence = sapply(cnvA$cellularprevalence, function(x){if (x == 1){0.99} else {x}})
+        #cnvA$cellularprevalence = sapply(cnvA$cellularprevalence, function(x){if (x == 1){0.99} else {x}})
         
         cnvSeqNames = cnvA$chrom
         if (!grepl("chr",cnvA$chrom[1])){
@@ -239,12 +239,13 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         #                 if (x %in% queryHits(foA)){cnvA$cellularprevalence[subjectHits(foA)[match(x, queryHits(foA))]]} else {0}}) 
         con1 = as.numeric(cnvA$normalproportion[1])          #pu1 = 1-cnvA$normalproportion[1]
         pu1 = 1 - (con1 + (1-max(as.numeric(pa1)))*(1-con1))
+        sAGP = pa1*(1-con1)
         message(pu1)
         purities = append(purities, pu1)
         names(purities)[length(purities)] = sn
         
-        sampAB = data.frame(sampAB, pu=pu1, pa=pa1, nt=nt1, nb=nb1, seg=seg1)
-        colnames(sampAB)[(dim(sampAB)[2]-4):dim(sampAB)[2]] = paste(sn,colnames(sampAB)[(dim(sampAB)[2]-4):dim(sampAB)[2]], sep="")
+        sampAB = data.frame(sampAB, pu=pu1, pa=pa1, sAGP=sAGP, nt=nt1, nb=nb1, seg=seg1)
+        colnames(sampAB)[(dim(sampAB)[2]-5):dim(sampAB)[2]] = paste(sn,colnames(sampAB)[(dim(sampAB)[2]-5):dim(sampAB)[2]], sep="")
         if ( correctColname == TRUE ) {
             colnames(sampAB) = gsub("\\.","-",colnames(sampAB))
         }
@@ -280,19 +281,19 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
             refc1 = as.numeric(sampAB[i, match(paste(sn, "refc", sep=""), colnames(sampAB))])
             altc1 = as.numeric(sampAB[i, match(paste(sn, "altc", sep=""), colnames(sampAB))])
             pu1 = as.numeric(sampAB[i, match(paste(sn, "pu", sep=""), colnames(sampAB))])       #cell purity
-            pu1 = nt1*pu1/(nt1*pu1+2*(1-pu1))                                                #effective purity
+            if (nt1 > 0) pu1 = nt1*pu1/(nt1*pu1+2*(1-pu1))                                      #effective purity
+            sAGP = as.numeric(sampAB[i, match(paste(sn, "sAGP", sep=""), colnames(sampAB))])    #segmental aneu- ploid genome proportion
             
             if (maf1 > 0) {
                 if (maf1 > t & foundSites >= 2) {
-                    CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,nt1,nb1,"unknown",overadj=overadj)
+                    CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,sAGP,nt1,nb1,"unknown",overadj=overadj,sigTh=sigTh)
                     sampAB[i, match(paste(sn, "ccf", sep=""), colnames(sampAB))] = as.numeric(CCF1[3])
                     sampAB[i, match(paste(sn, "ccfSD", sep=""), colnames(sampAB))] = as.numeric(CCF1[4])
                     sampAB[i, match(paste(sn, "mafa", sep=""), colnames(sampAB))] = as.numeric(CCF1[1])/2
                 } else {
-                    CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,nt1,nb1,"late",overadj=overadj)
+                    CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,sAGP,nt1,nb1,"late",overadj=overadj,sigTh=sigTh)
                     sampAB[i, match(paste(sn, "ccf", sep=""), colnames(sampAB))] = as.numeric(CCF1[3])
                     sampAB[i, match(paste(sn, "ccfSD", sep=""), colnames(sampAB))] = as.numeric(CCF1[4])
-                    #sampAB[i, match(paste(sn, "mafa", sep=""), colnames(sampAB))] = maf1/pu1
                     sampAB[i, match(paste(sn, "mafa", sep=""), colnames(sampAB))] = as.numeric(CCF1[1])/2
                 }
             }
@@ -503,7 +504,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
   
   
   sampAh = hist(sampAB[allA_Rows, maf1Index]/ratio, breaks=breaksA,  plot=F)
-  message(sampAh$breaks,collapse=" ")
+  #message(sampAh$breaks,collapse=" ")
   #sampAh = hist(sampAB[allA_Rows, maf1Index]/ratio, breaks=BinWidthA$breaks,  plot=F)
   sampAhsub = hist(sampAB[subA_Rows, maf1Index]/ratio, breaks=sampAh$breaks, plot=F)
   sampAhss = hist(sampAB[ssA_Rows, maf1Index]/ratio, breaks=sampAh$breaks, plot=F)
@@ -604,8 +605,8 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
       text(x=0.8,y=(3/4-0.334)*ylimup, labels=bquote(paste("KSD", " = ", .(ksd))),cex=2.2)
 
       npub = subMuts$pubTn
-      legendText = c(paste("Public ","(",npub,")",sep=""),"Pvt-Shared","Pvt-Site Specific")
-      legendXpos = 0.6
+      legendText = c(paste("Public ","(",npub,")",sep=""),"Pvt-Shared","Pvt-Rgn Specific")
+      legendXpos = 0.57
       legendYpos = ylimdown/3
       lengedCol = c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1))
       if (nohistlegend == TRUE){
@@ -688,7 +689,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
 
   if (plotDepth == TRUE) {
       maint = gsub("\\s.+","",main)
-      pdf(file = paste(sampName, "depth.pdf", sep="_"), width = 10, height = 6.6)
+      pdf(file = paste(sampName, "depth.pdf", sep="_"), width = 10, height = 6.6, useDingbats=FALSE)
       par(mfrow=c(2,3))
       ymaxdepth = max(quantile(sampAB[which(sampAB[,mafa1Index] > minAF),dp1i], prob=seq(0,1,0.05))["95%"],
           quantile(sampAB[which(sampAB[,mafa1Index] > minAF),dp2i], prob=seq(0,1,0.05))["95%"])
@@ -770,16 +771,18 @@ allAbs <- function(x) {
 }
 
 
-computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
-    #message(paste(c(f,A,S,pu,pa,nt,nb),collapse=" "))
+computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1.6, sigTh=0.90) {
+
     ccf = 0
     ccf2 = 0
     sd = 0
     cc <- seq(0.02, 1, by = 0.01)
     evoType = "A1/A2/B/C"
-    sigTh = 0.90
     N = A + S
     nc = nt * pa + 2 * (1 - pa)
+    nc2 = nt * sAGP + 2 * (1 - sAGP)
+    
+    #message(paste(c(f,A,S,pu,pa,sAGP,nt,nb),collapse=" "))
     if (nb == 1 & nt == 2) {   #normal diploid
         ccf = 2*(f/pu)
         ff = pu*cc/2
@@ -793,10 +796,10 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
         Ms.C <- computeSD(N, S, ff.C)          #dbinom
         ccf2 <- Ms.C$M1                        #dbinom
         sd <- Ms.C$SD
-        fh.ea <- (pa * (nt - nb) + 1 - pa)/nc
-        fl.ea <- (pa * (nt - nb))/nc
-        fh.t <- pa/nc
-        fh.e <- (1 - pa)/nc
+        fh.ea <- (sAGP * (nt - nb) + 1 - sAGP)/nc2
+        fl.ea <- (sAGP * (nt - nb))/nc2
+        fh.t <- sAGP/nc2
+        fh.e <- (1 - sAGP)/nc2
         pEarly.a <- pbeta(fh.ea, S+1, A+1) - pbeta(fl.ea, S+1, A+1)
         pLate <- pbeta(fh.t, S+1, A+1)
         pEuploid <- pbeta(fh.e, S+1, A+1)
@@ -820,11 +823,19 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
         } else if (cp.AD >= sigTh & cp.A < sigTh & cp.D < sigTh) {
             evoType <- "A1/C"
         }
+    } else if (nb == 0 & nt == 0) {        #homozygous deletion
+        evoType <- "C"
+        ccf = (f*nc2)/sAGP
+        ff.C = cc[cc<=(1-sAGP)]/nc2
+        Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=(1-sAGP)])
+        ccf2 <- (Ms.C$M1)/pu                    #dbinom
+        sd <- Ms.C$SD
+        #message(paste(c(ccf,ccf2),collapse=" "))
     } else if (nb == 0 | nt == 2 * nb) {   #NLOH or other balanced CNAs
-        fh.ea <- (pa * (nt - nb) + 1 - pa)/nc
-        fl.ea <- (pa * (nt - nb))/nc
-        fh.t <- pa/nc
-        fh.e <- (1 - pa)/nc
+        fh.ea <- (sAGP * (nt - nb) + 1 - sAGP)/nc2
+        fl.ea <- (sAGP * (nt - nb))/nc2
+        fh.t <- sAGP/nc2
+        fh.e <- (1 - sAGP)/nc2
         pEarly.a <- pbeta(fh.ea, S+1, A+1) - pbeta(fl.ea, S+1, A+1)
         pLate <- pbeta(fh.t, S+1, A+1)
         pEuploid <- pbeta(fh.e, S+1, A+1)
@@ -847,7 +858,8 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
         allprobs = c(pEarly.a, pLate, pEuploid)
         names(allprobs) = c("pEarly.a", "pLate", "pEuploid")
         maxType = names(allprobs[match(max(allprobs),allprobs)])
-        if (maxType == "pEarly.a" & prior != "late") {
+        #if (maxType == "pEarly.a" & prior != "late") {
+        if (evoType == "A1" & prior != "late") {
             ccf = (f/pu)*nc - (nt - nb - 1)*pa
             ff.A <- pu*(cc - pa + (nt - nb) * pa)/nc    #dbinom
             Ms.A <- computeSD(N, S, ff.A)               #dbinom
@@ -861,12 +873,12 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
             sd <- Ms.C$SD
         }
     } else if (nb >= 1 & nt > 2) {
-        fh.ea <- (pa * (nt - nb) + 1 - pa)/nc
-        fl.ea <- (pa * (nt - nb))/nc
-        fh.eb <- (nb * pa + 1 - pa)/nc
-        fl.eb <- nb * pa/nc
-        fh.t <- pa/nc
-        fh.e <- (1 - pa)/nc
+        fh.ea <- (sAGP * (nt - nb) + 1 - sAGP)/nc2
+        fl.ea <- (sAGP * (nt - nb))/nc2
+        fh.eb <- (nb * sAGP + 1 - sAGP)/nc2
+        fl.eb <- nb * sAGP/nc2
+        fh.t <- sAGP/nc2
+        fh.e <- (1 - sAGP)/nc2
         pEarly.a <- pbeta(fh.ea, S+1, A+1) - pbeta(fl.ea, S+1, A+1)
         pEarly.b <- pbeta(fh.eb, S+1, A+1) - pbeta(fl.eb, S+1, A+1)
         pLate <- pbeta(fh.t, S+1, A+1)
@@ -876,6 +888,7 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
         cp.B <- pEarly.b/Ptot
         cp.C <- pLate/Ptot
         cp.D <- pEuploid/Ptot
+        #message(paste(c(cp.A, cp.B, cp.C, cp.D), collapse=" "))
         cp.AB <- 1 - cp.C - cp.D
         cp.AC <- 1 - cp.B - cp.D
         cp.AD <- 1 - cp.B - cp.D
@@ -887,7 +900,7 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
         cp.ACD <- 1 - cp.B
         cp.BCD <- 1 - cp.A
         if (Ptot > 0) {
-            if (cp.A >= sigTh){
+            if (cp.A >= sigTh) {                   # earl A
                 evoType = "A1"
             } else if (cp.B >= sigTh){
                 evoType <- "A2"
@@ -920,13 +933,17 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
         allprobs = c(pEarly.a, pEarly.b, pLate, pEuploid)
         names(allprobs) = c("pEarly.a", "pEarly.b", "pLate", "pEuploid")
         maxType = names(allprobs[match(max(allprobs),allprobs)])
-        if (maxType == "pEarly.a" & prior != "late") {
-            ccf = (f/pu)*nc - (nt - nb - 1)*pa  #early A1
+        #if (maxType == "pEarly.a" & prior != "late") {
+        if (evoType == "A1" & prior != "late") {
+            ccf = (f/pu)*nc - (nt - nb - 1)*pa          #early A1
             ff.A <- pu*(cc - pa + (nt - nb) * pa)/nc    #dbinom
+            #ff.A <- (cc - sAGP + (nt - nb) * sAGP)/nc2
             Ms.A <- computeSD(N, S, ff.A)               #dbinom
             ccf2 <- Ms.A$M1                             #dbinom
+            #ccf2 = ccf2/pu
             sd <- Ms.A$SD
-        } else if (maxType == "pEarly.b" & prior != "late") {
+        #} else if (maxType == "pEarly.b" & prior != "late") {
+        } else if (evoType == "A2" & prior != "late") {    
             ccf = (f/pu)*nc - (nb - 1)* pa         #early A2
             ff.B <- pu*(cc - pa + nb * pa)/nc      #dbinom
             Ms.B <- computeSD(N, S, ff.B)          #dbinom
@@ -953,18 +970,14 @@ computeCCF <- function(f, A, S, pu, pa, nt, nb, prior="unknown", overadj=1.6) {
             ccf = f*2
         }
     }
-    if ( f > 0.45 & ccf > 2 ) {
-        ccf = f*2
-    }
     return(c(ccf, evoType, ccf2, sd))
 }
 
 
-computeSD <- function(N, S, f) {
+computeSD <- function(N, S, f, cc=seq(0.02, 1, by = 0.01)) {
     M1list <- c()
     M2list <- c()
     MLElist <- c()
-    cc <- seq(0.02, 1, by = 0.01)
     for (ii in 1:length(N)) {
         PF <- sum(dbinom(S[ii], N[ii], f), na.rm = TRUE)
         M1 <- sum(dbinom(S[ii], N[ii], f) * cc, na.rm = TRUE)/PF
@@ -1295,12 +1308,12 @@ fst.hudson <- function(af) {
 }
 
 
-dNdS <- function(sampAB, g.dnds, ndriver = 220) {
+dNdS <- function(sampAB, g.dnds, ndriver = 220, talt = 4) {
 
     g.dnds2 = g.dnds[which(g.dnds$MFLFsift < 100),]
     
     # pub dNdS
-    g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" &
+    g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & 
                                      (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
     g.table1 = g.table1[which(g.table1 > 0)]
     g.match1 = names(g.table1) %in% g.dnds$gene
@@ -1309,7 +1322,7 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
     g.total1 = sum(g.table1)
     g.frac1 = g.table1/g.total1
     g.norm1 = sum(g.frac1*subset.dnds1)
-    f.table1 = table(sampAB$functionalClass[which(sampAB$pubOrSub == "public" &
+    f.table1 = table(sampAB$functionalClass[which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt &
                                                  (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
     nonsyn1 = as.numeric(sum(as.numeric(f.table1[which(names(f.table1) != "synonymous SNV" & names(f.table1) != "unknown")])))
     syn1 = as.numeric(f.table1["synonymous SNV"])
@@ -1317,58 +1330,58 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
     res.dnds1 = res.dnds1/g.norm1
 
     # pub cadd
-    cadd.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$CADD_phred))])
+    cadd.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$CADD_phred))])
     cadd.g.table1 = cadd.g.table1[which(cadd.g.table1 > 0)]
     cadd.g.table1 = cadd.g.table1[names(cadd.g.table1) %in% g.dnds$gene]
     subset.cadd1 = g.dnds$MFLFcadd[match(names(cadd.g.table1),g.dnds$gene)]            #MFLFcadd
     cadd.g.total1 = sum(cadd.g.table1)
     cadd.g.frac1 = cadd.g.table1/cadd.g.total1
     cadd.g.norm1 = sum(cadd.g.frac1*subset.cadd1)
-    cadd.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred >= 20))
-    cadd.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred < 20))
+    cadd.f.more1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred >= 20))
+    cadd.f.less1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred < 20))
     res.cadd1 = (cadd.f.more1/cadd.f.less1)/cadd.g.norm1
 
     # pub GERP
-    gerp.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$GERP_RS))])
+    gerp.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$GERP_RS))])
     gerp.g.table1 = gerp.g.table1[which(gerp.g.table1 > 0)]
     gerp.g.table1 = gerp.g.table1[names(gerp.g.table1) %in% g.dnds$gene]
     subset.gerp1 = g.dnds$MFLFgerp[match(names(gerp.g.table1),g.dnds$gene)]
     gerp.g.total1 = sum(gerp.g.table1)
     gerp.g.frac1 = gerp.g.table1/gerp.g.total1
     gerp.g.norm1 = sum(gerp.g.frac1*subset.gerp1)
-    gerp.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS >= 5.2))
-    gerp.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS < 5.2))
+    gerp.f.more1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS >= 5.2))
+    gerp.f.less1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS < 5.2))
     res.gerp1 = (gerp.f.more1/gerp.f.less1)/gerp.g.norm1
 
 
     # pub SIFT
-    sift.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$SIFT_score))])
+    sift.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$SIFT_score))])
     sift.g.table1 = sift.g.table1[which(sift.g.table1 > 0)]
     sift.g.table1 = sift.g.table1[names(sift.g.table1) %in% g.dnds2$gene]
     subset.sift1 = g.dnds2$MFLFsift[match(names(sift.g.table1),g.dnds2$gene)]
     sift.g.total1 = sum(sift.g.table1)
     sift.g.frac1 = sift.g.table1/sift.g.total1
     sift.g.norm1 = sum(sift.g.frac1*subset.sift1)
-    sift.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score <= 0.05))
-    sift.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score > 0.05))
+    sift.f.more1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score <= 0.05))
+    sift.f.less1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score > 0.05))
     res.sift1 = (sift.f.more1/sift.f.less1)/sift.g.norm1
 
 
     # pub POLYPHEN
-    polyphen.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & !is.na(sampAB$Polyphen2_HVAR_pred))])
+    polyphen.g.table1 = table(sampAB$geneName[which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$Polyphen2_HVAR_pred))])
     polyphen.g.table1 = polyphen.g.table1[which(polyphen.g.table1 > 0)]
     polyphen.g.table1 = polyphen.g.table1[names(polyphen.g.table1) %in% g.dnds$gene]
     subset.polyphen1 = g.dnds$MFLFpolyphen[match(names(polyphen.g.table1),g.dnds$gene)]
     polyphen.g.total1 = sum(polyphen.g.table1)
     polyphen.g.frac1 = polyphen.g.table1/polyphen.g.total1
     polyphen.g.norm1 = sum(polyphen.g.frac1*subset.polyphen1)
-    polyphen.f.more1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred != "B"))
-    polyphen.f.less1 = length(which(sampAB$pubOrSub == "public" & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred == "B"))
+    polyphen.f.more1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred != "B"))
+    polyphen.f.less1 = length(which(sampAB$pubOrSub == "public" & sampAB$totalAlt >= talt & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred == "B"))
     res.polyphen1 = (polyphen.f.more1/polyphen.f.less1)/polyphen.g.norm1
 
     
     # sub dNdS
-    g.table2 = table(sampAB$geneName[which(sampAB$pubOrSub != "public" & sampAB$pubOrSub != "unknown" &
+    g.table2 = table(sampAB$geneName[which(sampAB$pubOrSub != "public" & sampAB$pubOrSub != "unknown" & sampAB$totalAlt >= talt &
                                          (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
     g.table2 = g.table2[which(g.table2 > 0)]
     g.match2 = names(g.table2) %in% g.dnds$gene
@@ -1377,7 +1390,7 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
     g.total2 = sum(g.table2)
     g.frac2 = g.table2/g.total2
     g.norm2 = sum(g.frac2*subset.dnds2)
-    f.table2 = table(sampAB$functionalClass[which(sampAB$pubOrSub != "public" & sampAB$pubOrSub != "unknown" &
+    f.table2 = table(sampAB$functionalClass[which(sampAB$pubOrSub != "public" & sampAB$pubOrSub != "unknown" & sampAB$totalAlt >= talt &
                                                       (grepl("synonymous",sampAB$functionalClass) | grepl("stop",sampAB$functionalClass)))])
     nonsyn2 = as.numeric(sum(as.numeric(f.table2[which(names(f.table2) != "synonymous SNV" & names(f.table2) != "unknown")])))
     syn2 = as.numeric(f.table2["synonymous SNV"])
@@ -1385,60 +1398,60 @@ dNdS <- function(sampAB, g.dnds, ndriver = 220) {
     res.dnds2 = res.dnds2/g.norm2
 
     # sub cadd
-    cadd.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$CADD_phred))])
+    cadd.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$CADD_phred))])
     cadd.g.table2 = cadd.g.table2[which(cadd.g.table2 > 0)]
     cadd.g.table2 = cadd.g.table2[names(cadd.g.table2) %in% g.dnds$gene]
     subset.cadd2 = g.dnds$MFLFcadd[match(names(cadd.g.table2),g.dnds$gene)]                   #MFLFcadd
     cadd.g.total2 = sum(cadd.g.table2)
     cadd.g.frac2 = cadd.g.table2/cadd.g.total2
     cadd.g.norm2 = sum(cadd.g.frac2*subset.cadd2)
-    cadd.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred >= 20))
-    cadd.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred < 20))
+    cadd.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred >= 20))
+    cadd.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$CADD_phred) & sampAB$CADD_phred < 20))
     res.cadd2 = (cadd.f.more2/cadd.f.less2)/cadd.g.norm2
 
     # sub gerp
-    gerp.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$GERP_RS))])
+    gerp.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$GERP_RS))])
     gerp.g.table2 = gerp.g.table2[which(gerp.g.table2 > 0)]
     gerp.g.table2 = gerp.g.table2[names(gerp.g.table2) %in% g.dnds$gene]
     subset.gerp2 = g.dnds$MFLFgerp[match(names(gerp.g.table2),g.dnds$gene)]                   #MFLFgerp
     gerp.g.total2 = sum(gerp.g.table2)
     gerp.g.frac2 = gerp.g.table2/gerp.g.total2
     gerp.g.norm2 = sum(gerp.g.frac2*subset.gerp2)
-    gerp.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS >= 5.2))
-    gerp.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS < 5.2))
+    gerp.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS >= 5.2))
+    gerp.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$GERP_RS) & sampAB$GERP_RS < 5.2))
     res.gerp2 = (gerp.f.more2/gerp.f.less2)/gerp.g.norm2
 
     # sub sift
-    sift.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$SIFT_score))])
+    sift.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$SIFT_score))])
     sift.g.table2 = sift.g.table2[which(sift.g.table2 > 0)]
     sift.g.table2 = sift.g.table2[names(sift.g.table2) %in% g.dnds2$gene]
     subset.sift2 = g.dnds2$MFLFsift[match(names(sift.g.table2),g.dnds2$gene)]                   #MFLFsift
     sift.g.total2 = sum(sift.g.table2)
     sift.g.frac2 = sift.g.table2/sift.g.total2
     sift.g.norm2 = sum(sift.g.frac2*subset.sift2)
-    sift.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score <= 0.05))
-    sift.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score > 0.05))
+    sift.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score <= 0.05))
+    sift.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$SIFT_score) & sampAB$SIFT_score > 0.05))
     res.sift2 = (sift.f.more2/sift.f.less2)/sift.g.norm2
 
 
     # sub polyphen
-    polyphen.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$Polyphen2_HVAR_pred))])
+    polyphen.g.table2 = table(sampAB$geneName[which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$Polyphen2_HVAR_pred))])
     polyphen.g.table2 = polyphen.g.table2[which(polyphen.g.table2 > 0)]
     polyphen.g.table2 = polyphen.g.table2[names(polyphen.g.table2) %in% g.dnds$gene]
     subset.polyphen2 = g.dnds$MFLFpolyphen[match(names(polyphen.g.table2),g.dnds$gene)]                   #MFLFpolyphen
     polyphen.g.total2 = sum(polyphen.g.table2)
     polyphen.g.frac2 = polyphen.g.table2/polyphen.g.total2
     polyphen.g.norm2 = sum(polyphen.g.frac2*subset.polyphen2)
-    polyphen.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred != "B"))
-    polyphen.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred == "B"))
+    polyphen.f.more2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred != "B"))
+    polyphen.f.less2 = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & !is.na(sampAB$Polyphen2_HVAR_pred) & sampAB$Polyphen2_HVAR_pred == "B"))
     res.polyphen2 = (polyphen.f.more2/polyphen.f.less2)/polyphen.g.norm2
 
 
     # ndriver
-    npub = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
-    npubDriver = length(which(grepl("public",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron != 0))
-    nsub = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
-    nsubDriver = length(which(grepl("private",sampAB$pubOrSub) & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron != 0))
+    npub = length(which(grepl("public",sampAB$pubOrSub) & sampAB$totalAlt >= talt & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
+    npubDriver = length(which(grepl("public",sampAB$pubOrSub) & sampAB$totalAlt >= talt & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron != 0))
+    nsub = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV"))
+    nsubDriver = length(which(grepl("private",sampAB$pubOrSub) & sampAB$totalAlt >= talt & sampAB$geneLoc != "intergenic" & sampAB$functionalClass != "synonymous SNV" & sampAB$dron != 0))
     pub.driver.enrich.p = phyper(npubDriver, ndriver, 20000-ndriver, npub, lower.tail=F)
     pub.driver.fc = (npubDriver/npub)/(ndriver/20000)
     sub.driver.enrich.p = phyper(nsubDriver, ndriver, 20000-ndriver, nsub, lower.tail=F)
@@ -1493,15 +1506,16 @@ pycloneTable <- function(sampAB, samples, outdir, minAF = 0.05, minDepth = 30) {
 
 
 
-scicloneTable <- function(sampAB, samples, outdir, minAF = 0.05, minDepth = 30, titanPath="./titan/") {
+scicloneTable <- function(sampAB, samples, outdir, minAF = 0.05, maxAF = 0.8, minDepth = 30, titanPath="./titan/", log=FALSE) {
 
     colnames = colnames(sampAB)
-    keep = as.vector(apply(sampAB, 1, function(x, coln) {
-                         maxAF = max(as.numeric(x[match(paste(samples, "mafa", sep=""), coln)]))
-                         minDP = min(as.numeric(x[match(paste(samples, "d", sep=""), coln)]))      
-                         if (maxAF >= minAF & minDP >= minDepth) TRUE
-                         else FALSE
-                     },coln=colnames))
+    keep = as.vector(apply(sampAB, 1, function(x, coln, minAF, maxAF, minDepth) {
+                               maxSampAF = max(as.numeric(x[match(paste(samples, "mafa", sep=""), coln)]))
+                               minSampAF = min(as.numeric(x[match(paste(samples, "mafa", sep=""), coln)]))
+                               minSampDP = min(as.numeric(x[match(paste(samples, "d", sep=""), coln)]))      
+                               if (maxSampAF > minAF & minSampAF < maxAF & minSampDP >= minDepth) TRUE
+                               else FALSE
+                           }, coln=colnames, minAF=minAF, maxAF=maxAF, minDepth=minDepth))
     sampAB = sampAB[keep,]
     colnames(sampAB) = colnames
 
@@ -1520,6 +1534,9 @@ scicloneTable <- function(sampAB, samples, outdir, minAF = 0.05, minDepth = 30, 
         altc = sampAB[,altci]
         mafc = sampAB[,mafci]*100
         mafa = sampAB[,mafai]*100
+        if (log){
+            mafa = log2(mafa + 1) * 10
+        }
         minor_cn = round(sampAB[,minor_cni])
         major_cn = sampAB[,major_cni] - minor_cn
 
@@ -1701,7 +1718,6 @@ generateUpSetList2 <- function(sampAB, sn1, sn2, samples) {
         }
     }
     depthBulkSampleGoodi = which(depthBulkSample)
-    
 
     needr = vector()
     sgHighi = vector()
@@ -1995,7 +2011,7 @@ plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plo
 
 
 
-plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="B", sn1="maf1", sn2="maf2", dp1="depth1", dp2="depth2",minAF=0.05, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0) {
+plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="B", sn1="maf1", sn2="maf2", dp1="depth1", dp2="depth2",minAF=0.05, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0, reportSSR=FALSE) {
 
   sn1s = sn1n     #name of sample 1
   sn2s = sn2n     #name of sample 2
@@ -2026,6 +2042,11 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
   subB_Rows = intersect(subMuts$subBi, which(sampAB[,maf2Index] > minAF & sampAB[,maf2Index] <= 1))                             #sample B sub rows
   ssB_Rows  = intersect(subMuts$subBi, which(sampAB[,maf2Index] > minAF & sampAB[,maf2Index] <= 1 & sampAB[,maf1Index] == 0))   #sample B specific rows
   allAB_Rows = union(allA_Rows, allB_Rows)
+
+  ssR = length(union(ssA_Rows,ssB_Rows))/length(union(subA_Rows,subB_Rows))
+  if (reportSSR == TRUE) {
+      return(ssR)
+  }
   
   BinWidthA = round(dpih(sampAB[allA_Rows, maf1Index]/ratio),2)
   if (BinWidthA == 0) { BinWidthA = 0.02 }
@@ -2104,7 +2125,7 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
       text(x=0.8,y=(3/4-0.334)*ylimup, labels=bquote(paste("KSD", " = ", .(ksd))),cex=2.6)
 
       npub = subMuts$pubTn
-      legend(0.52,ylimdown/4, legend=c(paste("Public ","(",npub,")",sep=""),"Pvt-Shared","Pvt-Site Specific"),
+      legend(0.5,ylimdown/4, legend=c(paste("Public ","(",npub,")",sep=""),"Pvt-Shared","Rgn Specific"),
              col=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), pch=15, bty="n", cex=2.4)
       if (pdf == TRUE) {
           dev.off()
@@ -2218,8 +2239,6 @@ subclonalMutSim <- function(sampAB, snA, snB, dpA, dpB, minAF=0.05, statsAF=0.08
     ssAn = length(ssAi)
     ssBn = length(ssBi)
     sharedn = length(union(subAi, subBi))-length(union(ssAi,ssBi))
-        
-    
         
     # list for output    
     muts = list(A=mutsA,B=mutsB,subAi=subAi,subBi=subBi,FST=FST, KSD=KSD, pubTn=pubTn, ssAn=ssAn, ssBn=ssBn, sharedn=sharedn,

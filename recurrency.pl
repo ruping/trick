@@ -124,6 +124,8 @@ while ( <IN> ) {
     }
     if ($task eq 'maf') {
       print "$_\tmaf\n";
+    } elsif ($task eq 'split') {
+      print "$_\n";
     } elsif ($task eq 'freq') {
       print "$_\tfreq\n";
     } elsif ($task eq 'trace') {

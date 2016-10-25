@@ -183,7 +183,7 @@ smkey <- function(x, y=NULL,
 
 scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=cex, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE,
                                drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(), colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
-                               legend=c("Public","Pvt-Shared","Pvt-Site Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1) {
+                               legend=c("Public","Pvt-Shared","Pvt-Rgn Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1) {
 
     if (length(groups) > 0) {
         colLegends = list()

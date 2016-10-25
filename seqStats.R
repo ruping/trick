@@ -282,32 +282,39 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
 #  utils                                                ###
 ###########################################################
 
-decideColorGroup <- function(legend, random=TRUE) {
+decideColorGroup <- function(legend, random=TRUE, alpha=0.75, col=vector()) {
 
     colorGroup = data.frame(legend=legend, col=rep(rgb(0,0,0,1/2), length(legend)))
     if (random == TRUE) {
         allColors = sampleColors(length(legend))
-    } else {
+        colorGroup$col = apply(col2rgb(allColors),2,function(x){rgb(x[1]/255,x[2]/255,x[3]/255,alpha)})
+    } else if (length(col) == 0){
         allColors = c(brewer.pal(9, "Set1")[c(1:5,7:9)], brewer.pal(8, "Dark2")[c(1:4,7)], brewer.pal(11, "Spectral")[1],
             brewer.pal(11, "BrBG")[c(1,11)], brewer.pal(9, "YlGnBu")[8], brewer.pal(9, "YlGnBu")[8], brewer.pal(8, "Set2")[1:4], "black")
         allColors = allColors[1:length(legend)]
+        colorGroup$col = apply(col2rgb(allColors),2,function(x){rgb(x[1]/255,x[2]/255,x[3]/255,alpha)})
+    } else if (length(col) == length(legend)) {
+        colorGroup$col = col
     }
-    colorGroup$col = apply(col2rgb(allColors),2,function(x){rgb(x[1]/255,x[2]/255,x[3]/255,3/4)})
     return(colorGroup)
 
 }
 
 
-makecolor <- function(x, colorGroup) {
+makecolor <- function(l, colorGroup) {
 
-    color = rep(rgb(0,0,0,1/3), length(x))
-    for (i in 1:length(x)) {
-        if (class(x) == "integer"){
-            current = x[i]
-            cc = as.vector(apply( colorGroup, 1, function(x, name=current){if(x[1] == current){x[2]} else {NA}} ))
+    color = rep(rgb(0,0,0,1/3), length(l))
+    message(class(l))
+    for (i in 1:length(l)) {
+        if ( is.na(l[i]) ) {
+            next
+        }
+        if ( is.integer(l[i]) ) {
+            current = l[i]
+            cc = as.vector(apply( colorGroup, 1, function(x, name=current) {if(as.numeric(x[1]) == name){x[2]} else {NA}} ))
         } else {
-            current = gsub(".lorenzNoDup","",x[i])
-            cc = as.vector(apply( colorGroup, 1, function(x, name=current){if(grepl(x[1], current)){x[2]} else {NA}} ))
+            current = gsub(".lorenzNoDup","",l[i])
+            cc = as.vector(apply( colorGroup, 1, function(x, name=current){if(grepl(x[1], name)){x[2]} else {NA}} ))
         }
         cc = cc[!is.na(cc)]
         if (! is.na(cc[1])) {
