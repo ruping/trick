@@ -38,6 +38,8 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
         trainY = trainY[which(data$model[(lent+1):dim(data)[1]] %in% modelsNeed)]
         if ( length(modelsNeed) > 2 ) {
             trainY = sapply(trainY, function(x){if (x == "s=0.05" | x == "s=0.1"){"selection"} else {"eneutral"}})
+        } else {
+            trainY = sapply(trainY, function(x){if (x == "s=0.01"){"weak"} else if (x == "s=0.05") {"moderate"} else if (x == "s=0.1") {"strong"} else {as.character(x)}})
         }
         trainY = as.factor(as.character(trainY))
     } else {
