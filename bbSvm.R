@@ -124,6 +124,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
             svm.tune = list(svm.tune=svm.tune, roc = roc)
         } else {
             pred = predict.train(svm.tune, testX, type="prob")
+            pred = data.frame(pred, model=testY)
             svm.tune = list(svm.tune=svm.tune, pred = pred)
         }
     }
@@ -153,7 +154,7 @@ load("stats.merged.rda")
 features = c("fHsub","fHss","FST","KSD","rAUC")
 data = stats.merged2
 colnames = colnames(data)
-seeds = 1943:1962         #20 times each
+seeds = 1943         #20 times each
 seeds = as.numeric(seeds)
 lent = 38
 
