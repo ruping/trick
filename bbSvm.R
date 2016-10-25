@@ -153,7 +153,7 @@ load("stats.merged.rda")
 features = c("fHsub","fHss","FST","KSD","rAUC")
 data = stats.merged2
 colnames = colnames(data)
-seeds = 1943:1962         #20 times each
+seeds = 1943         #20 times each
 seeds = as.numeric(seeds)
 lent = 38
 
@@ -161,4 +161,6 @@ combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
 featureRes = featureComparison(data, lent, model, combns, features, colnames, seeds, featureRes)
-save(featureRes, file=paste("feature_", comb, "_", model, "_", seeds, ".rda", sep=""))
+outfile = paste("feature_", comb, "_", model, "_", seeds, ".rda", sep="")
+message(outfile)
+save(featureRes, file=outfile)
