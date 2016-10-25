@@ -18,21 +18,6 @@ library(pROC)	       # plot the ROC curves
 library(doMC)
 
 
-featureComparison <- function (data, lent, model, combns, features, colnames, seeds, res) {    
-    fsn = features[combns]
-    featureCols = match(fsn, colnames)
-    for (s in 1:length(seeds)) {
-        seedn = seeds[s]
-        rn = paste(fsn, collapse="_")
-        rn = paste(rn, seedn, sep="_")
-        message(rn)
-        res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, subSample = TRUE, seed=seedn)
-        #res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, seed=seedn)
-    }
-    return(res)
-}
-
-
 trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","s=0.01","s=0.05","s=0.1"), classCol=1, ncores=2, trainY="", subSample=FALSE, seed=1943) {
     registerDoMC(cores = ncores)
     
@@ -134,6 +119,21 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
         svm.tune = list(svm.tune=svm.tune, roc = roc)
     }
     return(svm.tune)
+}
+
+featureComparison <- function (data, lent, model, combns, features, colnames, seeds, res) {    
+    fsn = features[combns]
+    featureCols = match(fsn, colnames)
+    for (s in 1:length(seeds)) {
+        seedn = seeds[s]
+        rn = paste(fsn, collapse="_")
+        rn = paste(rn, seedn, sep="_")
+        message(rn)
+        message(seedn)
+        res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, subSample = TRUE, seed=seedn)
+        #res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, seed=seedn)
+    }
+    return(res)
 }
 
 
