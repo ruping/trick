@@ -8,8 +8,9 @@ if (length(inputpar) < 1) stop("Wrong number of input parameters")
 
 path <- inputpar[1]
 comb <- inputpar[2]
-seeds <- inputpar[3]
-model <- inputpar[4]
+model <- inputpar[3]
+seeds <- inputpar[4]
+
 
 library(caret)
 library(dplyr)         # Used by caret
@@ -150,8 +151,7 @@ seeds = as.numeric(seeds)
 lent = 38
 
 combns = as.numeric(strsplit(comb,"")[[1]])
-modelsNeed = c(model, "neutral")
 
 featureRes = list()
-featureRes = featureComparison(data, lent, modelsNeed, combns, features, colnames, seeds, featureRes)
+featureRes = featureComparison(data, lent, model, combns, features, colnames, seeds, featureRes)
 save(featureRes, file=paste("feature_", comb, "_", model, "_", seeds, ".rda", sep=""))
