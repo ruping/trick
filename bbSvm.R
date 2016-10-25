@@ -152,7 +152,7 @@ load("stats.merged.rda")
 
 
 features = c("fHsub","fHss","FST","KSD","rAUC")
-data = stats.merged4
+data = stats.merged8
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
