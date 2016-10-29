@@ -134,13 +134,14 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
 featureComparison <- function (data, lent, model, combns, features, colnames, seeds, res) {    
     fsn = features[combns]
     featureCols = match(fsn, colnames)
+    classCol = match("model",colnames)
     for (s in 1:length(seeds)) {
         seedn = seeds[s]
         rn = paste(fsn, collapse="_")
         rn = paste(rn, seedn, sep="_")
         message(rn)
         message(seedn)
-        res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, subSample = TRUE, seed=seedn)
+        res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, classCol=classCol, subSample = TRUE, seed=seedn)
         #res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, seed=seedn)
     }
     return(res)
@@ -151,8 +152,10 @@ setwd(path)
 load("stats.merged.rda")
 
 
-features = c("fHsub","fHss","FST","KSD","rAUC")
-data = stats.merged8
+#features = c("fHsub","fHss","FST","KSD","rAUC")
+features = c("X1","X2")
+#data = stats.merged8
+data = res.ica2.S
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
@@ -162,6 +165,6 @@ combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
 featureRes = featureComparison(data, lent, model, combns, features, colnames, seeds, featureRes)
-outfile = paste("feature_", comb, "_", model, ".rda", sep="")
+outfile = paste("featureICA_", comb, "_", model, ".rda", sep="")
 message(outfile)
 save(featureRes, file=outfile)
