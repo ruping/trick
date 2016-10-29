@@ -150,7 +150,7 @@ featureComparison <- function (data, lent, model, combns, features, colnames, se
 
 setwd(path)
 load("stats.merged.rda")
-
+load("res.ica.S.rda")
 
 #features = c("fHsub","fHss","FST","KSD","rAUC")
 features = c("X1","X2")
