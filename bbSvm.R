@@ -155,7 +155,7 @@ load("res.ica.S.rda")
 #features = c("fHsub","fHss","FST","KSD","rAUC")
 features = c("X1","X2")
 #data = stats.merged8
-data = res.ica4.S
+data = res.ica8.S
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
