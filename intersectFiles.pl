@@ -272,7 +272,7 @@ sub eatline {
   my $variants = shift;
 
   my $isComment = 0;
-  if ($line =~ /^#/ || $line =~ /^[cC][hH][rR]\t/) {
+  if ($line =~ /^#/ || $line =~ /^[cC][hH][rR]\t/ or $line =~ /^[cC]hromosome\t/ or $line =~ /^[cC]hrom\t/) {
     $isComment = 1;
     return $isComment;
   }
@@ -308,7 +308,7 @@ sub getchrpos {
 
   while ( <DBFILE> ) {
 
-      if ($_ =~ /^[\#\@]/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^FID/) {
+      if ($_ =~ /^[\#\@]/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^FID/ or $_ =~ /^[cC]hromosome\t/ or $_ =~ /^[cC]hrom\t/) {
         $jumper = tell DBFILE;
         if ($column ne '' and ((($_ =~ /^#/ or $_ =~ /^FID/ or $_ =~ /^[cC][hH][rR]\t/) and $vcf == 0) or ($_ =~ /^#CHROM\t/ and $vcf == 1))) { #vcf header or not: 1 or 0
           $_ =~ s/^#//;
