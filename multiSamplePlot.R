@@ -480,7 +480,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
   #sshistA = sshist(sampAB[allA_Rows, maf1Index]/ratio)
   #BinWidthA = mean(sapply(2:length(sshistA$breaks), function(x, y){y$breaks[x]-y$breaks[x-1]}, y = sshistA))
   BinWidthA = round(dpih(sampAB[allA_Rows, maf1Index]/ratio),2)
-  if (BinWidthA == 0) { BinWidthA = 0.02 }
+  if ((BinWidthA < 0.02 & length(allA_Rows) < 3000) | BinWidthA == 0) { BinWidthA = 0.02 }
   
   allB_Rows = which(sampAB[,maf2Index] > minAF & sampAB[,mafa2Index] > minAF & sampAB[,maf2Index] <= 1)
   allAB_Rows = union(allA_Rows,allB_Rows)
@@ -488,7 +488,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
   ssB_Rows  = intersect(subMuts$subBi, which(sampAB[,maf2Index] > minAF & sampAB[,maf2Index] <= 1 & sampAB[,maf1Index] <= ssAF))
   
   BinWidthB = round(dpih(sampAB[allB_Rows, maf2Index]/ratio),2)
-  if (BinWidthB == 0) { BinWidthB = 0.02 }
+  if ((BinWidthB < 0.02 & length(allB_Rows) < 3000) | BinWidthB == 0) { BinWidthB = 0.02 }
   BinWidth = min(c(BinWidthA, BinWidthB, 0.1))
   if ( binw != 0 ){
       BinWidth = binw
@@ -1826,21 +1826,22 @@ rAUC <- function(data, mafs, depths) {
     lower = round((0.08/length(mafs)),2)
     message(paste("lower: ", lower,sep=""))
     weightAF = weightAFs(data, mafs, depths)
+    #message(paste(weightAF, collapse=" "))
     weightAF = weightAF[which(weightAF >= lower & weightAF <= 0.25)]
     message(paste("weightedMuts: ", length(weightAF), sep=""))
-    mafs = seq(lower,0.25,by=0.01)
-    nstep = length(mafs)
+    vafs = seq(lower,0.25,by=0.01)
+    nstep = length(vafs)
     counts = vector()
-    ncounts = ((1/mafs)-(1/0.25))/((1/lower)-(1/0.25))
+    ncounts = ((1/vafs)-(1/0.25))/((1/lower)-(1/0.25))
     
-    for ( i in 1:length(mafs) ) {
-        counts = append(counts, length(which(weightAF > mafs[i]))-length(which(weightAF > mafs[nstep])))
+    for ( i in 1:length(vafs) ) {
+        counts = append(counts, length(which(weightAF > vafs[i]))-length(which(weightAF > vafs[nstep])))
     }
     counts = counts/counts[1]
-    bei = bezierCurve(mafs, counts, length(mafs))
+    bei = bezierCurve(vafs, counts, length(vafs))
     AUC = trapz(bei$x,bei$y)
     #AUC = trapz(mafs,counts)
-    nAUC = trapz(mafs,ncounts)
+    nAUC = trapz(vafs,ncounts)
     rAUC = AUC/nAUC
     rAUC = round(rAUC,8)
     return(list(rAUC=rAUC,weightAF=weightAF))
@@ -1870,6 +1871,7 @@ weightAFs <- function(af.data, mafs, depths, minAF=0) {
         cdep = depths[i]
         cdepi = match(cdep,colnames(af.data))
         tdepth = tdepth + af.data[,cdepi]
+        #message(paste(tdepth, collapse=" "))
         talt = talt + af.data[,cdepi]*af.data[,cmafi]
     }
     tmaf = talt/tdepth
