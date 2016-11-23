@@ -81,7 +81,7 @@ while ( <IN> ) {
       print STDERR "function column is indexed $j\n" if $cols[$j] eq 'function';
     }
     for (my $i = 0; $i <= $#name; $i++) {
-      if ($name[$i] =~ /^(($prefixReg)[A-Za-z0-9\-\_]+)maf/) {
+      if ($name[$i] =~ /^(($prefixReg)([A-Za-z0-9\-\_]+)?)maf/) {
         my $sampCur = $1;
         if (exists $somatic{$sampCur}){  #only push tumor samples
           push(@samples, $sampCur);
