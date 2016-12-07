@@ -1823,7 +1823,11 @@ spruceInput <- function(samp, samples, minMaf) {
 
 rAUC <- function(data, mafs, depths) {
 
-    lower = round((0.08/length(mafs)),2)
+    if (length(mafs) <= 8){
+        lower = round((0.08/length(mafs)),2)
+    } else {
+        lower = max(0.005, round((0.08/length(mafs)),3))
+    }
     message(paste("lower: ", lower,sep=""))
     weightAF = weightAFs(data, mafs, depths)
     #message(paste(weightAF, collapse=" "))
