@@ -142,6 +142,7 @@ while ( <IN> ) {
           my $cmedian = 0;
           my $depth = $cols[$i+1];
 
+          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);
           if ($cols[$i] =~ /\|/) { #split the var surrounding information  0.4098|0.2800|1.5,1|0.2000,0.2500,0.44580|0|-64.856291
             my @infos = split(/\|/, $cols[$i]);
             $maf = $infos[0];
