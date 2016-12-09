@@ -95,88 +95,63 @@ while ( <IN> ) {
 
     my @genes = &grepGene($cols[$colindex{'function'}]);
 
-    if ($type =~ /somatic/) {   #somatic ones
+    for (my $i = 0; $i <= $#cols; $i++) {
+      if ($name[$i] =~ /^(($prefixReg)([A-Za-z0-9\-\_]+)?)maf$/) {
+        my $name = $1;
+        next unless (exists $somatic{$name});
+        my $maf = $cols[$i];
+        my $endsratio = 0;
+        my @strandRatio;
+        my $strandRatio;
+        my $strandRatioRef;
+        my $strandFisherP;
+        my $badQualFrac = 0;
+        my $mlod = 0;
+        my $cmean = 0;
+        my $cmedian = 0;
+        my $depth = $cols[$i+1];
 
-      next if ($cols[$colindex{'somatic'}] eq 'NA');
-      my @somaticSamps = split(',', $cols[$colindex{'somatic'}]);
-      foreach my $somaticSamp (@somaticSamps) {
-        $somaticSamp =~ s/\[\w+\]//;
-        next unless (exists $somatic{$somaticSamp});
-        foreach my $gene (@genes){
-          if ($gene ne ''){
-            $result{$gene}{$somaticSamp}++;
+        next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);
+        if ($type =~ /somatic/) {
+          next if ($cols[$colindex{'somatic'}] eq 'NA');
+          next if $somatic{$name} eq 'undef';
+        }
+        if ($type =~ /germline/) {
+          next if ($cols[$colindex{'germline'}] eq 'NA');
+        }
+        if ($cols[$i] =~ /\|/) {                      # split the var surrounding information  0.4098|0.2800|1.5,1|0.2000,0.2500,0.44580|0|-64.856291
+          my @infos = split(/\|/, $cols[$i]);
+          $maf = $infos[0];
+          if ($#infos == 5) {
+            $endsratio = $infos[1];
+            ($cmean, $cmedian) = split(',', $infos[2]);
+            @strandRatio = split(',', $infos[3]);
+            $strandRatio = $strandRatio[0];
+            $strandRatioRef = $strandRatio[1];
+            $strandFisherP = $strandRatio[2];
+            $badQualFrac = $infos[4];
+            $mlod = $infos[5];
+          } elsif ($#infos == 1) { #TCGA raw calls
+            $depth = $infos[1];
           }
         }
-      }
 
-    } elsif ($type =~ /germline/) {   #somatic ones
+        my $vard = sprintf("%.1f", $maf*$depth);
+        my $refd = $depth - $vard;
 
-      next if ($cols[$colindex{'germline'}] eq 'NA');
-      next if ($cols[$colindex{'somatic'}] ne 'NA');
-      next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);   #only consider rare ones
-      my @germlineSamps = split(',', $cols[$colindex{'germline'}]);
-      foreach my $germlineSamp (@germlineSamps) {
-        next unless (exists $somatic{$germlineSamp});
-        foreach my $gene (@genes){
-          if ($gene ne '') {
-            $result{$gene}{$germlineSamp}++;
-          }
-        }
-      }
+        #print STDERR "$name\t$maf\t$vard\n";
 
-    } else {
-
-      for (my $i = 0; $i <= $#cols; $i++) {
-        if ($name[$i] =~ /^(($prefixReg)([A-Za-z0-9\-\_]+)?)maf$/) {
-          my $name = $1;
-          next unless (exists $somatic{$name});
-          my $maf = $cols[$i];
-          my $endsratio = 0;
-          my @strandRatio;
-          my $strandRatio;
-          my $strandRatioRef;
-          my $strandFisherP;
-          my $badQualFrac = 0;
-          my $mlod = 0;
-          my $cmean = 0;
-          my $cmedian = 0;
-          my $depth = $cols[$i+1];
-
-          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);
-          if ($cols[$i] =~ /\|/) { #split the var surrounding information  0.4098|0.2800|1.5,1|0.2000,0.2500,0.44580|0|-64.856291
-            my @infos = split(/\|/, $cols[$i]);
-            $maf = $infos[0];
-            if ($#infos == 5) {
-              $endsratio = $infos[1];
-              ($cmean, $cmedian) = split(',', $infos[2]);
-              @strandRatio = split(',', $infos[3]);
-              $strandRatio = $strandRatio[0];
-              $strandRatioRef = $strandRatio[1];
-              $strandFisherP = $strandRatio[2];
-              $badQualFrac = $infos[4];
-              $mlod = $infos[5];
-            } elsif ($#infos == 1) { #TCGA raw calls
-              $depth = $infos[1];
-            }
-          }
-
-          my $vard = sprintf("%.1f", $maf*$depth);
-          my $refd = $depth - $vard;
-
-          #print STDERR "$name\t$maf\t$vard\n";
-
-          if (($endsratio < 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and (($strandRatio > 0.05 & $strandRatio < 0.95) or ($strandFisherP > 0.7 and $refd >= 10 and $vard >= 5 and $maf >= 0.1))) { #it looks good
-            if ($maf >= 0.15 and $vard >= 4) {  #for germline
-              foreach my $gene (@genes) {
-                if ($gene ne '') {
-                  $result{$gene}{$name}++;
-                }               #gene ne ''
-              }                 #foreach
-            }                   #found in this sample
-          }                     #it looks good
-        }                       #it is maf
-      }                         #iterator
-    }                           #germline ones
+        if (($endsratio < 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and (($strandRatio > 0.05 & $strandRatio < 0.95) or ($strandFisherP > 0.7 and $refd >= 10 and $vard >= 5 and $maf >= 0.1))) { #it looks good
+          if ($maf >= 0.15 and $vard >= 4) { #for germline
+            foreach my $gene (@genes) {
+              if ($gene ne '') {
+                $result{$gene}{$name}++;
+              }                 #gene ne ''
+            }                   #foreach
+          }                     #found in this sample
+        }                       #it looks good
+      }                         #it is maf
+    }                           #iterator
   }                             #data line
 }
 close IN;
