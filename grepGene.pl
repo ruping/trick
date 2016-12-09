@@ -140,7 +140,7 @@ while ( <IN> ) {
         my $vard = sprintf("%.1f", $maf*$depth);
         my $refd = $depth - $vard;
 
-        #print STDERR "$name\t$maf\t$vard\n";
+        print STDERR "$name\t$maf\t$vard\n";
 
         if (($endsratio < 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and (($strandRatio > 0.05 & $strandRatio < 0.95) or ($strandFisherP > 0.7 and $refd >= 10 and $vard >= 5 and $maf >= 0.1))) { #it looks good
           if ($maf >= 0.15 and $vard >= 4) { #for germline
