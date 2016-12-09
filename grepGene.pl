@@ -99,6 +99,7 @@ while ( <IN> ) {
       if ($name[$i] =~ /^(($prefixReg)([A-Za-z0-9\-\_]+)?)maf$/) {
         my $name = $1;
         next unless (exists $somatic{$name});
+        print STDERR "$name now\n";
         my $maf = $cols[$i];
         my $endsratio = 0;
         my @strandRatio;
