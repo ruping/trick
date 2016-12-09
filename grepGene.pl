@@ -99,7 +99,6 @@ while ( <IN> ) {
       if ($name[$i] =~ /^(($prefixReg)([A-Za-z0-9\-\_]+)?)maf$/) {
         my $name = $1;
         next unless (exists $somatic{$name});
-        print STDERR "$name now\n";
         my $maf = $cols[$i];
         my $endsratio = 0;
         my @strandRatio;
@@ -124,7 +123,7 @@ while ( <IN> ) {
         if ($cols[$i] =~ /\|/) {                      # split the var surrounding information  0.4098|0.2800|1.5,1|0.2000,0.2500,0.44580|0|-64.856291
           my @infos = split(/\|/, $cols[$i]);
           $maf = $infos[0];
-          if ($#infos == 5) {
+          if ($#infos >= 5) {
             $endsratio = $infos[1];
             ($cmean, $cmedian) = split(',', $infos[2]);
             @strandRatio = split(',', $infos[3]);
