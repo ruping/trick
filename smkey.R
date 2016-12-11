@@ -181,7 +181,7 @@ smkey <- function(x, y=NULL,
 }
 
 
-scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=cex, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE,
+scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=1.5, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE,
                                drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(), colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
                                legend=c("Public","Pvt-Shared","Pvt-Rgn Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1) {
 
@@ -194,7 +194,7 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
         else {
             par(mar=c(4.5,5,5,3))
         }
-        for (i in 1:length(groups)) {   #plot dense scatter for each group
+        for (i in 1:length(groups)) {                                  #plot dense scatter for each group
             colpanel = groupColors[[i]]
             indexes = groups[[i]]
             nbinx = round((max(x[indexes]) - min(x[indexes]))/div)
@@ -229,6 +229,7 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
                     #segments(xaxisat[1], yaxisat[length(yaxisat)], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
                     #segments(xaxisat[length(xaxisat)], yaxisat[1], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
                 } else {
+                    message("b")
                     plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
                 }
             } else {
