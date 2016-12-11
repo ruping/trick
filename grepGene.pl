@@ -116,9 +116,9 @@ while ( <IN> ) {
           next if $somatic{$name} eq 'undef';
         } elsif ($type =~ /germline/) {
           next if ($cols[$colindex{'germline'}] eq 'NA');
-          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);
+          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] >= 0.005);
         } elsif ($type =~ /rare/) {
-          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] > 0.005);
+          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] >= 0.005);
         }
         if ($cols[$i] =~ /\|/) {                      # split the var surrounding information  0.4098|0.2800|1.5,1|0.2000,0.2500,0.44580|0|-64.856291
           my @infos = split(/\|/, $cols[$i]);
@@ -143,7 +143,7 @@ while ( <IN> ) {
         #print STDERR "$name\t$maf\t$vard\t$refd\t$endsratio\t$strandRatio\t$strandFisherP\t$cmean\t$cmedian\n";
 
         if (($endsratio < 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and (($strandRatio > 0.05 & $strandRatio < 0.95) or ($strandFisherP > 0.7 and $refd >= 10 and $vard >= 5 and $maf >= 0.1))) { #it looks good
-          if ($maf >= 0.15 and $vard >= 5 and $depth >= 7) { #for germline
+          if ($maf >= 0.15 and $vard >= 5 and $depth >= 8) { #for germline
             foreach my $gene (@genes) {
               if ($gene ne '') {
                 $result{$gene}{$name}++;
