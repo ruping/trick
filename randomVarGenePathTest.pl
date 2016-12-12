@@ -95,7 +95,7 @@ for (1..$times) {  #randomization 5000 times
     #} else {
     #  next;
     #}
-    if ($gcount <= round($totalG * 1.1)) {
+    if ($gcount <= round($totalG * 1.15)) {
       #foreach my $genenow (@genes) {
       print OUT "$genenow\n";
       #}
