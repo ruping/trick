@@ -19,10 +19,11 @@ foreach my $sample (@samples) {
   my $cindex =~ s/\n$//;
   $cindex += 1;
   my $cmd = "awk \-F\"\\t\" \'$cindex != 0\' $rare >$outdir/$sample\.rare";
+  RunCommand($cmd, 0, 0);
 
   #do enrichment analysis
-  my $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/$sample\.rare $pathdb $Rbin";
-  RunCommand($cmd, 0 , 0);
+  $cmd = "perl $bin/runPathwayEnrichment.pl $outdir/$sample\.rare $pathdb $Rbin";
+  RunCommand($cmd, 0, 0);
 }
 
 exit 0;
