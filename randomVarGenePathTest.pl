@@ -40,7 +40,6 @@ while ( <IN> ) {
 close IN;
 print STDERR "$vcf loaded\n";
 
-
 my %result;
 my $querysize = 0;
 if (-e "$pathres") {
@@ -71,7 +70,7 @@ for (1..$times) {  #randomization 5000 times
   print STDERR "$_\t$_\t$_\t$_\n";
   my $gcount;
   my %lines;
-  my %geneCount;
+  #my %geneCount;
   open OUT, ">$outdir/rgenelist";
   while (1) {  #produce gene list
     my $line = int(rand($totalV));
@@ -90,13 +89,13 @@ for (1..$times) {  #randomization 5000 times
       my @genesnow = split(/\,/, $vcf{$line});
       $genenow = $genesnow[0];
     }
-    if (!exists($geneCount{$genenow})){
-      $geneCount{$genenow} = '';
+    #if (!exists($geneCount{$genenow})){
+    #  $geneCount{$genenow} = '';
       $gcount ++;
-    } else {
-      next;
-    }
-    if ($gcount <= $totalG) {
+    #} else {
+    #  next;
+    #}
+    if ($gcount <= round($totalG * 1.1)) {
       #foreach my $genenow (@genes) {
       print OUT "$genenow\n";
       #}
@@ -179,4 +178,13 @@ sub splitGene {
   }
   @genes = keys %tmp;
   return(@genes);
+}
+
+sub round {
+    my $number = shift;
+    my $tmp = int($number);
+    if ($number >= ($tmp+0.5)){
+      $tmp++;
+    }
+    return $tmp;
 }
