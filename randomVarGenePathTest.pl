@@ -71,6 +71,7 @@ for (1..$times) {  #randomization 5000 times
   print STDERR "$_\t$_\t$_\t$_\n";
   my $gcount;
   my %lines;
+  my %geneCount;
   open OUT, ">$outdir/rgenelist";
   while (1) {  #produce gene list
     my $line = int(rand($totalV));
@@ -81,7 +82,7 @@ for (1..$times) {  #randomization 5000 times
     #my @genes = &grepGene($vcf{$line});
     #$gcount += scalar(@genes);
     my $genenow;
-    if ($nonexonic eq ''){
+    if ($nonexonic eq '') {
       my @cols = split(/\t/, $vcf{$line});
       $cols[2] =~ /^(.+?)\:/;
       $genenow = $1;
@@ -89,7 +90,12 @@ for (1..$times) {  #randomization 5000 times
       my @genesnow = split(/\,/, $vcf{$line});
       $genenow = $genesnow[0];
     }
-    $gcount ++;
+    if (!exist($geneCount{$genenow})){
+      $geneCount{$genenow} = '';
+      $gcount ++;
+    } else {
+      next;
+    }
     if ($gcount <= $totalG) {
       #foreach my $genenow (@genes) {
       print OUT "$genenow\n";
