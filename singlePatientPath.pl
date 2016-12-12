@@ -18,9 +18,9 @@ foreach my $sample (@samples) {
   my $cindex = `perl $bin/columnIndex.pl $sample $rare`;
   $cindex =~ s/\n$//;
   $cindex += 1;
-  print STDERR "$cindex\n";
+  #print STDERR "$cindex\n";
   my $cmd = "awk \-F\"\\t\" \'\$$cindex != 0\' $rare >$outdir/$sample\.rare";
-  print STDERR "$cmd\n";
+  #print STDERR "$cmd\n";
   RunCommand($cmd, 0, 0);
 
   #do enrichment analysis
