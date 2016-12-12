@@ -90,7 +90,7 @@ for (1..$times) {  #randomization 5000 times
       my @genesnow = split(/\,/, $vcf{$line});
       $genenow = $genesnow[0];
     }
-    if (!exist($geneCount{$genenow})){
+    if (!exists($geneCount{$genenow})){
       $geneCount{$genenow} = '';
       $gcount ++;
     } else {
