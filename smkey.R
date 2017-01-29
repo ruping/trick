@@ -181,7 +181,7 @@ smkey <- function(x, y=NULL,
 }
 
 
-scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=1.5, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE,
+scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=1.5, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE, pch=19,
                                drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(), colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
                                legend=c("Public","Pvt-Shared","Pvt-Rgn Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1) {
 
@@ -222,18 +222,16 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
             colLegends[[i]] = colLegend
             if (i == 1) {
                 if (length(xaxisat) > 0) {
-                    plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main, axes = F)
+                    plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=pch, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main, axes = F)
                     axis(side=1, at=xaxisat, labels=xaxislb, cex.axis=cex.axis)
                     axis(side=2, at=yaxisat, labels=yaxislb, cex.axis=cex.axis)
                     box("plot")
-                    #segments(xaxisat[1], yaxisat[length(yaxisat)], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
-                    #segments(xaxisat[length(xaxisat)], yaxisat[1], xaxisat[length(xaxisat)], yaxisat[length(yaxisat)])
                 } else {
                     message("b")
-                    plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
+                    plot(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=pch, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, main=main, cex=cex, cex.axis=cex.axis, cex.lab=cex.lab, cex.main=cex.main)
                 }
             } else {
-                points(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=19, cex=cex)
+                points(x[indexes],y[indexes],col=denscolor, bg=denscolor, pch=pch, cex=cex)
             }
         }
         if (abline == TRUE) {
@@ -273,10 +271,6 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
     } else {
 
         colpanel = rev(brewer.pal(11, "RdYlBu"))[2:11]    #RdYlBu as default
-        #colpanel = rev(brewer.pal(11, "RdBu"))[2:11]
-        #colpanel = brewer.pal(9, "Greys")[2:9]
-        #colpanel = brewer.pal(9, "GnBu")[3:9]
-        #colpanel = rev(rainbow(20, end = 4/6))
         
         #determine dense color
         if (length(denscolor) == 0){
