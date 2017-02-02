@@ -8,8 +8,7 @@ if (length(inputpar) < 1) stop("Wrong number of input parameters")
 
 path <- inputpar[1]
 comb <- inputpar[2]
-model <- inputpar[3]
-seeds <- inputpar[4]
+seeds <- inputpar[3]
 
 
 library(caret)
@@ -132,7 +131,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
     return(svm.tune)
 }
 
-featureComparison <- function (data, lent, model, combns, features, colnames, seeds, res) {    
+featureComparison <- function (data, lent, combns, features, colnames, seeds, res) {    
     fsn = features[combns]
     featureCols = match(fsn, colnames)
     classCol = match("model",colnames)
@@ -142,7 +141,6 @@ featureComparison <- function (data, lent, model, combns, features, colnames, se
         rn = paste(rn, seedn, sep="_")
         message(rn)
         message(seedn)
-        #res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, classCol=classCol, subSample = TRUE, seed=seedn)
         res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
     }
     return(res)
@@ -165,7 +163,7 @@ lent = 37
 combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
-featureRes = featureComparison(data, lent, model, combns, features, colnames, seeds, featureRes)
+featureRes = featureComparison(data, lent, combns, features, colnames, seeds, featureRes)
 outfile = paste("featureICA_", comb, "_", model, ".rda", sep="")
 message(outfile)
 save(featureRes, file=outfile)
