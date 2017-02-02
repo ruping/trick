@@ -164,6 +164,6 @@ combns = as.numeric(strsplit(comb,"")[[1]])
 
 featureRes = list()
 featureRes = featureComparison(data, lent, combns, features, colnames, seeds, featureRes)
-outfile = paste("featureICA_", comb, "_", model, ".rda", sep="")
+outfile = paste("featureICA_", comb, ".rda", sep="")
 message(outfile)
 save(featureRes, file=outfile)
