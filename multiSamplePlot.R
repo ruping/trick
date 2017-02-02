@@ -1424,19 +1424,9 @@ pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), m
                       if (aboveContri >= 2 | (aboveContri >= 1 & length(samples) == 2)) {                    #looks like public, change prior
                           prior = "pub"
                       }
-                      if (as.numeric(mutVector[2]) == 77927386) {
-                          message(paste(as.integer(mutVector[refci]), as.integer(mutVector[altci]), as.numeric(maxsAGP[si]), as.numeric(mutVector[sAGPi]), as.integer(mutVector[nti]), as.integer(mutVector[nbi]), cPa, prior, sep=" "))
-                      }
                       cpop.probs = pubOrSub.prob.binom(as.integer(mutVector[refci]), as.integer(mutVector[altci]), as.numeric(maxsAGP[si]), as.numeric(mutVector[sAGPi]), as.integer(mutVector[nti]), as.integer(mutVector[nbi]), pa=cPa, prior=prior)
                       cpop.probs
                   }, originalNames=originalNames, samples=samples, mutVector=mutVector, aboveContri=aboveContri, maxPa=maxPa, maxsAGP=maxsAGP)
-
-    #if (as.numeric(mutVector[2]) == 885834 & mutVector[1] == "chr1") {
-    #    message(paste(cpop[1,], collapse="\t"))
-    #    message(paste(cpop[2,], collapse="\t"))
-    #    message(CCFaboveOne)
-    #    message(VAFaboveQua)
-    #}
 
     cpp = prod(cpop[1,])
     cpa = prod(cpop[2,])
@@ -1495,7 +1485,6 @@ pubOrSub.simu <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samp
         }
     }
     return(sampAB)
-
 }
 
 
@@ -2404,17 +2393,11 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
       sampBhss$counts = 0                                  #make black line
       plot( sampAhss, col="black", add=T, border=F)        #make black line
       plot( sampBhss, col="black", add=T, border=F)        #make black line
-
-      #message(sn1s)
-      #message(sn2s)
       
       axis(side=1,at=seq(0,1,by=0.1),labels=seq(0,1,by=0.1),cex.axis=2.4)       #x-axis
       axis(side=2,at=decideTickAt(ylimdown, ylimup),labels=allAbs(decideTickAt(ylimdown, ylimup)),cex.axis=2.4)
       text(x=0.5,y=ylimdown,labels=paste(sn2s,",",length(which(sampAB[,maf2Index] > minAF)), "SSNVs", sep = " "), cex=2.8)
-      #text(x=0.5,y=ylimdown,labels=paste("Site Specific,",length(which(sampAB[,maf2Index] > minAF & sampAB[,maf1Index]==0)), "SSNVs", sep = " "), cex=2)
       text(x=0.5,y=ylimup,labels=paste(sn1s,",",length(which(sampAB[,maf1Index] > minAF)), "SSNVs", sep = " "), cex=2.8)
-      #text(x=0.5,y=5*ylimup/6,labels=paste("Site Specific,",length(which(sampAB[,maf1Index] > minAF & sampAB[,maf2Index]==0)), "SSNVs", sep = " "), cex=2)
-
 
       #stats starting from here!
       fHsub = round(mean(c(subMuts$ratioHighSubA,subMuts$ratioHighSubB)),3)
@@ -2481,72 +2464,65 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
 }
 
 
-subclonalMutSim <- function(sampAB, snA, snB, dpA, dpB, minAF=0.05, statsAF=0.08, highAF=0.2, ratio=1)   {                  #determinine subclonal mutations
+
+subclonalMutSim <- function(sampAB, snA, snB, dpA, dpB, minAF=0.05, statsAF=0.08, highAF=0.2, ratio=1, pob="pubOrSub")   {                  #determinine subclonal mutations
     mafaAi = match(snA, colnames(sampAB))
     mafaBi = match(snB, colnames(sampAB))
     depthAi = match(dpA, colnames(sampAB))
     depthBi = match(dpB, colnames(sampAB))
+    pobi = match(pob, colnames(sampAB))
     
-    # for JSD
-    subAi = which( sampAB[,mafaAi] > minAF &
-            (
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)))    # one side is below VAF 0.25
+    # for KSD
+    subAi = which( grepl("private", sampAB[,pobi]) & sampAB[,mafaAi] > minAF )    
     ssAi  = intersect(subAi, which( sampAB[,mafaAi] > minAF & sampAB[,mafaBi] == 0 ))
     mutsA = sampAB[subAi,mafaAi]/ratio
     
-    
-    subBi = which( sampAB[,mafaBi] > minAF &
-            (
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)))    # one side is below VAF 0.25
+    subBi = which( grepl("private", sampAB[,pobi]) & sampAB[,mafaBi] > minAF )
     ssBi  = intersect(subBi, which( sampAB[,mafaBi] > minAF & sampAB[,mafaAi] == 0 ))
     mutsB = sampAB[subBi,mafaBi]/ratio
     
-    
     KSD = as.numeric(ks.test( mutsA[which(mutsA > statsAF)], mutsB[which(mutsB > statsAF)] )$statistic)
 
-    #pub    
-    pubTi = which( (sampAB[,mafaAi] >= 0.25 & sampAB[,mafaBi] >= 0.25) )
-    
+    # pub
+    pubTi = which( sampAB[,pobi] == "public" )
 
-    # for FST
-    mutsSub = sampAB[which((sampAB[,mafaAi] > statsAF | sampAB[,mafaBi] >= statsAF) &
-                            sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 &
-                           (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),]
-    mutsSub = data.frame(maf1 = mutsSub[,mafaAi], depth1=mutsSub[,depthAi], maf2 = mutsSub[,mafaBi], depth2=mutsSub[,depthBi])
-    FST = mean(fst.wc84(mutsSub, minAF=statsAF))
+    # FST
+    allSubRows = union(subAi,subBi)
+    mutsSub = sampAB[allSubRows,]
+    mutsSub = data.frame( maf1 = mutsSub[,mafaAi], depth1=mutsSub[,depthAi], maf2 = mutsSub[,mafaBi], depth2=mutsSub[,depthBi] )
+    FST = fst.hudson(mutsSub, minAF=statsAF)
 
     # for other stats
-    mutsA2 = sampAB[which( sampAB[,mafaAi] > statsAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaAi]
-    mutsAh2 = sampAB[which( sampAB[,mafaAi] > highAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaAi]
-    mutsASp2 = sampAB[which( sampAB[,mafaAi] > statsAF & sampAB[,mafaBi] == 0 &
-                               sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15),mafaAi]
-    mutsASph2 = sampAB[which( sampAB[,mafaAi] > highAF & sampAB[,mafaBi] == 0 &
-                               sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15),mafaAi]
-    mutsB2 = sampAB[which( sampAB[,mafaBi] > statsAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 & 
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaBi]
-    mutsBh2 = sampAB[which( sampAB[,mafaBi] > highAF & sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 &
-                (sampAB[,mafaAi] < 0.25 | sampAB[,mafaBi] < 0.25)),mafaBi]
-    mutsBSp2 = sampAB[which( sampAB[,mafaBi] > statsAF & sampAB[,mafaAi] == 0 &
-                               sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 ),mafaBi]
-    mutsBSph2 = sampAB[which( sampAB[,mafaBi] > highAF & sampAB[,mafaAi] == 0 &
-                                 sampAB[,depthAi] >= 15 & sampAB[,depthBi] >= 15 ),mafaBi]
+    mutsA2 = sampAB[intersect(subAi, which( sampAB[,mafaAi] > statsAF )), mafaAi]
+    mutsAh2 = sampAB[intersect(subAi, which( sampAB[,mafaAi] > highAF )), mafaAi]
+    mutsASr2 = sampAB[intersect(subAi, which( sampAB[,mafaAi] > statsAF & sampAB[,mafaBi] > 0.02)), mafaAi]   #shared
+    
+    mutsASp2 = sampAB[intersect(subAi, which( sampAB[,mafaAi] > statsAF & sampAB[,mafaBi] == 0)), mafaAi]
+    mutsASph2 = sampAB[intersect(subAi, which( sampAB[,mafaAi] > highAF & sampAB[,mafaBi] == 0)), mafaAi]
+    
+    mutsB2 = sampAB[intersect(subBi, which( sampAB[,mafaBi] > statsAF )), mafaBi]
+    mutsBh2 = sampAB[intersect(subBi, which( sampAB[,mafaBi] > highAF )), mafaBi]
+    mutsBSr2 = sampAB[intersect(subBi, which( sampAB[,mafaBi] > statsAF & sampAB[,mafaAi] > 0.02)), mafaBi]  #shared
+    
+    mutsBSp2 = sampAB[intersect(subBi, which( sampAB[,mafaBi] > statsAF & sampAB[,mafaAi] == 0)), mafaBi]
+    mutsBSph2 = sampAB[intersect(subBi, which( sampAB[,mafaBi] > highAF & sampAB[,mafaAi] == 0)), mafaBi]
 
-
-    # mutation counts
+    # mutational counts
     pubTn = length(pubTi)
     ssAn = length(ssAi)
     ssBn = length(ssBi)
-    sharedn = length(union(subAi, subBi))-length(union(ssAi,ssBi))
+    sharedAn = length(mutsASr2)
+    sharedBn = length(mutsBSr2)
         
     # list for output    
-    muts = list(A=mutsA,B=mutsB,subAi=subAi,subBi=subBi,FST=FST, KSD=KSD, pubTn=pubTn, ssAn=ssAn, ssBn=ssBn, sharedn=sharedn,
-                lenSubA=length(mutsA2),lenSubAh=length(mutsAh2),ratioHighSubA=length(mutsAh2)/length(mutsA2),
-                lenSubB=length(mutsB2),lenSubBh=length(mutsBh2),ratioHighSubB=length(mutsBh2)/length(mutsB2),
-                lenSsA=length(mutsASp2),lenHighSsA=length(mutsASph2),ratioHighSsA=length(mutsASph2)/length(mutsASp2),
-                lenSsB=length(mutsBSp2),lenHighSsB=length(mutsBSph2),ratioHighSsB=length(mutsBSph2)/length(mutsBSp2)
-                )
+    muts = list(A=mutsA,B=mutsB,subAi=subAi,subBi=subBi, ssAi=ssAi, ssBi=ssBi, pubTi=pubTi, #subArow=subArow, subBrow=subBrow, pubTrow = pubTrow,
+        lenSubA=length(mutsA2),lenSubAh=length(mutsAh2),ratioHighSubA=length(mutsAh2)/length(mutsA2),
+        lenSubB=length(mutsB2),lenSubBh=length(mutsBh2),ratioHighSubB=length(mutsBh2)/length(mutsB2),
+        lenSsA=length(mutsASp2),lenHighSsA=length(mutsASph2),ratioHighSsA=length(mutsASph2)/length(mutsASp2),pSsA=length(mutsASp2)/length(mutsA2),
+        lenSsB=length(mutsBSp2),lenHighSsB=length(mutsBSph2),ratioHighSsB=length(mutsBSph2)/length(mutsBSp2),pSsB=length(mutsBSp2)/length(mutsB2),
+        lenSharedA=length(mutsASr2), lenSharedB=length(mutsBSr2), ratioSharedA=length(mutsASr2)/length(mutsA2), ratioSharedB=length(mutsBSr2)/length(mutsB2),
+        FST=FST, KSD=KSD, pubTn=pubTn, sharedAn=sharedAn, sharedBn=sharedBn, ssAn=ssAn, ssBn=ssBn)
+
     return(muts)
 }
 
