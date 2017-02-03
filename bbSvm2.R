@@ -41,7 +41,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
                                                 {"selection"} else {"eneutral"}})
         } else {
             trainY = sapply(trainY, function(x){if (x == "s=1"){"sone"} else if (x == "s=2"){"stwo"} else if (x == "s=3"){"sthree"}
-                                           else if (x == "s=5"){"sfive"} else if (x == "s=10"){"sten"} else if (x == "CSC"){"CSC"}})
+                                           else if (x == "s=5"){"sfive"} else if (x == "s=10"){"sten"} else if (x == "CSC"){"CSC"}} else if (x == "neutral") {"neutral"})
         }
         trainY = as.factor(as.character(trainY))
     } else {
@@ -157,7 +157,7 @@ load("res.ica.S.rda")
 #features = c("fHsub","fHss","FST","KSD","rAUC")
 features = c("X1","X2")
 #data = stats.merged2
-data = res.ica2.S
+data = res.ica4.S
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
