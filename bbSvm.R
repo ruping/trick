@@ -84,7 +84,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
     svm.tune <- train(x=trainX,
                       y= trainY,
                       method = "svmRadial",                     # Radial kernel
-                      tuneLength = 15,				# 9 values of the cost function
+                      tuneLength = 9,				# 9 values of the cost function
                       #tuneGrid = grid,
                       metric="ROC",
                       trControl=ctrl,

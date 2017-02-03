@@ -142,21 +142,21 @@ featureComparison <- function (data, lent, model, combns, features, colnames, se
         rn = paste(rn, seedn, sep="_")
         message(rn)
         message(seedn)
-        #res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, classCol=classCol, subSample = TRUE, seed=seedn)
-        res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
+        res[[rn]] = trainSVM(data, lent=lent, modelsNeed=c(model,"neutral"), featureCols=featureCols, classCol=classCol, subSample = TRUE, seed=seedn)
+        #res[[rn]] = trainSVM(data, lent=lent, featureCols=featureCols, subSample = TRUE, seed=seedn)
     }
     return(res)
 }
 
 
 setwd(path)
-load("stats.merged.rda")
-#load("res.ica.S.rda")
+#load("stats.merged.rda")
+load("res.ica.S.rda")
 
-features = c("fHsub","fHss","FST","KSD","rAUC")
-#features = c("X1","X2")
-data = stats.merged2
-#data = res.ica8.S
+#features = c("fHsub","fHss","FST","KSD","rAUC")
+features = c("X1","X2")
+#data = stats.merged2
+data = res.ica2.S
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
 seeds = as.numeric(seeds)
