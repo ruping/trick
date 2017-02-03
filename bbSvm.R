@@ -84,7 +84,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
     svm.tune <- train(x=trainX,
                       y= trainY,
                       method = "svmRadial",                     # Radial kernel
-                      tuneLength = 15,				# 9 values of the cost function
+                      tuneLength = 9,				# 9 values of the cost function
                       #tuneGrid = grid,
                       metric="ROC",
                       trControl=ctrl,
@@ -94,12 +94,12 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
     message(sigma1)
     s_incre = round(sigma1/20, 2)
     message(s_incre)
-    sigmaTestRange = seq(sigma1-2*s_incre, sigma1+2*s_incre, by=s_incre)
+    sigmaTestRange = seq(sigma1-1*s_incre, sigma1+1*s_incre, by=s_incre)
     C1 = as.numeric(svm.tune$bestTune["C"])
     message(C1)
     c1_incre = round(C1/20, 2)
     message(c1_incre)
-    CTestRange = seq(C1-2*c1_incre, C1+2*c1_incre, by=c1_incre)
+    CTestRange = seq(C1-1*c1_incre, C1+1*c1_incre, by=c1_incre)
 
     # Second pass
     set.seed(seed)
@@ -153,7 +153,7 @@ load("stats.merged.rda")
 
 features = c("fHsub","fHss","FST","KSD","rAUC")
 #features = c("X1","X2")
-data = stats.merged2
+data = stats.merged8
 #data = res.ica8.S
 colnames = colnames(data)
 seeds = 1943:1962         #20 times each
