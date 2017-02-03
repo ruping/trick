@@ -41,7 +41,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
                                                 {"selection"} else {"eneutral"}})
         } else {
             trainY = sapply(trainY, function(x){if (x == "s=1"){"sone"} else if (x == "s=2"){"stwo"} else if (x == "s=3"){"sthree"}
-                                           else if (x == "s=5"){"sfive"} else if (x == "s=10"){"sten"} else if (x == "CSC"){"CSC"}} else if (x == "neutral") {"neutral"})
+                                           else if (x == "s=5"){"sfive"} else if (x == "s=10"){"sten"} else if (x == "CSC"){"CSC"} else if (x == "neutral") {"neutral"}})
         }
         trainY = as.factor(as.character(trainY))
     } else {
