@@ -40,7 +40,7 @@ trainSVM <- function(data, lent, featureCols=2:5, modelsNeed=c("CSC","neutral","
             trainY = sapply(trainY, function(x){if (x == "s=5" | x == "s=10" | x == "s=2" | x == "s=3")
                                                 {"selection"} else {"eneutral"}})
         } else {
-            trainY = sapply(trainY, function(x){ as.character(x) )
+            trainY = sapply(trainY, function(x){ as.character(x) })
         }
         trainY = as.factor(as.character(trainY))
     } else {
