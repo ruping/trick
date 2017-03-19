@@ -12,7 +12,8 @@ my $original;
 my $bgzip = 0;
 my $gzip = 0;
 my $vcf = 0;
-my $t=0;                                                               #tolerant
+my $t1=0;                                                               #tolerant
+my $t2=0;                                                               #tolerant
 my $count = 0;
 my $overlap = 0;
 my $nonoverlap = 0;
@@ -35,7 +36,8 @@ my %printer;
 while ($ARGV[0]) {
   my $arg = shift @ARGV;
   if ($arg eq '-m'){$maskfile    = shift @ARGV;}
-  elsif ($arg eq '-t'){$t        = shift @ARGV;}
+  elsif ($arg eq '-t1'){$t1      = shift @ARGV;}
+  elsif ($arg eq '-t2'){$t2      = shift @ARGV;}
   elsif ($arg eq '-o'){$original = shift @ARGV;}
   elsif ($arg eq '-bgz'){$bgzip = 1;}
   elsif ($arg eq '-gz'){$gzip = 1;}
@@ -284,8 +286,8 @@ sub eatline {
   $variant{'chr'} = $cols[$oichr];
   $variant{'chr'} = 'chr'.$variant{'chr'} if ($variant{'chr'} !~ /^chr/);
   $variant{'chr'} = 'chrM' if ($variant{'chr'} eq 'chrMT');
-  $variant{'start'} = $cols[$oistart] - $t;
-  $variant{'end'} = $cols[$oiend] + $t;
+  $variant{'start'} = $cols[$oistart] - $t1;
+  $variant{'end'} = $cols[$oiend] + $t2;
   $variant{'info'} = $line;
 
   push(@{$variants}, \%variant);

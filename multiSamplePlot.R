@@ -66,7 +66,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               resVector = vector()
               for (j in seq(6,(3+length(cindex)), by=3)) {   #foreach sample
                   sampleName = resColnames[j]
-                  sampleNameMaf = paste(sampleName, "mafc", sep="")
+-                  sampleNameMaf = paste(sampleName, "mafc", sep="")
                   sampleNameMafa = paste(sampleName, "mafa", sep="")
                   sampleNameCcf = paste(sampleName, "ccf", sep="")
                   sampleNameCcfSD = paste(sampleName, "ccfSD", sep="")
@@ -145,7 +145,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               #message(paste(ssb, ssbp, sep="  "))
               altdav = altdav/ssbc
               refdav = refdav/ssbc
-              if ((ssb >= 0.95 | ssb <= 0.05) | ssbp < 0.001) {                                        #multiple sample strand bias
+              if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1)| ssbp < 0.001) {                                        #multiple sample strand bias
+              #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
                   for (j in seq(6,(3+length(cindex)), by=3)) {
                       sampleName = resColnames[j]
                       sampleNameMaf = paste(sampleName, "mafc", sep="")
@@ -2527,3 +2528,20 @@ subclonalMutSim <- function(sampAB, snA, snB, dpA, dpB, minAF=0.05, statsAF=0.08
 }
 
 
+QT95 <- function(gd){
+    qd = quantile(gd, prob=seq(0,1,0.025))
+    qdl = round(as.numeric(qd["2.5%"]),2)
+    qdh = round(as.numeric(qd["97.5%"]),2)
+    return(c(qdl, qdh))
+}
+
+QT90 <- function(gd){
+    qd = quantile(gd, prob=seq(0,1,0.025))
+    qdl = round(as.numeric(qd["5%"]),2)
+    qdh = round(as.numeric(qd["95%"]),2)
+    return(c(qdl, qdh))
+}
+
+samplemean <- function(x, d) {
+  return(mean(x[d]))
+}
