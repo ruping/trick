@@ -6,6 +6,7 @@
 use strict;
 use Data::Dumper;
 use File::Basename;
+use List::Util qw(sum);
 
 my $maskfile;
 my $original;
@@ -375,7 +376,16 @@ sub var_processing {
    } elsif ($count == 1) {
      my $nump = 0;
      foreach my $printer ( @{$variant->{'printer'}} ) {
-        $nump++;
+       if ($column ne '') {
+         my @tmp = split (/\t/, $printer);
+         my $index = $columnIndex[0];
+         $nump += $tmp[$index];
+       } else {
+         $nump++;
+       }
+     }
+     if ($column ne '') {
+       $nump = $nump/scalar(@{$variant->{'printer'}});
      }
      print "$original\t$nump\n" if ($count == 1 and $nonoverlap == 0 and $overlap == 0);
      print "$original\t$nump\n" if ($count == 1 and $nonoverlap == 1 and $nump == 0);
@@ -418,3 +428,4 @@ sub var_processing {
      }
    }
  }
+
