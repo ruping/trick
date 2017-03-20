@@ -16,8 +16,8 @@ open IN, "$bed";
 my %bed;
 while ( <IN> ){
   chomp;
-  my ($chr, $start, $end, $tags, $starts) = split /\t/;
-  push (@{$bed{$chr}}, $starts);
+  my ($chr, $start, $end, $tags) = split /\t/;
+  push (@{$bed{$chr}{$start}}, $tags);
 }
 close IN;
 
@@ -25,8 +25,10 @@ print STDERR "all bed line stored\n";
 
 
 foreach my $chr (@chrs) {
-  print "fixedStep chrom=$chr start=1 step=1000 span=1000\n";
-  foreach my $starts (@{$bed{$chr}}){
-    print "$starts\n";
+  foreach my $start (sort %{$bed{$chr}}) {
+    print "fixedStep chrom=$chr start=$start step=100000 span=100000\n";
+    foreach my $starts ( @{$bed{$chr}{$start}} ) {
+      print "$starts\n";
+    }
   }
 }
