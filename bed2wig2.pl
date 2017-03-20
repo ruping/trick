@@ -25,7 +25,7 @@ print STDERR "all bed line stored\n";
 
 
 foreach my $chr (@chrs) {
-  foreach my $start (sort %{$bed{$chr}}) {
+  foreach my $start (sort keys %{$bed{$chr}}) {
     print "fixedStep chrom=$chr start=$start step=100000 span=100000\n";
     foreach my $starts ( @{$bed{$chr}{$start}} ) {
       print "$starts\n";
