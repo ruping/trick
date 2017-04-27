@@ -146,7 +146,7 @@ while ( <IN> ) {
         if ($type =~ /somatic/) {
           $minvard = 4;
         }
-        if (($endsratio < 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and (($strandRatio > 0.05 & $strandRatio < 0.95) or ($strandFisherP > 0.7 and $refd >= 10 and $vard >= 5 and $maf >= 0.1))) { #it looks good
+        #if (($endsratio < 0.9 or ((1-$endsratio)*$vard >= 2)) and (($cmean+$cmedian) < 5.5 or $cmedian <= 2) and (($strandRatio > 0.05 & $strandRatio < 0.95) or ($strandFisherP > 0.7 and $refd >= 10 and $vard >= 5 and $maf >= 0.1))) { #it looks good
           if ($maf >= 0.15 and $vard >= $minvard and $depth >= 8) { #for germline
             foreach my $gene (@genes) {
               if ($gene ne '') {
@@ -155,7 +155,7 @@ while ( <IN> ) {
               }                 #gene ne ''
             }                   #foreach
           }                     #found in this sample
-        }                       #it looks good
+        #}                       #it looks good
       }                         #it is maf
     }                           #iterator
   }                             #data line

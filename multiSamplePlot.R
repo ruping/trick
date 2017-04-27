@@ -66,7 +66,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               resVector = vector()
               for (j in seq(6,(3+length(cindex)), by=3)) {   #foreach sample
                   sampleName = resColnames[j]
--                  sampleNameMaf = paste(sampleName, "mafc", sep="")
+                  sampleNameMaf = paste(sampleName, "mafc", sep="")
                   sampleNameMafa = paste(sampleName, "mafa", sep="")
                   sampleNameCcf = paste(sampleName, "ccf", sep="")
                   sampleNameCcfSD = paste(sampleName, "ccfSD", sep="")
@@ -145,7 +145,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               #message(paste(ssb, ssbp, sep="  "))
               altdav = altdav/ssbc
               refdav = refdav/ssbc
-              if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1)| ssbp < 0.001) {                                        #multiple sample strand bias
+              if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1)| ssbp < 0.001) {                          #multiple sample strand bias
               #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
                   for (j in seq(6,(3+length(cindex)), by=3)) {
                       sampleName = resColnames[j]
@@ -533,7 +533,7 @@ plotRes.multi.pdf <- function(sampAB, sampName, main=sampName, sn1n="", sn2n="",
       }
       par(mar=c(4.5,5,4.5,0))
 
-      plot( sampAh, col=rgb(0,0,0,1/4), xlim=c(0, 1), ylim=c(ylimdown,ylimup), border=F, ylab="# of Mutations", xlab="Allele Frequency", axes = F, main = main, cex.lab = 2.3, cex.main = 2.3)  # first histogram
+      plot( sampAh, col=rgb(0,0,0,1/4), xlim=c(0, 1), ylim=c(ylimdown,ylimup), border=F, ylab="# of Mutations", xlab="VAF", axes = F, main = main, cex.lab = 2.3, cex.main = 2.3)  # first histogram
       plot( sampAhsub, col=rgb(178/255,223/255,138/255,1), add=T, border=F )    #subclonal green set border
       plot( sampAhss, col=rgb(31/255,120/255,180/255,1), add=T, border=F )      #site specific blue
       
@@ -1324,7 +1324,7 @@ JS.divergence <- function(sub1,sub2, minAF=0.04) {
 
 
 
-pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples), groupName = "") {
+pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples), groupName = "", pAF=0.25) {
 
     originalColNames = colnames(sampAB)
 
@@ -1343,12 +1343,16 @@ pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples),
 
     pstype = as.vector(apply(sampAB, 1, function(x, coln, samples, maxPa, maxsAGP, minAF, minDepTotal) {
                                  mutVector = as.vector(x)
-                                 cppres = pubOrSub.Calc(x, coln, samples, maxPa, maxsAGP)
+                                 cppres = pubOrSub.Calc(x, coln, samples, maxPa, maxsAGP, pAF=pAF)
                                  #if (as.numeric(mutVector[2]) == 1390624 & mutVector[1] == "chr1") {
                                  #    message(paste(cppres, collapse="\t"))
                                  #}
                                  cpstype = "unknown"
                                  totalDepth = sum(as.numeric(mutVector[match(paste(samples,"d",sep=""),coln)]))
+                                 if (is.nan(cppres[1]) | is.nan(cppres[3])) {
+                                     message(paste(x,collapse="\t"))
+                                     message(paste(cppres, collapse="\t"))
+                                 }
                                  if (totalDepth < minDepTotal) {
                                      cpstype = "unknown"
                                  } else if (cppres[1] >= 0.05 | cppres[3] == 1) {   #accept public
@@ -1394,13 +1398,13 @@ pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples),
 }
 
 
-pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), maxsAGP = vector()) {
+pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), maxsAGP = vector(), pAF=0.25) {
 
     CCFaboveOne = all((as.numeric(mutVector[match(paste(samples, "ccf", sep=""), originalNames)]) +
                            2.58*as.numeric(mutVector[match(paste(samples, "ccfSD", sep=""), originalNames)])) >= 1)
     aboveContri = length(which((as.numeric(mutVector[match(paste(samples, "ccf", sep=""), originalNames)]) +
                                     2.58*as.numeric(mutVector[match(paste(samples, "ccfSD", sep=""), originalNames)])) >= 1))
-    VAFaboveQua = all(as.numeric(mutVector[match(paste(samples, "mafa", sep=""), originalNames)]) >= 0.25)
+    VAFaboveQua = all(as.numeric(mutVector[match(paste(samples, "mafa", sep=""), originalNames)]) >= pAF)
 
     cpop = sapply(samples, function(x, samples, originalNames, mutVector, aboveContri, maxPa, maxsAGP) {
                       sn = x
@@ -1431,7 +1435,10 @@ pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), m
 
     cpp = prod(cpop[1,])
     cpa = prod(cpop[2,])
-
+    if (is.nan(cpp)){
+        message(paste(cpop[1,],collapse="\t"))
+    }
+    
     return(c(cpp, cpa, as.numeric(CCFaboveOne | VAFaboveQua)))
 
 }
@@ -1564,7 +1571,8 @@ pubOrSub.prob.binom <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {
     f.pub = ifelse(nb == 0 & nt == 0, 0.5*pu,
             ifelse(nb == 0 & prior == "pub", max((pu - sAGP)/nc, 0),
             ifelse(nb >= 1 & nt >= 2, nb * pu/nc, (pu * (nt - nb))/nc)))
-    
+
+    f.pub = min(1,f.pub)
     #p.pub = pbeta(fh.pub,S+1,A+1) - pbeta(fl.pub,S+1,A+1)
     p.pub = pbinom(S, N, f.pub)       #p for pub (under pub vaf, the prob reaching S)
     #p.abs = 1 - pbinom(S, N, f.abs)   #p for abs (under abs, the prob reaching S)
@@ -2382,7 +2390,7 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
       }
       par(mar=c(4.5,5,4.5,0))
 
-      plot( sampAh, col=rgb(0,0,0,1/4), xlim=c(0, 1), ylim=c(ylimdown,ylimup), border=F, ylab="# of Mutations", xlab="Allele Frequency", axes = F, main = main,cex.lab = 2.9, cex.main = 2.9)    # first histogram
+      plot( sampAh, col=rgb(0,0,0,1/4), xlim=c(0, 1), ylim=c(ylimdown,ylimup), border=F, ylab="# of Mutations", xlab="VAF", axes = F, main = main,cex.lab = 2.9, cex.main = 2.9)    # first histogram
       plot( sampAhsub, col=rgb(178/255,223/255,138/255,1), add=T, border=F )    #subclonal green no border
       plot( sampAhss, col=rgb(31/255,120/255,180/255,1), add=T, border=F )      #site specific blue
 
