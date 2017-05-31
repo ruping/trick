@@ -43,7 +43,7 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
         tlabels$yatNew = seq(0.2,0.9,by=(0.9-0.2)/(length(need)-1))
         llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(tlabels))
         llabels = gsub("Recurrence","Rec",llabels)
-        pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis, col=makecolor(rownames(tlabels), colorGroup))
+        pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis-0.2, col=makecolor(rownames(tlabels), colorGroup))
     }
     if (plotLorenz){
         plot(NULL, xlim=c(0,1),ylim=c(0,1), type="l", axes=F, xlab="Cumulative Fraction of Covered Region", ylab="Cumulative Fraction of Reads",main="Lorenz Curve of Read Consumption", cex.lab=cex.lab, cex.main=cex.main)
