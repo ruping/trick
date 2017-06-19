@@ -15,7 +15,7 @@ for (my $i = 0; $i <= $#indexes; $i++) {
 #print STDERR Dumper(\%indexes);
 
 my $bname = basename($fastq);
-$bname =~ /Undetermined(_.+?\.fastq\.gz)$/;
+$bname =~ /Undetermined(_.+?\.fastq)\.gz$/;
 my $suffix = $1;
 
 my %fhs; #output
@@ -26,6 +26,7 @@ while ( <IN> ) {
   if ($_ =~ /^\@\S+\s+\S+\:([A-Z]+)$/) {
     my $cindex = $1;
     my $csample = $indexes{$cindex};
+    if ($csample eq ''){$csample = "unknown"}
     my $fh = $csample;
     unless (-e "./$csample"."$suffix") {
       open ( my $fh, ">>", "./$csample"."$suffix" )  || die $!;
