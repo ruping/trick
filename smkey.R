@@ -1,3 +1,5 @@
+#Ruping Sun, regularhand@gmail.com
+
 library(KernSmooth)
 library(fields)
 
@@ -118,6 +120,7 @@ smkey <- function(x, y=NULL,
                           xlab=NULL, ylab=NULL, postPlotHook=box,
                           pch=".", cex=1,
                           xlim, ylim, col="black",
+                          hline=NULL, vline=NULL,
                           xaxs=par("xaxs"), yaxs=par("yaxs"), ...) {
   
   if (!is.numeric(nrpoints) | (nrpoints<0) | (length(nrpoints)!=1) )
@@ -165,6 +168,8 @@ smkey <- function(x, y=NULL,
   image.plot2(xm, ym, z=dens, legend.shrink = 1.0,
         xlab = xlab, ylab = ylab, nlevel = 256,...)
   if(!is.null(postPlotHook)) postPlotHook()
+  if(!is.null(hline)){segments(x0=xlim[1],y0=hline,x1=xlim[2],y1=hline,lty=2)}
+  if(!is.null(vline)){segments(x0=vline,y0=ylim[1],x1=vline,y1=ylim[2],lty=2)}
   
   ## plot selection of dots
   if (nrpoints!=0){
