@@ -19,6 +19,7 @@ $bname =~ /Undetermined(_.+?\.fastq\.gz)$/;
 my $suffix = $1;
 
 my %fhs; #output
+open IN, "gzip -dc $fastq |";
 while ( <IN> ) {
 
   chomp;
@@ -40,5 +41,6 @@ while ( <IN> ) {
   }
 
 }
+close IN;
 
 exit 0;
