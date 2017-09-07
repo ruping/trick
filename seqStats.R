@@ -265,7 +265,7 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
         png(file = ofile, width=700, height=700)
     }
 
-    plot(pp$ploidy, pp$purity, col=makecolor(rownames(pp), colorGroup), ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=1.3,xlim=c(1.5,4),ylim=c(0.1,1), cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
+    plot(pp$ploidy, pp$purity, col=makecolor(rownames(pp), colorGroup), ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=1.3,xlim=c(1,4),ylim=c(0.1,1), cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
     llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(pp))
     llabels = gsub("Recurrence","Rec",llabels)
     pointLabel(pp$ploidy, pp$purity, labels=llabels, col=makecolor(rownames(pp), colorGroup), cex=1.2)

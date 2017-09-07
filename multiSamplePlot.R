@@ -145,7 +145,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               #message(paste(ssb, ssbp, sep="  "))
               altdav = altdav/ssbc
               refdav = refdav/ssbc
-              if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1)| ssbp < 0.001) {                          #multiple sample strand bias
+              #if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1) | ssbp < 0.001) {                         #multiple sample strand bias
+              if (ssb > 0.88 | ssb < 0.12) {                         #multiple sample strand bias
               #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
                   for (j in seq(6,(3+length(cindex)), by=3)) {
                       sampleName = resColnames[j]
@@ -2552,4 +2553,14 @@ QT90 <- function(gd){
 
 samplemean <- function(x, d) {
   return(mean(x[d]))
+}
+
+
+outMutTable <- function(data, samples) {
+    data2 = data
+    #data2 = data[!(data$pubOrSub == "unknown"),]
+    data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
+    as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
+        colnames(data)[grepl("pubOrSub", colnames(data2))])]
+    return(data2)
 }
