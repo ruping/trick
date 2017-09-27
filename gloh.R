@@ -9,14 +9,12 @@ path <- inputpar[1]
 sampleName <- inputpar[2]
 numMark <- inputpar[3]
 
-options(width=130)
 library(DNAcopy)
 library(HMMcopy)
 
-
 #LOH
 #list.files("./","gloh",full=T)
-file = paste(path, "/", sampleName, ".gloh", sep="")
+file = paste(path,"/",sampleName,".gloh",sep="")
 d = read.delim(file)
 
 d = d[which(d$chr != "X" & d$chr != "Y" & d$chr != "MT"),]
@@ -51,4 +49,5 @@ segloh = segment(sloh)
 
 seg = segloh$output
 seg = seg[which(seg$num.mark > numMark),]
-write.table(seg, file=paste(path,"/",sampleName,"gloh.seg",sep=""), quote=F, sep="\t", row.names=F)
+message(numMark)
+write.table(seg, file=paste(path,"/",sampleName,".gloh.seg",sep=""), quote=F, sep="\t", row.names=F)
