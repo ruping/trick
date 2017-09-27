@@ -44,11 +44,11 @@ dev.off()
 
 #par(mfrow=c(1,1))
 sloh = CNA(loh$mvalue,loh$chrom,loh$maploc,
-   data.type="binary",sampleid="SPCG-OS405_4D")
+   data.type="binary",sampleid=sampleName)
 segloh = segment(sloh)
 #plot(density(log2(as.numeric(segloh$output$num.mark))))
 #plot(segloh, plot.type="w")
 
 seg = segloh$output
 seg = seg[which(seg$num.mark > numMark),]
-write.table(seg, file=paste(path,"/",sampleName,".seg",sep=""), quote=F, sep="\t", row.names=F)
+write.table(seg, file=paste(path,"/",sampleName,"gloh.seg",sep=""), quote=F, sep="\t", row.names=F)
