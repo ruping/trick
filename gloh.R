@@ -3,7 +3,7 @@
 ## this is for germline LOH detection
 
 inputpar <- commandArgs(TRUE)
-if (length(inputpar) < ) stop("Wrong number of input parameters: 'path sampleName numMark'")
+if (length(inputpar) < 3) stop("Wrong number of input parameters: 'path sampleName numMark'")
 
 path <- inputpar[1]
 sampleName <- inputpar[2]
