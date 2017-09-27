@@ -48,6 +48,6 @@ segloh = segment(sloh)
 #plot(segloh, plot.type="w")
 
 seg = segloh$output
-seg = seg[which(seg$num.mark > numMark),]
-message(numMark)
+#seg = seg[which(seg$num.mark > numMark),]
+#message(numMark)
 write.table(seg, file=paste(path,"/",sampleName,".gloh.seg",sep=""), quote=F, sep="\t", row.names=F)
