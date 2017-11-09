@@ -1,5 +1,5 @@
 #  (c) 2014 - Sun Ruping
-#  rs3412@columbia.edu
+#  regularhand@gmail.com
 #
 #  TODO: compare two files of coordinates, with a minimal consumption of memory and running-time
 
@@ -30,7 +30,7 @@ my $oistart = 1;
 my $oiend = 1;
 
 my $NAvalue = 'NA';
-
+my $percent = 0;
 
 my %printer;
 
@@ -56,7 +56,8 @@ while ($ARGV[0]) {
   elsif ($arg eq '-csplit'){$csplit = shift @ARGV;}
   elsif ($arg eq '-extraOM'){$extraOM = shift @ARGV;}  #extra constrain to identify lines with the same coordinates, in the order of oringal,mask
   elsif ($arg eq '-na'){$NAvalue = shift @ARGV;}
-  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-csplit: split tags for the column] [-t:tolerant]\n"; exit 0;}
+  elsif ($arg eq '-percent'){$percent = shift @ARGV;}
+  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-csplit: split tags for the column] [-t:tolerant] [-percent: percentage to be overlapped]\n"; exit 0;}
   else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
 
@@ -209,17 +210,32 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
         }
 
 
-        if ( $variants[$iter]->{'end'} >= $dbStart and $variants[$iter]->{'start'} <= $dbEnd ) {  #overlapping, should take action
+        if ( $variants[$iter]->{'end'} >= $dbStart and $variants[$iter]->{'start'} <= $dbEnd ) { #overlapping, should take action
 
-          if ($extraOM ne ''){ #check the additional O-M mapping identifier, for matching items only, e.g., snv matching
-            my @originalItems = split (/\t/, $variants[$iter]->{'info'});
-            my @maskItems = split (/\t/, $_);
-            push(@{$variants[$iter]->{'printer'}}, $_) if ($originalItems[$extraOM[0]] eq $maskItems[$extraOM[1]]);
+          my $overlapPercentage = 0;
+          if ($variants[$iter]->{'end'} >= $dbEnd and $variants[$iter]->{'start'} >= $dbStart) {
+            $overlapPercentage = $dbEnd - $variants[$iter]->{'start'} + 1;
+          } elsif ($dbEnd >= $variants[$iter]->{'end'} and $dbStart >= $variants[$iter]->{'start'}) {
+            $overlapPercentage = $variants[$iter]->{'end'} - $dbStart + 1;
+          } elsif ($dbEnd >= $variants[$iter]->{'end'} and $dbStart <= $variants[$iter]->{'start'}) {
+            $overlapPercentage = $variants[$iter]->{'end'} - $variants[$iter]->{'start'} + 1;
+          } elsif ($variants[$iter]->{'end'} >= $dbEnd and $variants[$iter]->{'start'} <= $dbStart) {
+            $overlapPercentage = $dbEnd - $dbStart + 1;
           } else {
-            push(@{$variants[$iter]->{'printer'}}, $_);
+            die("error in overlapping percentage!!! s1=$variants[$iter]->{'start'}; e1=$variants[$iter]->{'end'}; s1=$dbStart; e1=$dbEnd\n");
           }
 
-        }                                                              # overlapping take action!
+          if ($percent == 0 or ($percent > 0 and $overlapPercentage >= $percent)) {               #additional condition
+            if ($extraOM ne '') { #check the additional O-M mapping identifier, for matching items only, e.g., snv matching
+              my @originalItems = split (/\t/, $variants[$iter]->{'info'});
+              my @maskItems = split (/\t/, $_);
+              push(@{$variants[$iter]->{'printer'}}, $_) if ($originalItems[$extraOM[0]] eq $maskItems[$extraOM[1]]);
+            } else {
+              push(@{$variants[$iter]->{'printer'}}, $_);
+            }
+          }
+
+        }                       # overlapping take action!
 
 
         if ( $iter != $#variants ) {

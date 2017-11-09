@@ -31,8 +31,6 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
         tlabels = data.frame(xat=3.7, yat=rep(1,length(need)))
         rownames(tlabels) = gsub(".lorenzNoDup","",basename(need))
         rownames(tlabels) = gsub("CRCTumor","",rownames(tlabels))
-        #rownames(tlabels) = gsub("LOVO_","",rownames(tlabels))
-        #rownames(tlabels) = gsub("HCT116_","",rownames(tlabels))
         for (i in 1:length(need)) {
             d = read.delim(need[i])
             colnames(d) = c("dep","depc","depr","cumc","cumr","cumc2","cumr2")
@@ -130,7 +128,7 @@ medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pd
 #  Insert Size box plot                                 ###
 ###########################################################
 
-plotInsBox <- function(needBox, ofile, legend, otype = "pdf", cex.axis=1.3, cex.main=1.7, cex.lab=1.5, xlab="Samples") {
+plotInsBox <- function(needBox, ofile, legend, otype = "pdf", cex.axis=1.3, cex.main=1.7, cex.lab=1.5, xlab="Samples", ysize=1, width=18, height=7) {
 
     colorGroup = decideColorGroup(legend, FALSE)
     if (length(legend) > 22){
@@ -150,22 +148,19 @@ plotInsBox <- function(needBox, ofile, legend, otype = "pdf", cex.axis=1.3, cex.
     
     colnames(box) = gsub(".ins.rda", "", basename(needBox))
     colnames(box) = gsub("CRCTumor","",colnames(box))
-    #colnames(box) = gsub("LOVO_","",colnames(box))
-    #colnames(box) = gsub("HCT116_","",colnames(box))
     boxor = box[, order(box[3,], decreasing=T)]
     
     if (otype == "pdf") {
-        pdf(file = ofile, width=18, height=7)
+        pdf(file = ofile, width=width, height=height)
     } else if (otype == "png") {
-        png(file = ofile, width=1440, height=560)
+        png(file = ofile, width=80*width, height=80*height)
     }
     options(mar=c(0,5,1,2))
-    boxplot(boxor, axes=F, ylim = c(-220, 500), main="Insert Size", ylab="bp", xlab=xlab, col=makecolor(colnames(boxor), colorGroup), cex.main=cex.main, cex.lab=cex.lab)
-    axis(side=2, at=seq(0,500,by=50), labels=seq(0,500,by=50), cex.axis=1.3)
+    boxplot(boxor, axes=F, ylim = c(-400*ysize, 400*ysize), main="Insert Size", ylab="bp", xlab=xlab, col=makecolor(colnames(boxor), colorGroup), cex.main=cex.main, cex.lab=cex.lab)
+    axis(side=2, at=seq(0,400*ysize,by=100), labels=seq(0,400*ysize,by=100), cex.axis=1.3)
     llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",colnames(boxor))
     llabels = gsub("Recurrence","Rec",llabels)
-    text(1:length(needBox), -120, label= llabels, col = makecolor(colnames(boxor), colorGroup), srt=90, cex=cex.axis)
-    #legend("topright", legend=legend, pch=15, col=makecolor(legend, colorGroup), bty="n", cex=cex.axis)
+    text(1:length(needBox), -100*ysize-50*(2-ysize), label= llabels, col = makecolor(colnames(boxor), colorGroup), srt=90, cex=cex.axis)
     if (otype != "none"){
         dev.off()
     }

@@ -6,6 +6,7 @@ library(KernSmooth)
 library(RColorBrewer)
 
 getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
+    numsamples = length(samples)
     rindexTF = vector()
     cindex = vector()
     for (si in 1:length(samples)) {
@@ -70,6 +71,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
                   sampleNameMafa = paste(sampleName, "mafa", sep="")
                   sampleNameCcf = paste(sampleName, "ccf", sep="")
                   sampleNameCcfSD = paste(sampleName, "ccfSD", sep="")
+                  sampleNameTime = paste(sampleName, "time", sep="")
                   sampleNameAlt = paste(sampleName, "altc", sep="")
                   sampleNameRef = paste(sampleName, "refc", sep="")
                   oriTlod = 0
@@ -135,8 +137,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
                           mafNow = 0
                       }
                   }
-                  resVector = c(resVector, c(mafNow, 0, 0, 0, refnow, altnow))
-                  names(resVector)[(length(resVector)-5):length(resVector)] = c(sampleNameMaf,sampleNameMafa,sampleNameCcf,sampleNameCcfSD,sampleNameRef,sampleNameAlt)
+                  resVector = c(resVector, c(mafNow, 0, 0, 0, 0, refnow, altnow))
+                  names(resVector)[(length(resVector)-6):length(resVector)] = c(sampleNameMaf,sampleNameMafa,sampleNameCcf,sampleNameCcfSD,sampleNameTime,sampleNameRef,sampleNameAlt)   #time added
               } #for each sample
               
               ssb = ssb/altdav
@@ -146,7 +148,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
               altdav = altdav/ssbc
               refdav = refdav/ssbc
               #if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1) | ssbp < 0.001) {                         #multiple sample strand bias
-              if (ssb > 0.88 | ssb < 0.12) {                         #multiple sample strand bias
+              if (((ssb > 0.88 | ssb < 0.12) & numsamples > 1) | ((ssb > 0.9 | ssb < 0.1) & numsamples == 1)) {                         #multiple sample strand bias
               #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
                   for (j in seq(6,(3+length(cindex)), by=3)) {
                       sampleName = resColnames[j]
@@ -169,7 +171,6 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
 
           }, cindex=cindex, original=original, resColnames=resColnames)))
     
-    
 
     res = cbind(res, resAdd)
     res = res[which(res$totalMaf != 0),]
@@ -181,7 +182,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
 #adjust CCF titan for multi samples
 
 adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6, sigTh=0.9) {
-
+    
+    numsamples = length(samples)
     purities = vector()
     
     for (i in 1:length(samples)) {
@@ -285,16 +287,18 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
             if (nt1 > 0 & nt1 != 2) pu1 = nt1*sAGP/(nt1*sAGP+2*(1-sAGP))                                   #effective purity
             
             if (maf1 > 0) {
-                if (maf1 > t & foundSites >= 2) {
+                if ((maf1 > t & foundSites >= 2) | numsamples == 1) {
                     CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,sAGP,nt1,nb1,"unknown",overadj=overadj,sigTh=sigTh)
                     sampAB[i, match(paste(sn, "ccf", sep=""), colnames(sampAB))] = as.numeric(CCF1[3])
                     sampAB[i, match(paste(sn, "ccfSD", sep=""), colnames(sampAB))] = as.numeric(CCF1[4])
                     sampAB[i, match(paste(sn, "mafa", sep=""), colnames(sampAB))] = as.numeric(CCF1[1])/2
+                    sampAB[i, match(paste(sn, "time", sep=""), colnames(sampAB))] = CCF1[2]   #need to change
                 } else {
                     CCF1 = computeCCF(maf1,refc1,altc1,pu1,pa1,sAGP,nt1,nb1,"late",overadj=overadj,sigTh=sigTh)
                     sampAB[i, match(paste(sn, "ccf", sep=""), colnames(sampAB))] = as.numeric(CCF1[3])
                     sampAB[i, match(paste(sn, "ccfSD", sep=""), colnames(sampAB))] = as.numeric(CCF1[4])
                     sampAB[i, match(paste(sn, "mafa", sep=""), colnames(sampAB))] = as.numeric(CCF1[1])/2
+                    sampAB[i, match(paste(sn, "time", sep=""), colnames(sampAB))] = CCF1[2]
                 }
             }
 
@@ -900,9 +904,16 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
         ccf = (f*nc2)/sAGP
         ff.C = cc[cc<=(1-sAGP)]/nc2
         Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=(1-sAGP)])
+        if (sAGP > 0.98) {
+            ff.C = cc[cc<=0.02]/nc2
+            Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=0.02])
+        }
         ccf2 <- (Ms.C$M1)/pu                    #dbinom
         sd <- Ms.C$SD
-        #message(paste(c(ccf,ccf2),collapse=" "))
+        if (is.nan(sd)) {
+            sd = 0.01
+        }
+        #message(paste(c(ccf,ccf2,sd,f),collapse=" "))
     } else if (nb == 0 | nt == 2 * nb) {   #NLOH or other balanced CNAs
         fh.ea <- (sAGP * (nt - nb) + 1 - sAGP)/nc2
         fl.ea <- (sAGP * (nt - nb))/nc2
@@ -1042,7 +1053,7 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
             ccf = f*2
         }
     }
-    if ( f > 0.7 & ccf2 < 0.05 & is.nan(sd)) {  #probably un-identified LOH
+    if ( f > 0.7 & ccf2 < 0.05 & is.nan(sd) ) {  #probably un-identified LOH
         ccf = f*2
         ccf2 = 1
         sd = 0.01
@@ -1325,7 +1336,7 @@ JS.divergence <- function(sub1,sub2, minAF=0.04) {
 
 
 
-pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples), groupName = "", pAF=0.25) {
+pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples), groupName = "", pAF=0.25, setpub=FALSE) {
 
     originalColNames = colnames(sampAB)
 
@@ -1344,10 +1355,8 @@ pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples),
 
     pstype = as.vector(apply(sampAB, 1, function(x, coln, samples, maxPa, maxsAGP, minAF, minDepTotal) {
                                  mutVector = as.vector(x)
-                                 cppres = pubOrSub.Calc(x, coln, samples, maxPa, maxsAGP, pAF=pAF)
-                                 #if (as.numeric(mutVector[2]) == 1390624 & mutVector[1] == "chr1") {
-                                 #    message(paste(cppres, collapse="\t"))
-                                 #}
+                                 cppres = pubOrSub.Calc(x, coln, samples, maxPa, maxsAGP, pAF=pAF, setpub=setpub)
+
                                  cpstype = "unknown"
                                  totalDepth = sum(as.numeric(mutVector[match(paste(samples,"d",sep=""),coln)]))
                                  if (is.nan(cppres[1]) | is.nan(cppres[3])) {
@@ -1399,7 +1408,7 @@ pubOrSub <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samples),
 }
 
 
-pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), maxsAGP = vector(), pAF=0.25) {
+pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), maxsAGP = vector(), pAF=0.25, setpub=FALSE) {
 
     CCFaboveOne = all((as.numeric(mutVector[match(paste(samples, "ccf", sep=""), originalNames)]) +
                            2.58*as.numeric(mutVector[match(paste(samples, "ccfSD", sep=""), originalNames)])) >= 1)
@@ -1427,7 +1436,7 @@ pubOrSub.Calc <- function(mutVector, originalNames, samples, maxPa = vector(), m
                       if (cPa == maxPa[si] | cPa == 0) {
                           cPa = 1
                       }
-                      if (aboveContri >= 2 | (aboveContri >= 1 & length(samples) == 2)) {                    #looks like public, change prior
+                      if ((aboveContri >= 2 | (aboveContri >= 1 & length(samples) == 2)) & setpub == TRUE) {                    #looks like public, change prior
                           prior = "pub"
                       }
                       cpop.probs = pubOrSub.prob.binom(as.integer(mutVector[refci]), as.integer(mutVector[altci]), as.numeric(maxsAGP[si]), as.numeric(mutVector[sAGPi]), as.integer(mutVector[nti]), as.integer(mutVector[nbi]), pa=cPa, prior=prior)
@@ -1528,7 +1537,7 @@ pubOrSub.Calc.sim <- function(mutVector, samples, maxPa = vector(), maxsAGP = ve
 }
 
 
-pubOrSub.prob <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {
+pubOrSub.prob <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {   #based on beta, bayesian model
     
     N = A + S
     
@@ -1571,7 +1580,7 @@ pubOrSub.prob.binom <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {
 
     f.pub = ifelse(nb == 0 & nt == 0, 0.5*pu,
             ifelse(nb == 0 & prior == "pub", max((pu - sAGP)/nc, 0),
-            ifelse(nb >= 1 & nt >= 2, nb * pu/nc, (pu * (nt - nb))/nc)))
+            ifelse(nt >= 2, pu/nc, (pu * (nt - nb))/nc)))
 
     f.pub = min(1,f.pub)
     #p.pub = pbeta(fh.pub,S+1,A+1) - pbeta(fl.pub,S+1,A+1)
