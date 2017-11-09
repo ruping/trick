@@ -224,6 +224,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
           } else {
             die("error in overlapping percentage!!! s1=$variants[$iter]->{'start'}; e1=$variants[$iter]->{'end'}; s1=$dbStart; e1=$dbEnd\n");
           }
+          $overlapPercentage = $overlapPercentage/($variants[$iter]->{'end'} - $variants[$iter]->{'start'} + 1);
 
           if ($percent == 0 or ($percent > 0 and $overlapPercentage >= $percent)) {               #additional condition
             if ($extraOM ne '') { #check the additional O-M mapping identifier, for matching items only, e.g., snv matching
