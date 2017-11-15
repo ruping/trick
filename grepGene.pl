@@ -116,9 +116,9 @@ while ( <IN> ) {
           next if $somatic{$name} eq 'undef';
         } elsif ($type =~ /germline/) {
           next if ($cols[$colindex{'germline'}] eq 'NA');
-          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] >= 0.005);
+          next if (($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] >= 0.005) or ($cols[$colindex{'freq'}] eq 'NA' and $cols[$colindex{'id'}] ne '.'));
         } elsif ($type =~ /rare/) {
-          next if ($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] >= 0.005);
+          next if (($cols[$colindex{'freq'}] ne 'NA' and $cols[$colindex{'freq'}] >= 0.005) or ($cols[$colindex{'freq'}] eq 'NA' and $cols[$colindex{'id'}] ne '.'));
         }
         if ($cols[$i] =~ /\|/) {                      # split the var surrounding information  0.4098|0.2800|1.5,1|0.2000,0.2500,0.44580|0|-64.856291
           my @infos = split(/\|/, $cols[$i]);
