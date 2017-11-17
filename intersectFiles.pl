@@ -330,7 +330,7 @@ sub getchrpos {
 
       if ($_ =~ /^[\#\@]/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^FID/ or $_ =~ /^[cC]hromosome\t/ or $_ =~ /^[cC]hrom\t/) {
         $jumper = tell DBFILE;
-        if ($column ne '' and ((($_ =~ /^#/ or $_ =~ /^FID/ or $_ =~ /^[cC][hH][rR]\t/) and $vcf == 0) or ($_ =~ /^#CHROM\t/ and $vcf == 1))) { #vcf header or not: 1 or 0
+        if ($column ne '' and ((($_ =~ /^#/ or $_ =~ /^FID/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^[cC]hromosome\t/ or $_ =~ /^[cC]hrom\t/) and $vcf == 0) or ($_ =~ /^#CHROM\t/ and $vcf == 1))) { #vcf header or not: 1 or 0
           $_ =~ s/^#//;
           my @colnames = split(/\t/, $_);
           if ($column =~ /^(\d+)\-(\d+)$/) {
