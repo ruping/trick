@@ -1,4 +1,5 @@
 use strict;
+use Data::Dumper;
 
 my $genome = shift;
 my $chrs = shift;
@@ -8,6 +9,7 @@ my %chrs;
 foreach my $chr (@chrs) {
   $chrs{$chr} = '';
 }
+print STDERR Dumper(\%chrs);
 
 open HS, "$genome";
 my %genome = ();
