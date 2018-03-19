@@ -2,6 +2,7 @@
 #  regularhand@gmail.com
 #
 #  TODO: compare two files of coordinates, with a minimal consumption of memory and running-time
+#  a Perl script
 
 use strict;
 use Data::Dumper;

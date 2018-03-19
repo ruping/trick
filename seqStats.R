@@ -6,12 +6,16 @@ library(RColorBrewer)
 # cumulative target coverage                            ###
 ###########################################################
 
-plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLorenz = TRUE, cex.main=1.7, cex.lab=1.5, cex.axis=1.3, targetName="Targeted Region") {
+plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLorenz = TRUE, cex.main=1.7, cex.lab=1.5, cex.axis=1.3, targetName="Targeted Region", slab=TRUE) {
 
-    colorGroup = decideColorGroup(legend, FALSE)
-    if (length(legend) > 22) {
-        colorGroup = decideColorGroup(legend)
-        #stop("length of legend is greater than 22")
+    if (length(legend) > 1){
+        colorGroup = decideColorGroup(legend, FALSE)
+        if (length(legend) > 22) {
+            colorGroup = decideColorGroup(legend)
+            #stop("length of legend is greater than 22")
+        }
+    } else {
+        colorGroup = rgb(0,0,0,1/3)
     }
 
     if (otype == "pdf"){
@@ -41,7 +45,9 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
         tlabels$yatNew = seq(0.2,0.9,by=(0.9-0.2)/(length(need)-1))
         llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(tlabels))
         llabels = gsub("Recurrence","Rec",llabels)
-        pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis-0.2, col=makecolor(rownames(tlabels), colorGroup))
+        if (slab){
+            pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis-0.2, col=makecolor(rownames(tlabels), colorGroup))
+        }
     }
     if (plotLorenz){
         plot(NULL, xlim=c(0,1),ylim=c(0,1), type="l", axes=F, xlab="Cumulative Fraction of Covered Region", ylab="Cumulative Fraction of Reads",main="Lorenz Curve of Read Consumption", cex.lab=cex.lab, cex.main=cex.main)
@@ -299,6 +305,10 @@ decideColorGroup <- function(legend, random=TRUE, alpha=0.75, col=vector()) {
 makecolor <- function(l, colorGroup) {
 
     color = rep(rgb(0,0,0,1/3), length(l))
+    if (length(colorGroup) == 1){
+        return(color)
+    }
+    
     message(class(l))
     for (i in 1:length(l)) {
         if ( is.na(l[i]) ) {

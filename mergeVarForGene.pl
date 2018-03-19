@@ -40,7 +40,7 @@ print STDERR "sample Info processed\n";
 my $biomart = "$annotationdir/hg19.biomart.txt";
 my $gene2loc = "$annotationdir/entrez2loc.sorted.txt";
 my $genelength = "$annotationdir/hg19.gencode_GC_Len.txt";
-my $census = "$annotationdir/Census_091214.tsv";
+my $census = "$annotationdir/cancer_gene_census.txt";
 my $tsg = "$annotationdir/TSGs";
 
 my %gene2ens;
@@ -123,12 +123,7 @@ $int2type{'+'} = 'cnva';
 $int2type{'-'} = 'cnvd';
 $int2type{7} = 'hypermethy';
 
-#my @ileum = qw(AC444 AC445 AC446 AC516 AC517 AC518 AC519);
-#my %ileum;
-#foreach my $il (@ileum) {
-#  $ileum{$il} = '';
-#}
-#my @rectum = qw(AC57 AC439 AC440 AC441 AC443 AC447 AC525 AC526 AC527 AC528 AC529 AC530 AC531 AC532 AC533 AC546 AC548 AC580 AC637 AC653 AC668);
+
 my @rectum = sort {$a =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pa = $1; my $ia = $2; my $ias = $3; $b =~ /($prefixReg)(\d+)?([A-Za-z0-9\-\_]+)?/; my $pb = $1; my $ib = $2; my $ibs = $3; $pa cmp $pb or $ia <=> $ib or $ias cmp $ibs} keys %somatic;
 my %rectum;
 foreach my $rec (@rectum) {
@@ -251,29 +246,9 @@ foreach my $gene (keys %result) {
     $rectum += $changed;
     print "\t$vars";
   }
-  #foreach my $sample (@ileum) {     #ileum
-  #  my $changed = 0;
-  #  my $vars;
-  #  foreach my $type (sort {my $tia = $type2int{$a}; my $tib = $type2int{$b}; $a <=> $b} keys %{$result{$gene}{$sample}}) {
-  #    if ($result{$gene}{$sample}{$type} > 0 and $result{$gene}{$sample}{$type} ne 'NA'){
-  #       #$vars .= $type.","
-  #       $vars .= $type2int{$type};
-  #       if ($vars ne ''){
-  #         $changed = 1;
-  #       }
-  #       $sumIle{$type2int{$type}} = '';
-  #    }
-  #  }
-  #  if ($vars eq '') {
-  #    $vars = 0;
-  #  }
-  #  $ileum += $changed;
-  #  print "\t$vars";
-  #}
+
   my $sumRec = join("", sort {$a <=> $b} keys %sumRec);
-  #my $sumIle = join("", sort {$a <=> $b} keys %sumIle);
   $sumRec = ($sumRec eq '')? 0 : $sumRec;
-  #$sumIle = ($sumIle eq '')? 0 : $sumIle;
   print "\t$sumRec\t$rectum";
 
 
