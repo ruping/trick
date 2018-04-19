@@ -46,7 +46,7 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
         llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(tlabels))
         llabels = gsub("Recurrence","Rec",llabels)
         if (slab){
-            pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis-0.2, col=makecolor(rownames(tlabels), colorGroup))
+            pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis-0.3, col=makecolor(rownames(tlabels), colorGroup))
         }
     }
     if (plotLorenz){
@@ -269,7 +269,7 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
     plot(pp$ploidy, pp$purity, col=makecolor(rownames(pp), colorGroup), ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=1.3,xlim=c(1,4),ylim=c(0.1,1), cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
     llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(pp))
     llabels = gsub("Recurrence","Rec",llabels)
-    pointLabel(pp$ploidy, pp$purity, labels=llabels, col=makecolor(rownames(pp), colorGroup), cex=1.2)
+    pointLabel(pp$ploidy, pp$purity, labels=llabels, col=makecolor(rownames(pp), colorGroup), cex=1)
     abline(h=c(0.5,0.6),lty=2)
     abline(v=c(2),lty=3)
     if (otype != "none"){

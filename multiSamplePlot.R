@@ -32,11 +32,12 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
     siftindex = match("SIFT_score", colnames(d))
     polyphenindex = match("Polyphen2_HVAR_pred", colnames(d))
     somindex = match("somatic", colnames(d))
+    repindex = match("rep",colnames(d))
 
     if (! is.na(caddindex)) {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,somindex,ncindex)]
+        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,repindex,somindex,ncindex)]
     } else {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,somindex,ncindex)]
+        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,repindex,somindex,ncindex)]
     }
     
     resColnames = colnames(res)
@@ -195,7 +196,7 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                #skip NA
         cnvA = cnvA[which(cnvA$num.mark > 9),]                              #skip two few marks
         cnvA$nt = cnvA$copynumber
-        if ("minor_cn" %in% colnames(cnv.inputA)) {
+        if ("minor_cn" %in% colnames(cnvA)) {
             cnvA$nb = cnvA$minor_cn
         } else {
             cnvA$nb = partialRound(cnvA$copynumber*(
@@ -1584,6 +1585,27 @@ pubOrSub.prob.binom <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {
 
     f.pub = min(1,f.pub)
     #p.pub = pbeta(fh.pub,S+1,A+1) - pbeta(fl.pub,S+1,A+1)
+    p.pub = pbinom(S, N, f.pub)       #p for pub (under pub vaf, the prob reaching S)
+    #p.abs = 1 - pbinom(S, N, f.abs)   #p for abs (under abs, the prob reaching S)
+    p.abs = pbeta(f.abs, S+1, A+1)
+    return(c(p.pub, p.abs))
+    
+}
+
+
+earlyMut.prob.binom <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {      #using binomial test
+    
+    N = A + S
+    
+    nc = nt * sAGP + 2 * (1 - sAGP)
+    f.abs <- 0.02
+    f.pub <- (pu * (nt - nb))/nc
+
+    f.pub = ifelse(nb == 0 & nt == 0, 0.5*pu,
+            ifelse(nb == 0 & prior == "pub", max((pu - sAGP)/nc, 0),
+            ifelse(nt >= 2, (pu * (nt - nb))/nc, (pu * (nt - nb))/nc)))     #as long as more than 2 copies
+
+    f.pub = min(1,f.pub)
     p.pub = pbinom(S, N, f.pub)       #p for pub (under pub vaf, the prob reaching S)
     #p.abs = 1 - pbinom(S, N, f.abs)   #p for abs (under abs, the prob reaching S)
     p.abs = pbeta(f.abs, S+1, A+1)

@@ -21,15 +21,13 @@ my %opt = (
 	   'cd10'         => 1,
            'indel'        => undef,
            'indelT'       => undef,
+           'sv'           => undef,
 	   'nonrepeat'    => undef,
            'nonrecurrent' => undef,
            'nonselfchain' => undef,
            'nonsnp'       => undef,
 	   'denovo'       => undef,
 	   'common'       => undef,
-           'table'        => undef,
-           'recheck'      => undef,
-           'clinical'     => undef,
            'tmpdir'       => "./",
            'prefix'       => undef,
            'sampleInfo'   => undef,
@@ -46,15 +44,13 @@ GetOptions (
             "hetero|e"       => \$opt{'hetero'},
             "indel|i=s"      => \$opt{'indel'},
             "indelT|y=s"     => \$opt{'indelT'},
+            "sv=s"           => \$opt{'sv'},
             "nonrepeat|r=s"  => \$opt{'nonrepeat'},
             "nonrecurrent|u" => \$opt{'nonrecurrent'},
             "nonselfchain|s=s" => \$opt{'nonselfchain'},
             "nonsnp|p"       => \$opt{'nonsnp'},
             "denovo|d"       => \$opt{'denovo'},
             "common|o=s"     => \$opt{'common'},
-            "table|t"        => \$opt{'table'},
-            "recheck|k=s"    => \$opt{'recheck'},
-            "clinical=s"     => \$opt{'clinical'},
             "tmpdir=s"       => \$opt{'tmpdir'},
             "prefix=s"       => \$opt{'prefix'},
             "sampleInfo=s"   => \$opt{'sampleInfo'},
@@ -67,6 +63,7 @@ GetOptions (
               print "\t--normal\tthe sample id for normal or blood samples to decide somatic mutations\n";
               print "\t--hetero\tonly search for hetero substitutions.\n";
               print "\t--indel[T]\tsearch for partial indel and depth indel, 'T' for the already prepared indel table\n";
+              print "\t--sv\t\tsearch for SVs\n";
               print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, default, yes, provide rep file\n";
               print "\t--nonselfchain\toptionally choose whether allow variations in selfchain regions to be searched, default, yes, provide sc file\n";
               print "\t--nonrecurrent\tskip calls that are recurrent across samples.\n";
@@ -74,9 +71,6 @@ GetOptions (
               print "\t--denovo\twhether substract Parents or not\n";
               print "\t--common\tthe number of the common patients\n";
               print "\t--help\t\tprint this help message\n";
-              print "\t--table\t\tgenerate table of variants\n";
-              print "\t--recheck\tthe dir whether recheck files are located under ./compared_\*/\n";
-              print "\t--clinical\tjust overlay with the clinical related variants\n";
               print "\t--tolerance\tthe distance tolerance to be allowed for comparing indels for generating tables\n";
               print "\t--sampleInfo\tthe sample infomation table (tumor normal each line sep by tab)\n";
               print "\t--type\tthe type of mutation, somatic or germline\n";
@@ -238,89 +232,9 @@ if ($opt{mutation}) {
 
   foreach my $snv_file (@snv_files) {
     my $individual;
-    if ($snv_file =~ /ARJ/) {
-      $individual = "AC3";
-      if ($snv_file =~ /type1/){
-         $individual .= "T1";
-      } elsif ($snv_file =~ /type2/) {
-         $individual .= "T2";
-      } else {
-         $individual .= "U";
-      }
-      open ARJ, "$snv_file";
-      while ( <ARJ> ) {
-        chomp;
-        next if /^chr\t/;
-        next if /^#/;
-        my @cols = split /\t/;
-        my $CHROM = $cols[0];
-        my $POS = $cols[1];
-        my $coor = $CHROM.':'.$POS;
-        my $MAF = 0;
-        if ($snv_file =~ /type1/){
-          for(my $i = 9; $i <= 42; $i = $i+3) {
-            $MAF += $cols[$i];
-          }
-          $MAF = sprintf("%.3f", $MAF/12);
-        } elsif ($snv_file =~ /type2/) {
-          $MAF = sprintf("%.3f", ($cols[45]+$cols[48])/2);
-        } else {
-          my $startI = ($opt{'clinical'})? 5:9;
-          my $endI = ($opt{'clinical'})? 18:48;
-          my $increI = ($opt{'clinical'})? 1:3;
-          for(my $i = $startI; $i <= $endI; $i = $i+$increI) {
-            $MAF += $cols[$i];
-          }
-          $MAF = sprintf("%.3f", $MAF/14);
-        }
-        my $function = $cols[5];
-        if ($opt{'clinical'}){
-          $function = $cols[19];
-        }
-        $variations{$CHROM}{$POS}{$individual}{'SUB'}{'info'} = $CHROM.':'.$POS.'(maf='.$MAF.';'.$function.')';
-        if ($opt{'table'}) {   #generate the mutation table
-           $snv{$coor}{$individual} = $MAF;
-           $snv{$coor}{'function'} = $function;
-           $snv{$coor}{'info'} = join("\t", ($cols[2], $cols[3], $cols[4]));
-           if ($opt{'clinical'}){
-             $snv{$coor}{'clinical'} = $cols[20];
-           }
-        }
-      }
-      close ARJ;
-      print STDERR "#ARJ $individual loaded.\n";
-      $samples{$individual} = "";
-      next;
-    } #ARJ files
 
     $snv_file =~ /($opt{'prefix'}\d+)[^0-9a-zA-Z]/;
     $individual = $1;
-
-    my %recheck;
-    my $recheckN = 0;
-    if ($opt{'recheck'}) {   #do recheck here
-      my @rechecks = bsd_glob("$opt{recheck}/snv/compared_*/$individual");
-      $recheckN = scalar(@rechecks);
-      print STDERR "$recheckN\n";
-      foreach my $recheck (@rechecks) {
-        open RECHECK, "$recheck";
-        while ( <RECHECK> ) {
-           chomp;
-           my @cols = split /\t/;
-           my $coor = $cols[0].':'.$cols[1];
-           if (($cols[4]+$cols[5]+$cols[6]+$cols[7]) == 0 and $cols[2] > 7) {                       #only record for absent indels
-              $recheck{$coor} += 1;
-           }
-        }
-        close RECHECK;
-      } #each recheck file
-    } #do recheck
-
-    if ($opt{'clinical'}) { # want to grep the clinical sites only, first generate tmp intersect file
-      my $cmd = "perl $bin/intersectFiles.pl -o $snv_file -m $opt{'clinical'} -vcf -overlap -column INFO -t $opt{'tolerance'} >$opt{'tmpdir'}/tmp";
-      RunCommand($cmd,0,0);
-      $snv_file = "$opt{'tmpdir'}/tmp";
-    }
 
     open SNV, "$snv_file";
     my $revertornot = "no";
@@ -331,7 +245,7 @@ if ($opt{mutation}) {
       if ($_ =~ /^#/) {
         if ($_ =~ /^#CHROM\tPOS\tID/) {
           my @cols = split (/\t/, $_);
-          my $minusI = ($opt{'clinical'})? 2:1;
+          my $minusI = 1;
           print STDERR "$cols[$#cols]\n";
           if ( exists($normals{$cols[$#cols - $minusI]}) ) {
             $revertornot = "yes";
@@ -346,7 +260,7 @@ if ($opt{mutation}) {
         }
       }
 
-      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $sample, $blood, $clinINFO) = split /\t/;
+      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $blood, $sample) = split /\t/;
 
       if ($revertornot eq 'yes') {   #revert sample and blood
         my $tmp = $sample;
@@ -371,10 +285,6 @@ if ($opt{mutation}) {
 
         if ($QUAL < 30){
           next;                          #skip low quality calls
-        }
-
-        if ($opt{'clinical'}){  # want to grep the clinical sites only
-          goto PRODUCE;
         }
 
         if ($ID ne '.' or $INFO =~ /dbSNP/ or $INFO =~ /1KG/ or $INFO =~ /ESP5400\=/) {  #snp in population, is it a somatic one?
@@ -449,9 +359,7 @@ if ($opt{mutation}) {
           }
         }
 
-
         my $coor = $CHROM.':'.$POS;
-        next if ($opt{'recheck'} and (!exists($recheck{$coor}) or $recheck{$coor} < $recheckN));
 
         $INFO =~ /[\;]?DP\=(\d+)[\;]?/;
         my $dp = $1;
@@ -474,9 +382,6 @@ if ($opt{mutation}) {
           $snv{$coor}{$individual} = $MAF;
           $snv{$coor}{'function'} = $function;
           $snv{$coor}{'info'} = join("\t", ($ID,$REF,$ALT));
-          if ($opt{'clinical'}) {
-            $snv{$coor}{'clinical'} = $clinINFO; #clinical id information
-          }
         }
       } #the defined chromosome
     } #each SNV file
@@ -945,33 +850,74 @@ if ($opt{indelT}) {
 }
 
 
-
-##generate big table
-
-if ($opt{'table'} and $opt{'mutation'}) {
-  print "#chr\tpos\tid\tref\talt";
-  foreach my $name (sort keys %samples) {
-    print "\t$name";
+####################################load the file of SV###############################################################
+my %sv;
+if ($opt{'sv'}) {
+  open SV, "$opt{'sv'}";
+  my @sv_files;
+  while ( <SV> ) {
+    chomp;
+    push(@sv_files, $_);
   }
-  print "\tfunction";
-  if ($opt{'clinical'}) {
-    print "\tclinical";
+  close SV;
+
+  foreach my $sv_file (@sv_files) {
+
+    my $individual;
+
+    $sv_file =~ /($opt{'prefix'}\d+)[^0-9a-zA-Z]/;
+    $individual = $1;
+
+    open COHORT, "$sv_file";
+    my $printerror = 0;
+    while ( <COHORT> ) {
+      chomp;
+      if ($_ =~ /^#/) {
+          next;
+      }
+
+      my ($CHROM, $POS, $ID, $REF, $ALT, $QUAL, $FILTER, $INFO, $FORMAT, $blood, $sample) = split /\t/;
+
+      my @formats = split(':', $FORMAT);
+      my %formindex;
+      for(my $f = 0; $f <= $#formats; $f++) {
+        $formindex{$formats[$f]} = $f;
+      }
+      if ($printerror == 0){
+        print STDERR Dumper(\%formindex);
+        $printerror ++;
+      }
+
+      $CHROM =~ s/chr//;
+      my $function;
+      my $MAF;
+      if ( !$opt{chr} or ($opt{chr} and ($CHROM eq $opt{chr})) ) {
+
+        my $coor = $CHROM.':'.$POS;
+
+        $INFO =~ /[\;]?SR\=(\d+)[\;]?/;
+        my $sr = $1;
+        $INFO =~ /[\;]?RP\=(\d+)[\;]?/;
+        my $rp = $1;
+        $INFO =~ /[\;]?REF\=(\d+)[\;]?/;
+        my $refsu = $1;
+        $INFO =~ /[\;]?REFPAIR\=(\d+)[\;]?/;
+        my $refpair = $1;
+
+        my $vard = $sr + $rp;
+        my $depth = $sr + $rp + $refsu + $refpair;
+        $MAF = sprintf("%.3f", $vard/$depth);
+        $variations{$CHROM}{$POS}{$individual}{'SV'}{'info'} = 'SV:'.$CHROM.':'.$POS.':'.$REF.'->'.$ALT.':'.$MAF.':('.$sr.'+'.$rp.'+'.$refsu.'+'.$refpair.')';
+        $variations{$CHROM}{$POS}{$individual}{'SV'}{'end'} = $POS + 1;
+
+      } #the same chromosome
+    } #each cohort
+    close COHORT;
+    print STDERR "#$sv_file loaded\n";
+    $samples{$individual} = "";
   }
-  print "\n";
+  print STDERR "#all indels' files loaded\n";
 }
-
-if ($opt{'table'} and $opt{'indel'}) {
-  print "#chr\tpos\tid\tref\talt";
-  foreach my $name (sort keys %samples) {
-    print "\t$name";
-  }
-  print "\tfunction";
-  if ($opt{'clinical'}) {
-    print "\tclinical";
-  }
-  print "\n";
-}
-
 
 
 #################################generate a big array with all the starts############################################################
@@ -1009,53 +955,6 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
     push @starts, $start;
 
   }
-
-
-  #print table for snv
-  if ($opt{'table'} and $opt{'mutation'}) {
-    foreach my $start (@starts) {
-      my $coor = $chr.":".$start;
-      my $info = $snv{$coor}{'info'};
-      print "$chr\t$start\t$info";
-      foreach my $name (sort keys %samples) {
-        if ($snv{$coor}{$name} ne '') {
-          print "\t$snv{$coor}{$name}";
-        } else {
-          print "\t0";
-        }
-      }
-      my $function = $snv{$coor}{'function'};
-      print "\t$function";
-      if ($opt{'clinical'}) {
-        print "\t$snv{$coor}{'clinical'}";
-      }
-      print "\n";
-    }
-    goto TABLE;
-  }
-  #print table for indel
-  if  ($opt{'table'} and $opt{'indel'}){
-    foreach my $start (@starts) {
-      my $coor = $chr.":".$start;
-      my $info = $indel{$coor}{'info'};
-      print "$chr\t$start\t$info";
-      foreach my $name (sort keys %samples) {
-        if ($indel{$coor}{$name} ne '') {
-          print "\t$indel{$coor}{$name}";
-        } else {
-          print "\t0";
-        }
-      }
-      my $function = $indel{$coor}{'function'};
-      print "\t$function";
-      if ($opt{'clinical'}) {
-        print "\t$indel{$coor}{'clinical'}";
-      }
-      print "\n";
-    }
-    goto TABLE;
-  }
-
 
   my $totalwinnum = scalar @starts;
   print STDERR "#total window chr$chr: $totalwinnum\n";
@@ -1117,7 +1016,7 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
       my $start_here = $starts[$ptr];
       foreach my $individual (keys %{$variations{$chr}{$start_here}}) {
         foreach my $var_type (keys %{$variations{$chr}{$start_here}{$individual}}) {
-          $result{$individual}{$start_here}{$var_type} = $variations{$chr}{$start_here}{$individual}{$var_type}{info};
+          $result{$individual}{$start_here}{$var_type} = $variations{$chr}{$start_here}{$individual}{$var_type}{'info'};
         }
       }
       $ptr++;
@@ -1181,8 +1080,6 @@ foreach my $chr (sort keys %variations) { #foreach chromosome $chr
         print "$info\n";
      } #individual
   }
-
-TABLE:
 
 }
 
