@@ -1,7 +1,7 @@
 use strict;
 use File::Glob ':glob';
 use File::Basename;
-use Data::Dumper; 
+use Data::Dumper;
 
 my $dir = shift;
 my $pattern = shift;

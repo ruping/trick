@@ -127,6 +127,7 @@ medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pd
         dev.off()
     }
 
+    return(covdup)
 }
 
 
@@ -166,7 +167,7 @@ plotInsBox <- function(needBox, ofile, legend, otype = "pdf", cex.axis=1.3, cex.
     axis(side=2, at=seq(0,400*ysize,by=100), labels=seq(0,400*ysize,by=100), cex.axis=1.3)
     llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",colnames(boxor))
     llabels = gsub("Recurrence","Rec",llabels)
-    text(1:length(needBox), -100*ysize-50*(2-ysize), label= llabels, col = makecolor(colnames(boxor), colorGroup), srt=90, cex=cex.axis)
+    text(1:length(needBox), -100*ysize-50*(4-ysize), label= llabels, col = makecolor(colnames(boxor), colorGroup), srt=90, cex=cex.axis)
     if (otype != "none"){
         dev.off()
     }

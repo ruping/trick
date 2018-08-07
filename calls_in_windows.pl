@@ -916,8 +916,10 @@ if ($opt{'sv'}) {
     print STDERR "#$sv_file loaded\n";
     $samples{$individual} = "";
   }
-  print STDERR "#all indels' files loaded\n";
+  print STDERR "#all SV files loaded\n";
 }
+
+print STDERR Dumper(\%samples);
 
 
 #################################generate a big array with all the starts############################################################

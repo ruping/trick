@@ -1908,12 +1908,12 @@ mergeVAF <- function(sampAB, samples) {
 
 
 
-prepareLichee <- function(samples, nmaf, SampAB) {
+prepareLichee <- function(samples, nmaf, SampAB, minDepth=20) {
     depthCols = paste(samples, "d", sep="")
     licheeCol = c("chr","pos","ref","alt","geneName",nmaf,paste(samples,"mafa",sep=""))
     licheeRow = !is.na(SampAB$functionalClass)
     for (i in 1:length(depthCols)) {  #Depth
-        licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= 20
+        licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= minDepth
     }
     
     licheeInput = SampAB[licheeRow,match(licheeCol,colnames(SampAB))]
@@ -2086,7 +2086,7 @@ generateUpSetList2 <- function(sampAB, sn1, sn2, samples) {
 }
 
 
-spruceInput <- function(samp, samples, minMaf) {
+spruceInput <- function(samp, samples, minMaf, clonal=FALSE) {
     depthCols = paste(samples, "d", sep="")
     licheeRow = !is.na(samp$functionalClass)
     for (i in 1:length(depthCols)) {
@@ -2095,19 +2095,45 @@ spruceInput <- function(samp, samples, minMaf) {
     samp = samp[licheeRow,]
     result = data.frame()
     mutindex = 0
+    #maxnanbs = 2   #max nanb status
     for (r in 1:dim(samp)[1]) {    #each mutation
         maxMaf = 0
+        isClonal = FALSE
+        #ntnbs = vector()   #all nt nb stats
         for (i in 1:length(samples)) {
             sn = samples[i]
             mafi = match(paste(sn,"mafa",sep=""), colnames(samp))
             maf = as.numeric(samp[r,mafi])
+            ccfi = match(paste(sn,"ccf",sep=""), colnames(samp))
+            ccf = as.numeric(samp[r,ccfi])
+            ccfSDi = match(paste(sn,"ccfSD",sep=""), colnames(samp))
+            ccfSD = as.numeric(samp[r,ccfSDi])
+            #nti = match(paste(sn,"nt",sep=""), colnames(samp))
+            #nt = as.character(samp[r,nti])
+            #nbi = match(paste(sn,"nb",sep=""), colnames(samp))
+            #nb = as.character(round(as.numeric(samp[r,nbi])))
+            #na = nt-nb
+            #nanb = paste(na,nb,sep="_")
+            #nanbs = append(nanbs, nanb)
             if (maf > maxMaf) {
                 maxMaf = maf
+            }
+            if ((ccf + 1.96*ccfSD) >= 1) {
+                isClonal = TRUE
             }
         }
         if (maxMaf < minMaf)  {
             next
         }
+        if (clonal ==TRUE & isClonal == FALSE){
+            next
+        }
+
+        #nanbst = table(nanbs)
+        #nstatus = length(nanbst)
+        #if (nstatus > maxnanbs) {
+        #    maxnanbs = nstatus     #update max ntnb status
+        #}
         mutn = as.character(samp[r, match("geneName", colnames(samp))])   #mutation name
         for (i in 1:length(samples)) {   #each tumor
             sn = samples[i]
@@ -2127,7 +2153,7 @@ spruceInput <- function(samp, samples, minMaf) {
             seg = as.numeric(samp[r,segi])
             maflb = quantile(rbinom(1000,depth,maf),prob=seq(0,1,0.01))["1%"]/depth
             mafub = quantile(rbinom(1000,depth,maf),prob=seq(0,1,0.01))["99%"]/depth
-            if (na == 1 & nb == 1){
+            if (na == 1 & nb == 1){  #WT type diploid
                 result = rbind(result, c(i-1, sn, mutindex, mutn, maflb, maf, mafub, 1, 1, 1, NA, NA, NA, seg),
                     stringsAsFactors=FALSE)
             } else {
@@ -2137,7 +2163,7 @@ spruceInput <- function(samp, samples, minMaf) {
         } #each tumor
         mutindex = mutindex+1
     } #each mutation
-    colnames(result) = c("sample_index","sample_label","character_label","character_index",
+    colnames(result) = c("sample_index","sample_label","character_index","character_label",
                 "vaf_lb","vaf_mean","vaf_ub","x","y","mu","x","y","mu","seg")
     return(result)
 }
@@ -2588,10 +2614,13 @@ samplemean <- function(x, d) {
 
 
 outMutTable <- function(data, samples) {
-    data2 = data
+    keep = rowSums(data[,paste(samples,"ccf",sep="")]) > 0
+    data2 = data[keep,]
     #data2 = data[!(data$pubOrSub == "unknown"),]
+    #data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
+    #as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
+    #    colnames(data)[grepl("pubOrSub", colnames(data2))])]
     data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
-    as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
-        colnames(data)[grepl("pubOrSub", colnames(data2))])]
+    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu"), paste, sep=""))))]
     return(data2)
 }

@@ -31,7 +31,7 @@ while ( <IN> )
  {
    next if (/^>$/);
    s/\n>//;
-   /^chr(\w+).*?\n(.*)/s;
+   /^(\w+).*?\n(.*)/s;
    my $chr = $1;
    my $seq = $2;
    $seq =~ s/\n//g;
