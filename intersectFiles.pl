@@ -191,7 +191,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
       }
 
 
-      while ( $variants[$iter]->{'chr'} eq $old_chr and $variants[$iter]->{'start'} <= $dbEnd and $iter <= $#variants ) {
+      while ( $variants[$iter]->{'chr'} eq $old_chr and $variants[$iter]->{'start'} <= $dbEnd and $iter <= $#variants ) {  #region start less than dbEnd
 
 
         if ( $variants[$iter]->{'end'} < $dbStart ) {                  # the region end is beyond the alignmentStart
@@ -244,10 +244,11 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
           $iter++;                                                     # if this region is not the last element in the deque
         } else {                                                       # the last element
             $line = <ORI>;                                             # get a line of region file
-            if (!defined $line){
-               &var_processing($variants[$iter-1]);
-               print STDERR "finished: end of region file, zone 4\n";
-               exit 0;
+            if (!defined $line) {
+            #   &var_processing($variants[$iter-1]);
+            #   print STDERR "finished: end of region file, zone 4\n";
+            #   exit 0;
+              last; #the most recent while
             }
             eatline($line, \@variants);                                # eat a line and put it into the duque
             $iter = $#variants;

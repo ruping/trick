@@ -6,16 +6,18 @@ library(RColorBrewer)
 # cumulative target coverage                            ###
 ###########################################################
 
-plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLorenz = TRUE, cex.main=1.7, cex.lab=1.5, cex.axis=1.3, targetName="Targeted Region", slab=TRUE) {
+plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLorenz = TRUE, cex.main=1.7, cex.lab=1.5, cex.axis=1.3, cex.legend=cex.axis, targetName="Targeted Region", slab=TRUE, colorGroup=data.frame()) {
 
-    if (length(legend) > 1){
-        colorGroup = decideColorGroup(legend, FALSE)
-        if (length(legend) > 22) {
-            colorGroup = decideColorGroup(legend)
-            #stop("length of legend is greater than 22")
-        }
-    } else {
-        colorGroup = rgb(0,0,0,1/3)
+    if (dim(colorGroup)[1] == 0){
+      if (length(legend) > 1) {
+          colorGroup = decideColorGroup(legend, FALSE)
+          if (length(legend) > 22) {
+              colorGroup = decideColorGroup(legend)
+              #stop("length of legend is greater than 22")
+          }
+      } else {
+          colorGroup = rgb(0,0,0,1/3)
+      }
     }
 
     if (otype == "pdf"){
@@ -26,11 +28,12 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
     if (plotCov & plotLorenz){
         layout(matrix(c(1,2),ncol=2))
     }
-    if (plotCov){
+    if (plotCov) {
         plot(NULL, xlim=c(0, 5),ylim=c(0,1), type="l", axes=F, xlab=expression("Read Depth">=""), ylab=paste("Cumulative Fraction of",targetName,sep=" "), main=paste("Depth Coverage in",targetName,sep=" "), cex.lab=cex.lab, cex.main=cex.main)
         axis(side=1, at=c(0,1,log10(30),2,3,4,5), labels=c(1,10,30,100,expression(10^3),expression(10^4),expression(10^5)), tck=0.02, cex.axis=cex.axis)
         axis(side=2, at=seq(0,1,by=0.2), labels=seq(0,1,by=0.2), tck=0.02, cex.axis=cex.axis)
         abline(v=log10(30),lty=2)
+        abline(h=0.5,lty=2)
 
         tlabels = data.frame(xat=3.7, yat=rep(1,length(need)))
         rownames(tlabels) = gsub(".lorenzNoDup","",basename(need))
@@ -49,7 +52,7 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
             pointLabel(tlabels$xat, tlabels$yatNew, label= llabels, cex=cex.axis-0.3, col=makecolor(rownames(tlabels), colorGroup))
         }
     }
-    if (plotLorenz){
+    if (plotLorenz) {
         plot(NULL, xlim=c(0,1),ylim=c(0,1), type="l", axes=F, xlab="Cumulative Fraction of Covered Region", ylab="Cumulative Fraction of Reads",main="Lorenz Curve of Read Consumption", cex.lab=cex.lab, cex.main=cex.main)
         axis(side=1, at=seq(0,1,by=0.2), labels=seq(0,1,by=0.2), tck=0.02, cex.axis=cex.axis)
         axis(side=2, at=seq(0,1,by=0.2), labels=seq(0,1,by=0.2), tck=0.02, cex.axis=cex.axis)
@@ -63,12 +66,13 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
             sgini = sgini + seqGini(d$cumc2/max(d$cumc2), d$cumr2)
         }
         sgini = round(sgini/length(need), 4)
-        legend("topleft", legend=gsub("WES-|TCGA-\\d+\\-|Patient","",legend), col=makecolor(legend, colorGroup), bty="n",lwd=1,cex=cex.axis)
+        legend("topleft", legend=gsub("WES-|TCGA-\\d+\\-|Patient","",legend), col=makecolor(legend, colorGroup), bty="n",lwd=1,cex=cex.legend)
         text(0.5,0.5, labels = paste("Mean Gini Index = ", sgini, sep=""), cex=cex.axis)
     }
     if (otype != "none"){
         dev.off()
     }
+    return(colorGroup)
 
 }
 
@@ -77,12 +81,14 @@ plotLorenz <- function(need, outFile, legend, otype="pdf",plotCov = TRUE, plotLo
 # median coverage and duplicates                        ###
 ###########################################################
 
-medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pdf", cex.main=1.7, cex.lab=1.5, cex.axis=1.3) {
+medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pdf", cex.main=1.7, cex.lab=1.5, cex.axis=1.3, cex.legend=cex.axis, colorGroup=data.frame()) {
 
-    colorGroup = decideColorGroup(legend, FALSE)
-    if (length(legend) > 22){
-        colorGroup = decideColorGroup(legend)
-        #stop("length of legend is greater than 22")
+    if (dim(colorGroup)[1] == 0) {
+      colorGroup = decideColorGroup(legend, FALSE)
+      if (length(legend) > 22){
+          colorGroup = decideColorGroup(legend)
+          #stop("length of legend is greater than 22")
+      }
     }
     
     if (otype == "pdf") {
@@ -120,9 +126,9 @@ medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pd
          xlab="Read Duplication Rate", ylab="Median Coverage", main="Median Coverage vs Duplication Rate", cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
     llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(covdup))
     llabels = gsub("Recurrence","Rec",llabels)
-    pointLabel(covdup$duprate, covdup$coverage,label= llabels, col=makecolor(rownames(covdup), colorGroup), cex=1.2)
+    pointLabel(covdup$duprate, covdup$coverage,label= llabels, col=makecolor(rownames(covdup), colorGroup), cex=cex.legend)
 
-    legend("topright", legend=gsub("WES-|TCGA-\\d+\\-|Patient","",legend), pch=19, col=makecolor(legend, colorGroup), bty="n",cex=1.5)
+    legend("topright", legend=gsub("WES-|TCGA-\\d+\\-|Patient","",legend), pch=19, col=makecolor(legend, colorGroup), bty="n",cex=cex.legend)
     if (otype != "none") {
         dev.off()
     }
@@ -135,14 +141,16 @@ medianCoverage <- function (needMapStats, needLorenz, ofile, legend, otype = "pd
 #  Insert Size box plot                                 ###
 ###########################################################
 
-plotInsBox <- function(needBox, ofile, legend, otype = "pdf", cex.axis=1.3, cex.main=1.7, cex.lab=1.5, xlab="Samples", ysize=1, width=18, height=7) {
+plotInsBox <- function(needBox, ofile, legend, otype = "pdf", cex.axis=1.3, cex.main=1.7, cex.lab=1.5, xlab="Samples", ysize=1, width=18, height=7, colorGroup = data.frame()) {
 
-    colorGroup = decideColorGroup(legend, FALSE)
-    if (length(legend) > 22){
-        colorGroup = decideColorGroup(legend)
-        #stop("length of legend is greater than 22")
-    }
-
+    if (dim(colorGroup)[1] == 0){
+      colorGroup = decideColorGroup(legend, FALSE)
+      if (length(legend) > 22){
+          colorGroup = decideColorGroup(legend)
+          #stop("length of legend is greater than 22")
+      }
+  }
+    
     box = vector()
     for (i in 1:length(needBox)) {
         load(needBox[i])
@@ -222,12 +230,14 @@ propMouseBar <- function(needpropm, ofile, legend, otype = "pdf", cex.main=1.7, 
 #  Purity and ploidy plot                               ###
 ###########################################################
 
-purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples = c("none"), cex.main=1.7, cex.lab=1.5, cex.axis=1.3) {
+purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples = c("none"), cex.main=1.7, cex.lab=1.5, cex.axis=1.3, cex.legend=cex.axis,colorGroup = data.frame(), labgsub="SPCG-OS|SPCG-CSAR|UCPG-|S2379_|S2499_", longilink=FALSE) {
 
-    colorGroup = decideColorGroup(legend, FALSE)
-    if (length(legend) > 22) {
-        #stop("length of legend is greater than 22")
-        colorGroup = decideColorGroup(legend, TRUE)
+    if (dim(colorGroup)[1] == 0){
+      colorGroup = decideColorGroup(legend, FALSE, alpha=0.9)
+      if (length(legend) > 22) {
+          #stop("length of legend is greater than 22")
+          colorGroup = decideColorGroup(legend, TRUE, alpha=0.9)
+      }
     }
     
     pp = data.frame(purity=rep(1,length(needpp)), ploidy=rep(1,length(needpp)))
@@ -249,14 +259,15 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
     
     for (i in 1:length(needppNew)) {
         samp = gsub("_nclones1.TitanCNA.segments.txt", "", basename(needppNew[i]))
-        samp = gsub("CRCTumor","",samp)
-        #samp = gsub("LOVO_","",samp)
-        #samp = gsub("HCT116_","",samp)
         d = read.delim(needppNew[i], header=T)
         sploidy = d$ploidy[1]
         pa = max(as.numeric(na.omit(d$cellularprevalence)))
         con = d$normalproportion[1]
         spurity = 1 - (con + (1-pa)*(1-con))
+        if (abs(sploidy - 2) < 0.02 & (1-spurity) < 0.1) {
+            spurity = 0.05
+            message(paste("low purity: ", samp, sep=""))
+        }
         pp$purity[i] = spurity
         pp$ploidy[i] = sploidy
         rownames(pp)[i] = samp
@@ -267,12 +278,31 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
         png(file = ofile, width=700, height=700)
     }
 
-    plot(pp$ploidy, pp$purity, col=makecolor(rownames(pp), colorGroup), ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=1.3,xlim=c(1,4),ylim=c(0.1,1), cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
-    llabels = gsub("HCT116_|LOVO_|WES-|TCGA-\\d+\\-|Patient","",rownames(pp))
-    llabels = gsub("Recurrence","Rec",llabels)
-    pointLabel(pp$ploidy, pp$purity, labels=llabels, col=makecolor(rownames(pp), colorGroup), cex=1)
-    abline(h=c(0.5,0.6),lty=2)
+    plot(pp$ploidy, pp$purity, col=makecolor(rownames(pp), colorGroup), ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=2, xlim=c(1.5,4), ylim=c(0,1),cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
+    llabels = gsub(labgsub,"",rownames(pp))
+    llabels = gsub("\\d+\\_\\d+","",llabels)
+    text(pp$ploidy, pp$purity, labels=llabels, cex=.6, col=rgb(0,0,0,0.5))
+    legend("topright", legend=gsub(labgsub,"",legend), pch=19, col=makecolor(legend, colorGroup), bty="n", cex=1, pt.cex=1.8)
+    #pointLabel(pp$ploidy, pp$purity, labels=llabels, col=makecolor(rownames(pp), colorGroup), cex=cex.legend)
+    abline(h=c(0.2,0.5),lty=2)
     abline(v=c(2),lty=3)
+
+    if (longilink) {
+        for (i in 1:dim(colorGroup)[1]) {
+            pid = as.character(colorGroup[i,1])
+            psamps = rownames(pp)[grepl(pid, rownames(pp)) & pp[,"purity"] != 0.05]
+            if (length(psamps) > 1){
+                for (k in 1:(length(psamps)-1)){
+                    x0 = pp[psamps[k],"ploidy"]
+                    y0 = pp[psamps[k],"purity"]
+                    x1 = pp[psamps[k+1],"ploidy"]
+                    y1 = pp[psamps[k+1],"purity"]
+                    arrows(x0,y0,x1,y1,col=colorGroup[i,"col"],lwd=1,length=0.15,angle=20)
+                }
+            } #make link if longitudinal samples
+        } #each patient
+    }
+    
     if (otype != "none"){
         dev.off()
     }

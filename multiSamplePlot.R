@@ -5,7 +5,7 @@ library(caTools)
 library(KernSmooth)
 library(RColorBrewer)
 
-getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
+getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5) {
     numsamples = length(samples)
     rindexTF = vector()
     cindex = vector()
@@ -112,7 +112,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
                   #decide mafNow
                   if ( mafTmp == 0 ) {
                       mafNow = mafTmp
-                  } else if (endBias < 0.9 & ((strandBias != 0 & strandBias != 1) | (strandBiasFisherP > 0.7 & refnow >= 10 & altnow >= 5 & mafTmp >= 0.1)) & mappingBias < 0.8 & cmemeSum < 5.2 & cmedianav < cmedianTh) {  
+                  } else if (endBias < 0.9 & ((strandBias != 0 & strandBias != 1) | (strandBiasFisherP > 0.7 & refnow >= 10 & altnow >= 5 & mafTmp >= 0.1)) & mappingBias < 0.8 & cmemeSum < cmemeTh & cmedianav < cmedianTh) {  
                       mafNow = mafTmp
                       if (original > 0) {   #if oriLod
                           if (oriTlod < original) {
@@ -181,8 +181,143 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original) {
 
 
 #adjust CCF titan for multi samples
+mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19) {
+    #prepare CNA
+    cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
+    cnvA = read.delim(cnv.inputA)
+    cnvA = cnvA[which(cnvA$num.mark > skipchunk),]                               #skip two few marks
+    cp2 <- c(which(cnvA$logcopynumberratio[-1] != cnvA$logcopynumberratio[-nrow(cnvA)] |
+                       cnvA$chrom[-1] != cnvA$chrom[-nrow(cnvA)] |
+                           cnvA$LOHcall[-1] != cnvA$LOHcall[-nrow(cnvA)]),
+             nrow(cnvA))
+    cp1 <- c(1,cp2[-length(cp2)]+1)
+    cnvA2 <- data.frame(chrom=cnvA$chrom[cp1],
+                        loc.start=cnvA$loc.start[cp1],
+                        loc.end=cnvA$loc.end[cp2],
+                        num.mark=cnvA$num.mark[cp1],         #recal later
+                        seg.mean=cnvA$seg.mean[cp1],         #recal later
+                        copynumber=cnvA$copynumber[cp1],
+                        minor_cn=cnvA$minor_cn[cp1],
+                        major_cn=cnvA$major_cn[cp1],
+                        allelicratio=cnvA$allelicratio[cp1], #recal later
+                        LOHcall=cnvA$LOHcall[cp1],
+                        cellularprevalence=cnvA$cellularprevalence[cp1],
+                        ploidy=cnvA$ploidy[cp1],
+                        normalproportion=cnvA$normalproportion[cp1],
+                        logcopynumberratio=cnvA$logcopynumberratio[cp1])
+    for (j in 1:length(cp1)) {
+        cnvA2$num.mark[j] <- sum(cnvA$num.mark[cp1[j]:cp2[j]])
+        cnvA2$seg.mean[j] <- mean(cnvA$seg.mean[cp1[j]:cp2[j]])
+        cnvA2$allelicratio[j] <- mean(cnvA$allelicratio[cp1[j]:cp2[j]])
+    }
+    return(cnvA2)
+}
 
-adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6, sigTh=0.9) {
+cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sampAB, public=FALSE, skipchunk = 19,
+                      mmut=10, method="fullMLE") {
+
+    #mergeCNA
+    cnvA2 = mergeCNA(titanPath=titanPath, sn=sn, skipchunk = skipchunk)
+
+    #overlap between CNA and SNV
+    cnvSeqNames = cnvA2$chrom
+    if ( !grepl("chr", cnvA2$chrom[1]) ) {
+        cnvSeqNames = paste("chr", cnvA2$chrom, sep="")
+    }
+    snvSeqNames = sampAB$chr
+    if ( !grepl("chr", sampAB$chr[1]) ) {
+        snvSeqNames = paste("chr", sampAB$chr, sep="")
+    }
+    cnvRangeA = GRanges(seqnames = cnvSeqNames, ranges = IRanges(cnvA2$loc.start, end=cnvA2$loc.end), strand=rep('+',dim(cnvA2)[1]))
+    snvRange = GRanges(seqnames = snvSeqNames, ranges = IRanges(sampAB$pos, end=sampAB$pos), strand=rep('+',dim(sampAB)[1]))
+    foA = findOverlaps(cnvRangeA, snvRange)
+    cnvHits = queryHits(foA)
+    snvHits = subjectHits(foA)
+
+    #produce results
+    result = list()
+    resultTable = vector()
+    li = 1
+    for (i in 1:dim(cnvA2)[1]) {
+        cnchrom = cnvA2$chrom[i]
+        cnstart = cnvA2$loc.start[i]
+        cnend = cnvA2$loc.end[i]
+        cnLOHcall = as.character(cnvA2$LOHcall[i])
+        cnminor = cnvA2$minor_cn[i]
+        cnmajor = cnvA2$major_cn[i]
+        cntotal = cnvA2$copynumber[i]
+        if (cntotal > 4 | cntotal < 2 | (cnminor == 1 & cnmajor == 1)){
+            #message(paste("skip cnv", i, "due to cnv configuration", cnmajor, cnminor, sep=" "))
+            next
+        }
+        if (length(which(cnvHits == i)) < mmut) {
+            #message(paste("skip cnv", i, sep=" "))
+            next     #skip too few mutations 1
+        }
+        
+        chopped = sampAB[snvHits[which(cnvHits == i)],]
+        if (public == TRUE) {
+            chopped = chopped[which(chopped$pubOrSub == "public"),]
+        } else {
+            chopped = chopped[which(chopped[,paste(sn,"ccf",sep="")] + 2.58*chopped[,paste(sn,"ccfSD",sep="")] >= 1),]
+        }
+        if (dim(chopped)[1] < mmut) {
+            #message(paste("skip cnv", i, "second round", dim(chopped)[1], sep=" "))
+            next    #skip too few mutations 2
+        }
+        normCont = 1-chopped[,paste(sn,"pu",sep="")][1]
+        
+        onlyMuts = data.frame(chromosome=chopped$chr, position=chopped$pos, refbase=chopped$ref, mutbase=chopped$alt,
+            rsID=chopped$id, t_ref_count=chopped[,paste(sn,"refc",sep="")], t_alt_count=chopped[,paste(sn,"altc",sep="")],
+            allelefreq=chopped[,paste(sn,"mafc",sep="")],
+            t_depth=chopped[,paste(sn,"refc",sep="")] + chopped[,paste(sn,"altc",sep="")])
+        
+        if (cnmajor == 2 & cnminor == 0) {
+            hmatrix = makeEventHistory(type="LOH",copies=c(cnmajor,cnminor),onlyIdentifiable=F)[[1]]
+            cntype = "CNLOH"
+        } else if (cnmajor == 2 & cnminor == 2) {   #convert to CNLOH type
+            hmatrix = matrix(c(0,2,1,0),ncol=2,nrow=2,byrow=TRUE)
+            cntype = "CNLOH"
+            cntotal = 2
+            onlyMuts$allelefreq = sapply(onlyMuts$allelefreq, function(x){ min(1, 2*x)})
+            onlyMuts$t_alt_count = round(onlyMuts$allelefreq*onlyMuts$t_depth)
+            onlyMuts$t_ref_count = onlyMuts$t_depth - onlyMuts$t_alt_count
+        } else if (cnmajor == 3 & cnminor == 0) {
+            hmatrix = matrix(c(1,2,3,0,1,0,1,0,0), byrow=T, ncol=3)
+            cntype = "ALOH"
+        } else if (cnmajor == 4 & cnminor == 0) {
+            hmatrix = matrix(c(1,2,3,4,0,0,1,0,0,1,0,0,1,0,0,0), byrow=T, ncol=4)
+            cntype = "ALOH"
+        } else {
+            hmatrix = makeEventHistory(type="gain",copies=c(cnmajor,cnminor),onlyIdentifiable=F)[[1]]
+            cntype = "gain"
+        }
+        
+        x<-eventTiming(x=onlyMuts$t_alt_count, m=onlyMuts$t_depth, history=hmatrix, totalCopy=cntotal, minMutations=mmut,
+                       type=cntype,normCont=normCont, bootstrapCI="parametric",CILevel=0.9, method=method)
+        x = c(x, cnid=i, cnchrom=cnchrom, cnstart=cnstart, cnend=cnend, cnmajor=cnmajor, cnminor=cnminor, cnLOHcall=cnLOHcall)
+
+        result[[li]] = x
+        names(result)[[li]] = i
+        currentline = c(cnchrom, cnstart, cnend, cnmajor, cnminor, x$summaryTable[1],
+            as.numeric(x$pi[1]), x$piCI[1,1], x$piCI[1,2], as.numeric(x$pi[2]), x$piCI[2,1], x$piCI[2,2])
+        names(currentline) = c("chrom","loc.start","loc.end","major_cn","minor_cn","nmut",
+                 "p0","p0l","p0h","p1","p1l","p1h")
+        message(paste(currentline, collapse=" "))
+        if (length(resultTable) == 0) {
+            resultTable = currentline
+        } else {
+            resultTable = rbind(resultTable, currentline)
+        }
+        li=li+1
+    }
+    resultTable = data.frame(resultTable)
+    return(list(result, resultTable, cnvA2))    
+}
+
+
+
+adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6, sigTh=0.9, skipchunk=19) {
     
     numsamples = length(samples)
     purities = vector()
@@ -193,12 +328,13 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
         #message(cnv.inputA)
         cnvA = read.delim(cnv.inputA)
-        cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                #skip NA
-        cnvA = cnvA[which(cnvA$num.mark > 9),]                              #skip two few marks
+        #cnvA = mergeCNA(titanPath=titanPath, sn=sn, skipchunk = skipchunk)
+        cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                 #skip NA
+        cnvA = cnvA[which(cnvA$num.mark > 9),]                               #skip two few marks
         cnvA$nt = cnvA$copynumber
         if ("minor_cn" %in% colnames(cnvA)) {
             cnvA$nb = cnvA$minor_cn
-        } else {
+        } else { 
             cnvA$nb = partialRound(cnvA$copynumber*(
                 1-((cnvA$allelicratio - cnvA$normalproportion*0.5)/(1-cnvA$normalproportion) - (1-cnvA$cellularprevalence)*0.5)
                 /cnvA$cellularprevalence))
@@ -859,7 +995,7 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
     nc2 = nt * sAGP + 2 * (1 - sAGP)
 
     #message(nc)
-    #message(paste(c(f,A,S,pu,pa,sAGP,nt,nb),collapse=" "))
+    #message(paste(c(f,A,S,pu,pa,sAGP,nt,nb,nc),collapse=" "))
     if (nb == 1 & nt == 2) {   #normal diploid
         ccf = 2*(f/pu)
         ff = pu*cc/2
@@ -906,10 +1042,12 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
         ff.C = cc[cc<=(1-sAGP)]/nc2
         Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=(1-sAGP)])
         if (sAGP > 0.98) {
-            ff.C = cc[cc<=0.02]/nc2
+            ff.C = min(1, cc[cc<=0.02]/nc2)
             Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=0.02])
+            message(paste(ff.C, collapse="   "))
         }
         ccf2 <- (Ms.C$M1)/pu                    #dbinom
+        
         sd <- Ms.C$SD
         if (is.nan(sd)) {
             sd = 0.01
@@ -1908,23 +2046,42 @@ mergeVAF <- function(sampAB, samples) {
 
 
 
-prepareLichee <- function(samples, nmaf, SampAB, minDepth=20) {
+prepareLichee <- function(samples, nmaf, SampAB, minDepth=20, clonal=FALSE, correctColname=FALSE, toPhylip=FALSE) {
     depthCols = paste(samples, "d", sep="")
-    licheeCol = c("chr","pos","ref","alt","geneName",nmaf,paste(samples,"mafa",sep=""))
-    licheeRow = !is.na(SampAB$functionalClass)
+    ccfCols = paste(samples, "ccf", sep="")
+    ccfSDcols = paste(samples, "ccfSD", sep="")
+    licheeCol = c("chr","pos","ref","alt","geneName",nmaf,paste(samples,"mafc",sep=""))
+    #licheeRow = !is.na(SampAB$functionalClass)
+    licheeRow = rep(TRUE, dim(SampAB)[1])
     for (i in 1:length(depthCols)) {  #Depth
         licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= minDepth
     }
+    #message(length(which(licheeRow)))
+    #message(ccfCols)
     
+    if (clonal) {
+        licheeRow2 = rep(FALSE, dim(SampAB)[1])
+        for (i in 1:length(ccfCols)) {  #clonality
+            licheeRow2 = licheeRow2 | (SampAB[,match(ccfCols[i], colnames(SampAB))] + 1.96*SampAB[,match(ccfSDcols[i], colnames(SampAB))]) >= 1
+        }
+        licheeRow = licheeRow & licheeRow2
+    }
     licheeInput = SampAB[licheeRow,match(licheeCol,colnames(SampAB))]
+    
     licheeInput = data.frame(licheeInput, name=paste(licheeInput$geneName,
-                  paste(licheeInput$chr,licheeInput$pos,licheeInput$ref,sep=":"), licheeInput$alt, sep="_"))
-    licheeInput = licheeInput[,match(c("chr","pos","name",nmaf,paste(samples,"mafa",sep="")),colnames(licheeInput))]
+                                              paste(licheeInput$chr,licheeInput$pos,licheeInput$ref,sep=":"), licheeInput$alt, sep="_"))
+    if ( correctColname == TRUE ) {
+        colnames(licheeInput) = gsub("\\.","-", colnames(licheeInput))
+    }
+    #message(paste(colnames(licheeInput), collapse="\t"))
+    #message(paste(dim(licheeInput), collapse="\t"))
+    licheeInput = licheeInput[,match(c("chr","pos","name",nmaf,paste(samples,"mafc",sep="")),colnames(licheeInput))]
     licheeInput[,4] = 0
     
-    colnames(licheeInput) = gsub("mafa", "", colnames(licheeInput))
+    colnames(licheeInput) = gsub("mafc", "", colnames(licheeInput))
     colnames(licheeInput) = gsub("maf", "", colnames(licheeInput))
     return(licheeInput)
+
 }
 
 
@@ -2624,3 +2781,4 @@ outMutTable <- function(data, samples) {
     as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu"), paste, sep=""))))]
     return(data2)
 }
+
