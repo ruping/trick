@@ -140,7 +140,7 @@ for (i in 1:dim(cnvA2)[1]) {
     
     cnlodc = 0
     if (npos >= 2) {
-        tt = cnlrbafprob(data, sample1.titanres[[[1]]$convergeParams)
+        tt = cnlrbafprob(data, sample1.titanres[[1]]$convergeParams)
         tt2 = cnlrbafprob(data2, sample2.titanres[[1]]$convergeParams)
         cnlodc = cnlod(tt1, tt2)/npos
     }
