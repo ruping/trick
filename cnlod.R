@@ -19,8 +19,8 @@ setwd(path)
 
 cnlod <- function(tt1, tt2) {
     #a = b
-    rowsum1 = rowSums(log(tt1[[1]]))+rowSums(log2(tt1[[2]]))
-    rowsum2 = rowSums(log(tt2[[1]]))+rowSums(log2(tt2[[2]]))
+    rowsum1 = rowSums(log(tt1[[1]]))+rowSums(log(tt1[[2]]))
+    rowsum2 = rowSums(log(tt2[[1]]))+rowSums(log(tt2[[2]]))
     rowsumt = rowsum1 + rowsum2
     anyvalue = max(rowsumt)
     logEQ = anyvalue + log(sum(exp(rowsumt - anyvalue)))
@@ -97,23 +97,6 @@ balleleRatio <- function(n, rn=0.5, Cn=2, prev, Ct, Cb) {
     return(br)
 }
 
-normalpdflog <- function(x, mu, var) {
-    c <- log(1/(sqrt(var) * sqrt(2 * pi)))   #normalizing constant
-    l <- -((x - mu)^2)/(2 * var)             #likelihood
-    y <- c + l                               #together
-    #y <- exp(y)                              #shit
-    return(y)
-}
-
-binomialpdflog <- function(k, N, mu) {
-    c <- lgamma(N + 1) - lgamma(k + 1) - lgamma(N - k + 1)   #normalizing constant  
-    l <- k * log(mu) + (N - k) * log(1 - mu)                 #likelihood
-    y <- c + l                                               #together
-    y <- exp(y)
-    return(y)
-}
-
-
 
 #start processing
 cnvA2 = read.delim(cnvres)
@@ -150,4 +133,4 @@ for (i in 1:dim(cnvA2)[1]) {
 
 cnvA2 = data.frame(cnvA2, cnlodres)
 colnames(cnvA2)[dim(cnvA2)[2]] = paste("cnlod",sn1,sn2,sep=".")    
-write.table(cnvA2, file=paste("cnlod",sn1,sn2,"tsv"sep="."), quote=F, sep="\t", row.names=F)
+write.table(cnvA2, file=paste("cnlod",sn1,sn2,"tsv",sep="."), quote=F, sep="\t", row.names=F)
