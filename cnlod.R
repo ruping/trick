@@ -105,6 +105,7 @@ sample1.titanres = titancnaresults
 load(sample2)
 sample2.titanres = titancnaresults
 cnlodres = vector()
+nprobes = vector()
 for (i in 1:dim(cnvA2)[1]) {
     chr = cnvA2[i,"chrom"]
     start = as.numeric(cnvA2[i,"loc.start"])
@@ -129,8 +130,9 @@ for (i in 1:dim(cnvA2)[1]) {
     }
     message(paste(c(i,chr,start,end,cn1,cn2,npos,cnlodc), collapse="\t"))
     cnlodres = append(cnlodres,  cnlodc)
+    nprobes = append(nprobes, npos)
 }
 
-cnvA2 = data.frame(cnvA2, cnlodres)
-colnames(cnvA2)[dim(cnvA2)[2]] = paste("cnlod",sn1,sn2,sep=".")    
+cnvA2 = data.frame(cnvA2, nprobes, cnlodres)
+colnames(cnvA2)[(dim(cnvA2)[2]-1):dim(cnvA2)[2]] = c("npos", paste("cnlod",sn1,sn2,sep="."))
 write.table(cnvA2, file=paste("cnlod",sn1,sn2,"tsv",sep="."), quote=F, sep="\t", row.names=F)
