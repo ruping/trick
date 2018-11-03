@@ -230,7 +230,7 @@ propMouseBar <- function(needpropm, ofile, legend, otype = "pdf", cex.main=1.7, 
 #  Purity and ploidy plot                               ###
 ###########################################################
 
-purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples = c("none"), cex.main=1.7, cex.lab=1.5, cex.axis=1.3, cex.legend=cex.axis,colorGroup = data.frame(), labgsub="SPCG-OS|SPCG-CSAR|UCPG-|S2379_|S2499_", longilink=FALSE) {
+purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples = c("none"), cex.main=1.7, cex.lab=1.5, cex.axis=1.3, cex.legend=cex.axis,colorGroup = data.frame(), labgsub="SPCG-OS|SPCG-CSAR|UCPG-|S2379_|S2499_", longilink=FALSE, sampleReNames="") {
 
     if (dim(colorGroup)[1] == 0){
       colorGroup = decideColorGroup(legend, FALSE, alpha=0.9)
@@ -278,11 +278,28 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
         png(file = ofile, width=700, height=700)
     }
 
-    plot(pp$ploidy, pp$purity, col=makecolor(rownames(pp), colorGroup), ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=2, xlim=c(1.5,4), ylim=c(0,1),cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
+    madeColors = makecolor(rownames(pp), colorGroup)
     llabels = gsub(labgsub,"",rownames(pp))
+    message(paste(llabels, collapse="\t"))
+    if (length(sampleReNames) > 0) {
+        llabels = sample.rename(llabels, sampleReNames)
+        llabels = gsub("^OS","",llabels)
+        llabels = gsub("\\d+\\_\\d+","",llabels)
+        message(paste(llabels, collapse="\t"))
+        madeColors = as.vector(as.character(sapply(llabels, function(x){
+                                if (x == "D"){"#D3D4D6"}
+                                else if (x == "R"){"#FCDEDE"}
+                                else if (x == "M"){"#9FD4F0"}
+                                else if (x == "X"){"#FFF689"}
+                                else if (x == "C"){"#C3E3CD"}
+                            })))
+        message(paste(madeColors, collapse="\t"))
+    }
     llabels = gsub("\\d+\\_\\d+","",llabels)
+    plot(pp$ploidy, pp$purity, col=madeColors, ylab="Purity", xlab="Ploidy",main="Purity and Ploidy Estimates", pch=19,cex=2, xlim=c(1.5,4), ylim=c(0,1),cex.main=cex.main, cex.lab=cex.lab, cex.axis=cex.axis)
     text(pp$ploidy, pp$purity, labels=llabels, cex=.6, col=rgb(0,0,0,0.5))
-    legend("topright", legend=gsub(labgsub,"",legend), pch=19, col=makecolor(legend, colorGroup), bty="n", cex=1, pt.cex=1.8)
+    #legend("topright", legend=gsub(labgsub,"",legend), pch=19, col=makecolor(legend, colorGroup), bty="n", cex=1, pt.cex=1.8)
+    legend("topright", legend=c("Biopsy","Resection","Metastasis","PDX","Cell Line"), pch=19, col=c("#D3D4D6","#FCDEDE","#9FD4F0","#FFF689","#C3E3CD"), bty="n", cex=1, pt.cex=1.8)
     #pointLabel(pp$ploidy, pp$purity, labels=llabels, col=makecolor(rownames(pp), colorGroup), cex=cex.legend)
     abline(h=c(0.2,0.5),lty=2)
     abline(v=c(2),lty=3)
@@ -297,7 +314,8 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
                     y0 = pp[psamps[k],"purity"]
                     x1 = pp[psamps[k+1],"ploidy"]
                     y1 = pp[psamps[k+1],"purity"]
-                    arrows(x0,y0,x1,y1,col=colorGroup[i,"col"],lwd=1,length=0.15,angle=20)
+                    #arrows(x0,y0,x1,y1,col=colorGroup[i,"col"],lwd=1,length=0.15,angle=20)
+                    arrows(x0,y0,x1,y1,col=rgb(0,0,0,0.3),lwd=0.7,length=0.15,angle=20,lty=2)
                 }
             } #make link if longitudinal samples
         } #each patient
@@ -306,8 +324,16 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
     if (otype != "none"){
         dev.off()
     }
+    return(pp)
 }
 
+sample.rename <- function(names, samplesall.rename){
+    as.vector(sapply(names, function(x, samplesall.mapping){
+               idx = which(grepl(x, names(samplesall.mapping)))
+               if (length(idx) == 1) {samplesall.mapping[idx]} else if (length(idx) == 0) {x}
+                             }, samplesall.mapping = samplesall.rename))
+    #return(samplesall.rename[which(grepl(name, names(samplesall.rename)))])
+}
 
 
 ###########################################################

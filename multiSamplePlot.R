@@ -506,7 +506,7 @@ adjust.ccf.titan.single <- function(sampAB, cnv.inputA, minAF=0.05) {    #may no
 
 # plot pair-wise multi sample plot
 
-plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotType = "AF", snr="", sns=vector(),ssAF=0, pobs=rep("pubOrSub",dim(combn(length(samples),2))[2])) {
+plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotType = "AF", snr="", sns=vector(),ssAF=0, pobs=rep("pubOrSub",dim(combn(length(samples),2))[2]), png=FALSE) {
     combinations = combn(length(samples),2)
     nplots = dim(combinations)[2]
     ndims = length(samples)-1
@@ -519,8 +519,12 @@ plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotT
     if (plotType == "Density") {
         outfile = paste(sroot,"multi_density.pdf",sep="")
     }
-    
-    pdf(file = outfile, width=pdfsize, height=pdfsize)
+
+    if (png){
+        png(file = outfile, width=pdfsize*100, height=pdfsize*100)
+    } else {
+        pdf(file = outfile, width=pdfsize, height=pdfsize)
+    }
     layout(matrix(seq(1,ndims^2), ndims, ndims, byrow = FALSE))
     
     pindex = 0
@@ -2084,6 +2088,64 @@ prepareLichee <- function(samples, nmaf, SampAB, minDepth=20, clonal=FALSE, corr
 
 }
 
+prepareTreeomics <- function(samples, nmaf, nd, SampAB, minDepth=20, clonal=FALSE, correctColname=FALSE) {
+    
+    depthCols = paste(samples, "d", sep="")
+    ccfCols = paste(samples, "ccf", sep="")
+    ccfSDcols = paste(samples, "ccfSD", sep="")
+    licheeCol = c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",nmaf,paste(samples,"altc",sep=""),depthCols,nd)
+
+    licheeRow = rep(TRUE, dim(SampAB)[1])
+    for (i in 1:length(depthCols)) {  #Depth
+        licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= minDepth
+    }
+    
+    if (clonal) {
+        licheeRow2 = rep(FALSE, dim(SampAB)[1])
+        for (i in 1:length(ccfCols)) {  #clonality
+            licheeRow2 = licheeRow2 | (SampAB[,match(ccfCols[i], colnames(SampAB))] + 1.96*SampAB[,match(ccfSDcols[i], colnames(SampAB))]) >= 1
+        }
+        licheeRow = licheeRow & licheeRow2
+    }
+    licheeInput = SampAB[licheeRow,match(licheeCol,colnames(SampAB))]
+
+    idxgeneName = match("geneName",colnames(licheeInput))
+    idxgeneLoc = match("geneLoc",colnames(licheeInput))
+    idxfunClass = match("functionalClass",colnames(licheeInput))
+    GeneNames = as.vector(apply(licheeInput, 1, function(x, ign, igl, ifc){
+                                    if (x[igl] == "intergenic" | x[igl] == "ncRNA_exonic" | x[igl] == "ncRNA_splicing" | x[igl] == "splicing") {
+                                        x[ign]
+                                    } else if (x[igl] == "exonic" & x[ifc] != "synonymous SNV") {
+                                        x[ign]
+                                    } else if (x[igl] == "exonic" & x[ifc] == "synonymous SNV") {
+                                        paste(x[ign],"[synonymous]",sep="")
+                                    } else {
+                                        paste(x[ign],"[",x[igl],"]",sep="")
+                                    }
+                                                            }, ign=idxgeneName, igl=idxgeneLoc, ifc=idxfunClass))
+    
+    licheeInput = data.frame(licheeInput, Change=paste(licheeInput$ref, licheeInput$alt, sep=">"), Gene=GeneNames)
+    if ( correctColname == TRUE ) {
+        colnames(licheeInput) = gsub("\\.","-", colnames(licheeInput))
+    }
+
+    licheeInput1 = licheeInput[,match(c("chr","pos","Change","Gene",nmaf,paste(samples,"altc",sep="")),colnames(licheeInput))]
+    licheeInput1[,5] = 0
+    colnames(licheeInput1)[1:4] = c("Chromosome","Position","Change","Gene")
+    colnames(licheeInput1) = gsub("altc", "", colnames(licheeInput1))
+    colnames(licheeInput1) = gsub("maf", "", colnames(licheeInput1))
+    colnames(licheeInput1) = gsub("SPCG-", "", colnames(licheeInput1))
+
+    licheeInput2 = licheeInput[,match(c("chr","pos","Change","Gene",nd,paste(samples,"d",sep="")),colnames(licheeInput))]
+    colnames(licheeInput2)[1:4] = c("Chromosome","Position","Change","Gene")
+    colnames(licheeInput2) = gsub("d$", "", colnames(licheeInput2))
+    colnames(licheeInput2) = gsub("SPCG-", "", colnames(licheeInput2))
+    return(list(licheeInput1, licheeInput2))
+
+}
+
+
+
 
 prepareLichee2 <- function(samples, sgSamples, nmaf, sampAB) {
     
@@ -2771,7 +2833,11 @@ samplemean <- function(x, d) {
 
 
 outMutTable <- function(data, samples) {
-    keep = rowSums(data[,paste(samples,"ccf",sep="")]) > 0
+    if (length(samples) == 1) {
+        keep = data[,paste(samples,"ccf",sep="")] > 0
+    } else {
+        keep = rowSums(data[,paste(samples,"ccf",sep="")]) > 0
+    }
     data2 = data[keep,]
     #data2 = data[!(data$pubOrSub == "unknown"),]
     #data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
