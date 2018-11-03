@@ -39,7 +39,7 @@ foreach my $chr (keys %loci) {
   my $end = $loci{$chr}{'end'};
   my $seq = substr($genome{$chr}, $start-1, $end-$start+1);
 
-  my $identifier = $chr.'_'.start.'_'.$end;
+  my $identifier = $chr.'_'.$start.'_'.$end;
   print ">$identifier\n";
   print "$seq\n";
 
