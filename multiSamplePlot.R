@@ -179,6 +179,139 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
 }
 
 
+getSampMutMultiIndel <- function(samples, normal, d) {
+    numsamples = length(samples)
+    rindexTF = vector()
+    cindex = vector()
+    for (si in 1:length(samples)) {
+        if (length(rindexTF) > 0) {
+            rindexTF = rindexTF | grepl(samples[si], d$traceSomatic)
+        } else {
+            rindexTF = grepl(samples[si], d$traceSomatic)
+        }
+        cindex = append(cindex, match(paste(samples[si], "maf", sep=""), colnames(d)))
+    }
+    rindex = which(rindexTF)
+    cindex = as.vector(sapply(cindex, function(x){c(x-1,x,x+1)}))
+    
+    ncindex = match(paste(normal, "maf", sep=""), colnames(d))
+    ncindex = as.vector(sapply(ncindex, function(x){c(x,x+1)}))  #normal samples maf and depth indexes
+    
+    #dronindex = match("dron", colnames(d))
+    gnindex = match("geneName", colnames(d))
+    glindex = match("geneLoc", colnames(d))
+    gfindex = match("functionalClass", colnames(d))
+    #caddindex = match("CADD_phred", colnames(d))
+    #gerpindex = match("GERP_RS", colnames(d))
+    #siftindex = match("SIFT_score", colnames(d))
+    #polyphenindex = match("Polyphen2_HVAR_pred", colnames(d))
+    somindex = match("traceSomatic", colnames(d))
+    germindex = match("traceGermline", colnames(d))
+    repindex = match("rep",colnames(d))
+    scindex = match("sc",colnames(d))
+
+    res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,repindex,scindex,somindex,germindex,ncindex)]
+    
+    resColnames = colnames(res)
+    resAdd = t(data.frame(apply(res, 1, function(x, cindex, resColnames) {     #x is every row
+              #ssb = 0                                        #combined strand bias check
+              ssbc = 0
+              #ssbp = 0
+              refdav = 0
+              altdav = 0
+              resVector = vector()
+              for (j in seq(6,(3+length(cindex)), by=3)) {   #foreach sample
+                  sampleName = resColnames[j]
+                  sampleNameMaf = paste(sampleName, "mafc", sep="")
+                  sampleNameMafa = paste(sampleName, "mafa", sep="")
+                  sampleNameCcf = paste(sampleName, "ccf", sep="")
+                  sampleNameCcfSD = paste(sampleName, "ccfSD", sep="")
+                  sampleNameTime = paste(sampleName, "time", sep="")
+                  sampleNameAlt = paste(sampleName, "altc", sep="")
+                  sampleNameRef = paste(sampleName, "refc", sep="")
+
+                  altd = 0
+                  refd = 0
+                  tdep = 0
+                  mafTmp = 0
+                  cmeme = 0
+                  endBias = 0
+                  strandBias = 0
+                  mappingBias = 0
+                  if ( grepl("\\|", as.character(x[j])) ) {    #sample Name column
+                      ori = strsplit(as.character(x[j]), "\\|")
+                      oriDep = strsplit(ori[[1]][3], ",")
+                      mafTmp = as.numeric(ori[[1]][1])
+                      altd = as.numeric(oriDep[[1]][1])
+                      tdep = as.numeric(oriDep[[1]][2])
+                  } else if ( grepl("\\|", as.character(x[j+1])) ) { #samle Name maf column
+                      ss = strsplit(as.character(x[j+1]), "\\|")
+                      mafTmp = min(c(as.numeric(ss[[1]][1]),1))
+                      cmeme = strsplit(ss[[1]][3], ",")
+                      endBias = as.numeric(ss[[1]][2])
+                      strandBias = as.numeric(ss[[1]][4])
+                      mappingBias = as.numeric(ss[[1]][5])
+                      tdep = as.numeric(x[j+2])
+                      refd = max(c(round(tdep*(1-mafTmp)),0))
+                      altd = round(tdep*mafTmp)
+                  }
+                  
+                  #cmedianav = as.numeric(cmeme[[1]][2])
+                  #cmemeSum = sum(as.numeric(cmeme[[1]]))
+
+                  if ( mafTmp > 0 ) {
+                      #ssb = ssb + strandBias*altnow
+                      #ssbp = ssbp + strandBiasFisherP*altnow
+                      refdav = refdav + refd
+                      altdav = altdav + altd
+                      ssbc = ssbc + 1
+                  }
+                  
+                  #decide mafNow
+                  mafNow = mafTmp
+                  
+                  resVector = c(resVector, c(mafNow, 0, 0, 0, 0, refd, altd))
+                  names(resVector)[(length(resVector)-6):length(resVector)] = c(sampleNameMaf,sampleNameMafa,sampleNameCcf,sampleNameCcfSD,sampleNameTime,sampleNameRef,sampleNameAlt)   #time added
+              } #for each sample
+              
+              #ssb = ssb/altdav
+              #ssbp = ssbp/altdav
+              #message(paste(x[1],x[2], sep="  "))
+              #message(paste(ssb, ssbp, sep="  "))
+              altdav = altdav/ssbc
+              refdav = refdav/ssbc
+
+              #if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1) | ssbp < 0.001) {                         #multiple sample strand bias
+              #if (((ssb > 0.88 | ssb < 0.12) & numsamples > 1) | ((ssb > 0.9 | ssb < 0.1) & numsamples == 1)) {                         #multiple sample strand bias
+              #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
+              #    for (j in seq(6,(3+length(cindex)), by=3)) {
+              #        sampleName = resColnames[j]
+              #        sampleNameMaf = paste(sampleName, "mafc", sep="")
+              #        resVector[sampleNameMaf] = 0
+              #    }
+              #}
+
+              totalMaf = sum(as.numeric(resVector[grepl("mafc", names(resVector))]))
+              totalAlt = sum(as.numeric(resVector[grepl("altc", names(resVector))]))
+              totalRef = sum(as.numeric(resVector[grepl("refc", names(resVector))]))
+              mergeMAFC = round(totalAlt/(totalAlt+totalRef), 4)
+              mergeMAFA = mergeMAFC
+              mergedCCF = mergeMAFC
+              mergedCCFsd = mergeMAFC
+              resVector = c(resVector, totalMaf, totalAlt, totalRef, mergeMAFC, mergeMAFA, mergedCCF, mergedCCFsd)
+              names(resVector)[(length(resVector)-6):length(resVector)] = c("totalMaf", "totalAlt", "totalRef", "mergeMAFC", "mergeMAFA", "mergeCCF", "mergeCCFsd")
+
+              resVector                #return the result
+
+          }, cindex=cindex, resColnames=resColnames)))
+    
+
+    res = cbind(res, resAdd)
+    res = res[which(res$totalMaf != 0),]
+    return(res)
+}
+
+
 
 #adjust CCF titan for multi samples
 mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19) {
@@ -1201,6 +1334,9 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
         ccf2 = 1
         sd = 0.01
     }
+    if (is.nan(sd)) {
+        sd = 0.01
+    }
     return(c(ccf, evoType, ccf2, sd))
 }
 
@@ -1411,6 +1547,9 @@ computeCCF2 <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=
         } else {
             ccf = f*2
         }
+    }
+    if (is.nan(sd)) {
+        sd = 0.02
     }
     return(c(ccf, evoType, ccf2, sd))
 }
@@ -2846,5 +2985,40 @@ outMutTable <- function(data, samples) {
     data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
     as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu"), paste, sep=""))))]
     return(data2)
+}
+
+outTable.maf <- function(data, samples) {
+    outmaf = data.frame()
+    for(r in 1:dim(data)[1]) {                                          #each row
+        Hugo_Symbol = gsub("\\(dist=\\d+\\)", "", data[r,"geneName"])
+        Chromosome = data[r,"chr"]
+        Start_Position = data[r,"pos"]
+        End_Position = data[r,"pos"]
+        Variant_Classification = data[r,"functionalClass"]
+        if (is.na(Variant_Classification)) {
+            Variant_Classification = data[r,"geneLoc"]
+        }
+        Variant_Type = "DEL"
+        Reference_Allele = data[r,"ref"]
+        if (Reference_Allele == '-') {
+            Variant_Type = "INS"
+        }
+        Tumor_Seq_Allele2 = data[r,"alt"]
+        
+        for (i in 1:length(samples)) {
+            tmp = data.frame()
+            sn = samples[i]
+            Tumor_Sample_Barcode = sn
+            ccfindex = match(paste(sn, "ccf", sep=""), colnames(data))
+            ccfsdindex = match(paste(sn, "ccfSD", sep=""), colnames(data))
+            somindex = match("traceSomatic", colnames(data))
+            if ((data[r,ccfindex] + 1.96*data[r,ccfsdindex]) >= 1) {
+                tmp = rbind(tmp, c(Hugo_Symbol,Chromosome,Start_Position,End_Position,Variant_Classification,Variant_Type,Reference_Allele,Tumor_Seq_Allele2,Tumor_Sample_Barcode))
+                colnames(tmp) =  c("Hugo_Symbol","Chromosome","Start_Position","End_Position","Variant_Classification","Variant_Type","Reference_Allele","Tumor_Seq_Allele2","Tumor_Sample_Barcode")
+                outmaf = rbind(outmaf, tmp)
+            }
+        }
+    }
+    return(outmaf)
 }
 

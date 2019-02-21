@@ -895,19 +895,28 @@ if ($opt{'sv'}) {
 
         my $coor = $CHROM.':'.$POS;
 
-        $INFO =~ /[\;]?SR\=(\d+)[\;]?/;
-        my $sr = $1;
-        $INFO =~ /[\;]?RP\=(\d+)[\;]?/;
-        my $rp = $1;
-        $INFO =~ /[\;]?REF\=(\d+)[\;]?/;
-        my $refsu = $1;
-        $INFO =~ /[\;]?REFPAIR\=(\d+)[\;]?/;
-        my $refpair = $1;
+        $INFO =~ /[\;]?SVTYPE\=(\w+)[\;]?/;
+        my $svtype = $1;
+        my $sr = 0;
+        if ($INFO =~ /[\;]?SR\=(\d+)[\;]?/){
+          $sr = $1;
+        }
+        #$INFO =~ /[\;]?RP\=(\d+)[\;]?/;
+        #my $rp = $1;
+        my $pe = 0;
+        if ($INFO =~ /[\;]?PE\=(\d+)[\;]?/){
+          $pe = $1;
+        }
+        #$INFO =~ /[\;]?REF\=(\d+)[\;]?/;
+        #my $refsu = $1;
+        #$INFO =~ /[\;]?REFPAIR\=(\d+)[\;]?/;
+        #my $refpair = $1;
 
-        my $vard = $sr + $rp;
-        my $depth = $sr + $rp + $refsu + $refpair;
-        $MAF = sprintf("%.3f", $vard/$depth);
-        $variations{$CHROM}{$POS}{$individual}{'SV'}{'info'} = 'SV:'.$CHROM.':'.$POS.':'.$REF.'->'.$ALT.':'.$MAF.':('.$sr.'+'.$rp.'+'.$refsu.'+'.$refpair.')';
+        #my $vard = $sr + $rp;
+        #my $depth = $sr + $rp + $refsu + $refpair;
+        #$MAF = sprintf("%.3f", $vard/$depth);
+        #$variations{$CHROM}{$POS}{$individual}{'SV'}{'info'} = 'SV:'.$CHROM.':'.$POS.':'.$REF.'->'.$ALT.':'.$MAF.':('.$sr.'+'.$rp.'+'.$refsu.'+'.$refpair.')';
+        $variations{$CHROM}{$POS}{$individual}{'SV'}{'info'} = 'SV:'.$CHROM.':'.$POS.':'.$REF.'->'.$ALT.':'.$svtype.':'.$sr.'+'.$pe;
         $variations{$CHROM}{$POS}{$individual}{'SV'}{'end'} = $POS + 1;
 
       } #the same chromosome

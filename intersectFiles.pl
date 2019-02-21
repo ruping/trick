@@ -62,6 +62,7 @@ while ($ARGV[0]) {
   else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
 
+print STDERR "tolerance on original ranges: t1: $t1  t2: $t2\n";
 my @extraOM;
 if ($extraOM ne ''){
   @extraOM = split(',', $extraOM);
@@ -93,7 +94,15 @@ while ($isComment == 1) {
      chomp($line);
      $line =~ s/[\s\n]$//;
      my $maskadd = basename($maskfile);
-     print "$line\t$maskadd\n";
+     if ($vcf == 1) {
+       if ($line =~ /^#CHROM\t/) {
+         print "$line\t$maskadd\n";
+       } else {
+         print "$line\n";
+       }
+     } else {
+       print "$line\t$maskadd\n";
+     }
    } elsif ($column ne '') {
      chomp($line);
      $line =~ s/[\s\n]$//;
@@ -306,8 +315,8 @@ sub eatline {
   $variant{'chr'} = $cols[$oichr];
   $variant{'chr'} = 'chr'.$variant{'chr'} if ($variant{'chr'} !~ /^chr/);
   $variant{'chr'} = 'chrM' if ($variant{'chr'} eq 'chrMT');
-  $variant{'start'} = $cols[$oistart] - $t1;
-  $variant{'end'} = $cols[$oiend] + $t2;
+  $variant{'start'} = $cols[$oistart] - $t1;       #add tolerance
+  $variant{'end'} = $cols[$oiend] + $t2;           #add tolerance
   $variant{'info'} = $line;
 
   push(@{$variants}, \%variant);
