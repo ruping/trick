@@ -284,7 +284,8 @@ purityPloidy <- function(needpp, ofile, legend, otype = "pdf", excludingSamples 
     if (length(sampleReNames) > 0) {
         llabels = sample.rename(llabels, sampleReNames)
         llabels = gsub("^OS","",llabels)
-        llabels = gsub("\\d+\\_\\d+","",llabels)
+        llabels = gsub("\\d+\\_","",llabels)
+        llabels = gsub("\\d+","",llabels)
         message(paste(llabels, collapse="\t"))
         madeColors = as.vector(as.character(sapply(llabels, function(x){
                                 if (x == "D"){"#D3D4D6"}

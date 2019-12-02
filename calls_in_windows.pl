@@ -22,6 +22,9 @@ my %opt = (
            'indel'        => undef,
            'indelT'       => undef,
            'sv'           => undef,
+           'cnv'          => undef,
+           'cnvTG'        => undef,
+           'cnvTL'        => undef,
 	   'nonrepeat'    => undef,
            'nonrecurrent' => undef,
            'nonselfchain' => undef,
@@ -45,6 +48,9 @@ GetOptions (
             "indel|i=s"      => \$opt{'indel'},
             "indelT|y=s"     => \$opt{'indelT'},
             "sv=s"           => \$opt{'sv'},
+            "cnv=s"          => \$opt{'cnv'},
+            "cnvTG=f"        => \$opt{'cnvTG'},                      #cnvthreshold
+            "cnvTL=f"        => \$opt{'cnvTL'},
             "nonrepeat|r=s"  => \$opt{'nonrepeat'},
             "nonrecurrent|u" => \$opt{'nonrecurrent'},
             "nonselfchain|s=s" => \$opt{'nonselfchain'},
@@ -64,6 +70,9 @@ GetOptions (
               print "\t--hetero\tonly search for hetero substitutions.\n";
               print "\t--indel[T]\tsearch for partial indel and depth indel, 'T' for the already prepared indel table\n";
               print "\t--sv\t\tsearch for SVs\n";
+              print "\t--cnv\t\tsearch for CNVs\n";
+              print "\t--cnvTG\t\tcnv Threshold Greater than\n";
+              print "\t--cnvTL\t\tcnv Threshold Less than\n";
               print "\t--nonrepeat\toptionally choose whether allow variations in repetitive regions to be searched, default, yes, provide rep file\n";
               print "\t--nonselfchain\toptionally choose whether allow variations in selfchain regions to be searched, default, yes, provide sc file\n";
               print "\t--nonrecurrent\tskip calls that are recurrent across samples.\n";
@@ -928,7 +937,60 @@ if ($opt{'sv'}) {
   print STDERR "#all SV files loaded\n";
 }
 
+####################################load the file of CNV###############################################################
+my %cnv;
+if ($opt{'cnv'}) {
+  open CNV, "$opt{'cnv'}";
+  my @cnv_files;
+  while ( <CNV> ) {
+    chomp;
+    push(@cnv_files, $_);
+  }
+  close SV;
+
+  foreach my $cnv_file (@cnv_files) {
+
+    my $individual;
+
+    $cnv_file =~ /($opt{'prefix'}\d+)[^0-9a-zA-Z]/;
+    $individual = $1;
+
+    open COHORT, "$cnv_file";
+    my $printerror = 0;
+    while ( <COHORT> ) {
+      chomp;
+      if ($_ =~ /^#/) {
+          next;
+      }
+
+      my ($chrom, $start, $end, $nmark, $segmean, $copynumber, $minor_cn, $major_cn, $allelicratio, $LOHcall, $cellularprevalence,
+          $ploidy, $normalproportion, $logcopynumberratio, $segmeanAdj, $rcnc) = split /\t/;
+
+      $chrom =~ s/chr//;
+      if ( !$opt{chr} or ($opt{chr} and ($chrom eq $opt{chr})) ) {
+
+        #filter data
+        if ($opt{'cnvTG'}){
+          next if $rcnc <= $opt{'cnvTG'};
+        }
+        elsif ($opt{'cnvTL'}){
+          next if $rcnc >= $opt{'cnvTL'}
+        }
+
+        $variations{$chrom}{$start}{$individual}{'CNV'}{'info'} = 'CNV:'.$chrom.':'.$start.'-'.$end.'->'.$copynumber.':'.$minor_cn.':'.$nmark.':'.$rcnc;
+        $variations{$chrom}{$start}{$individual}{'CNV'}{'end'} = $end;
+
+      } #the same chromosome
+    } #each cohort
+    close COHORT;
+    print STDERR "#$cnv_file loaded\n";
+    $samples{$individual} = "";
+  }
+  print STDERR "#all CNV files loaded\n";
+}
+
 print STDERR Dumper(\%samples);
+
 
 
 #################################generate a big array with all the starts############################################################
