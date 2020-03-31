@@ -324,6 +324,7 @@ sub eatline {
   $variant{'end'} = $cols[$oiend] + $t2;           #add tolerance
   $variant{'info'} = $line;
 
+  print STDERR "$variant{'chr'}\t$variant{'start'}\t$variant{'end'}\n";
   push(@{$variants}, \%variant);
   return $isComment;
 
