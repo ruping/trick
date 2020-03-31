@@ -72,7 +72,7 @@ if ($extraOM ne ''){
 
 my @columnIndex = ();
 my @columnNames = ();
-my %maskChrJumper = &getchrpos($maskfile);
+my %maskChrJumper = &getchrpos($maskfile, $commentChar);
 print STDERR Dumper(\%maskChrJumper);
 print STDERR "column set: $column\tindex:\n";
 print STDERR Dumper(\@columnIndex);
@@ -331,6 +331,7 @@ sub eatline {
 sub getchrpos {
 
   my $dbfile = shift;
+  my $commentChar = shift;
 
   my $chr_old = "UNDEF";
 
@@ -338,11 +339,17 @@ sub getchrpos {
 
   my $jumper = 0;
 
-  open DBFILE, "$dbfile" or die "The db file read error!";
+  my $openhandle = "$dbfile";
+
+  if ($dbfile =~ /\.gz$/){
+    $openhandle = "gzip -dc $dbfile |";
+  }
+
+  open DBFILE, $openhandle or die "The db file read error!";
 
   while ( <DBFILE> ) {
 
-      if ($_ =~ /^[\#\@]/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^FID/ or $_ =~ /^[cC]hromosome\t/ or $_ =~ /^[cC]hrom\t/) {
+      if ($_ =~ /^[\#\@]/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^FID/ or $_ =~ /^[cC]hromosome\t/ or $_ =~ /^[cC]hrom\t/ or $_=~ /^$commentChar/) {
         $jumper = tell DBFILE;
         if ($column ne '' and ((($_ =~ /^#/ or $_ =~ /^FID/ or $_ =~ /^[cC][hH][rR]\t/ or $_ =~ /^[cC]hromosome\t/ or $_ =~ /^[cC]hrom\t/) and $vcf == 0) or ($_ =~ /^#CHROM\t/ and $vcf == 1))) { #vcf header or not: 1 or 0
           $_ =~ s/^#//;
