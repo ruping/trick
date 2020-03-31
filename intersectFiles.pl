@@ -176,6 +176,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
 
       my $dbStart  =  $cols[$mistart];
       my $dbEnd    =  $cols[$miend];
+      print STDERR "$chr_now\t$dbStart\t$dbEnd\n";
 
       if ($chr_now ne $old_chr) {                                 # jump out if reaching the next chromosome
          last;
@@ -324,7 +325,6 @@ sub eatline {
   $variant{'end'} = $cols[$oiend] + $t2;           #add tolerance
   $variant{'info'} = $line;
 
-  print STDERR "$variant{'chr'}\t$variant{'start'}\t$variant{'end'}\n";
   push(@{$variants}, \%variant);
   return $isComment;
 
