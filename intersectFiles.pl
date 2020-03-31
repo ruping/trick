@@ -179,6 +179,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
       print STDERR "$chr_now\t$dbStart\t$dbEnd\n";
 
       if ($chr_now ne $old_chr) {                                 # jump out if reaching the next chromosome
+        print STDERR "here!\n";
          last;
       }
 
