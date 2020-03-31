@@ -164,7 +164,11 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
     my $jumper = $maskChrJumper{$chr_id};
     print STDERR "$chr_id\tjumper: $jumper\t$old_chr\t$variants[$it]->{'chr'}\t$variants[$it]->{'start'}\t$variants[$it]->{'end'}\n";
 
-    open MASK, "$maskfile";
+    my $openhandle = "$maskfile";
+    if ($maskfile =~ /\.gz$/){
+      $openhandle = "gzip -dc $maskfile |";
+    }
+    open MASK, $openhandle;
     seek(MASK, $jumper, 0);
     while ( <MASK> ) {
 
@@ -179,7 +183,6 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
       print STDERR "$chr_now\t$dbStart\t$dbEnd\n";
 
       if ($chr_now ne $old_chr) {                                 # jump out if reaching the next chromosome
-        print STDERR "here!\n";
          last;
       }
 
