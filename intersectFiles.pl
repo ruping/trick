@@ -32,6 +32,7 @@ my $oiend = 1;
 
 my $NAvalue = 'NA';
 my $percent = 0;
+my $commentChar = '#';
 
 my %printer;
 
@@ -58,7 +59,8 @@ while ($ARGV[0]) {
   elsif ($arg eq '-extraOM'){$extraOM = shift @ARGV;}  #extra constrain to identify lines with the same coordinates, in the order of oringal,mask
   elsif ($arg eq '-na'){$NAvalue = shift @ARGV;}
   elsif ($arg eq '-percent'){$percent = shift @ARGV;}
-  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-csplit: split tags for the column] [-t:tolerant] [-percent: percentage to be overlapped]\n"; exit 0;}
+  elsif ($arg eq '-commentChar'){$commentChar = shift @ARGV;}
+  elsif ($arg eq '-h'){print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf:vcf file input] [-count/overlap/nonoverlap] [-column:get that column from mask file, columnName or Indexes, e.g. 1-7] [-csplit: split tags for the column] [-t:tolerant] [-percent: percentage to be overlapped] [-commentChar the comment line starts with this character or string]\n"; exit 0;}
   else {print "useage: intersectFiles.pl -o: origninal_filename -m: maskfile [-vcf: vcf file input] [-t:tolerant]\n"; exit 0;}
 }
 
@@ -85,7 +87,7 @@ my @variants;  #it is an Array like a deque
 my $isComment = 0;
 open ORI, "$original";
 $line = <ORI>;
-$isComment = eatline($line, \@variants);
+$isComment = eatline($line, $commentChar, \@variants);
 
 
 while ($isComment == 1) {
@@ -121,7 +123,7 @@ while ($isComment == 1) {
      print "$line\n";
    }
    $line = <ORI>;
-   $isComment = eatline($line, \@variants);                            # eat a new line
+   $isComment = eatline($line, $commentChar, \@variants);                            # eat a new line
 }                                                                      # is comment
 
 my $it = 0;
@@ -146,7 +148,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
           print STDERR "finished: end of region file, zone 0\n";
           exit 0;
         }
-        eatline($line, \@variants);
+        eatline($line, $commentChar, \@variants);
         $it = 0;
         if ( $variants[$it]->{'chr'} eq $old_chr ) {
           &var_processing($variants[$it]);
@@ -188,7 +190,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
                 print STDERR "finished: end of region file, zone 2.2\n";
                  exit 0;
              }
-             eatline($line, \@variants);                              # eat a line and put it into the duque
+             eatline($line, $commentChar, \@variants);                              # eat a line and put it into the duque
              $iter = 0;
          }
       }
@@ -213,7 +215,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
                  print STDERR "finished: end of region file, zone 3\n";
                  exit 0;
               }
-              eatline($line, \@variants);                              # eat a line and put it into the duque
+              eatline($line, $commentChar, \@variants);                              # eat a line and put it into the duque
               $iter = 0;
           }
           next;
@@ -259,7 +261,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
             #   exit 0;
               last; #the most recent while
             }
-            eatline($line, \@variants);                                # eat a line and put it into the duque
+            eatline($line, $commentChar, \@variants);                                # eat a line and put it into the duque
             $iter = $#variants;
         }   #the last element
 
@@ -281,7 +283,7 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
          print STDERR "finished: end of region file, zone 5\n";
          exit 0;
       }
-      eatline($line, \@variants);
+      eatline($line, $commentChar, \@variants);
       $it = 0;
       if ( $variants[$it]->{'chr'} eq $old_chr ) {
         &var_processing($variants[$it]);
@@ -298,12 +300,13 @@ while ( $variants[$it]->{'chr'} ne $old_chr ) {
 sub eatline {
 
   my $line = shift;
+  my $commentChar = shift;
   chomp($line);
   $line =~ s/[\s\n]$//;
   my $variants = shift;
 
   my $isComment = 0;
-  if ($line =~ /^#/ || $line =~ /^[cC][hH][rR]\t/ or $line =~ /^[cC]hromosome\t/ or $line =~ /^[cC]hrom\t/) {
+  if ($line =~ /^$commentChar/ or $line =~ /^[cC][hH][rR]\t/ or $line =~ /^[cC]hromosome\t/ or $line =~ /^[cC]hrom\t/) {
     $isComment = 1;
     return $isComment;
   }

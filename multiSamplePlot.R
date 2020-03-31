@@ -459,9 +459,7 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         sn = samples[i]
         message(sn)
         cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
-        #message(cnv.inputA)
         cnvA = read.delim(cnv.inputA)
-        #cnvA = mergeCNA(titanPath=titanPath, sn=sn, skipchunk = skipchunk)
         cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                 #skip NA
         cnvA = cnvA[which(cnvA$num.mark > 9),]                               #skip two few marks
         cnvA$nt = cnvA$copynumber
@@ -472,7 +470,6 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
                 1-((cnvA$allelicratio - cnvA$normalproportion*0.5)/(1-cnvA$normalproportion) - (1-cnvA$cellularprevalence)*0.5)
                 /cnvA$cellularprevalence))
         }
-        #cnvA$cellularprevalence = sapply(cnvA$cellularprevalence, function(x){if (x == 1){0.99} else {x}})
         
         cnvSeqNames = cnvA$chrom
         if (!grepl("chr",cnvA$chrom[1])){
@@ -2313,7 +2310,6 @@ prepareTreeomics <- function(samples, nmaf, nd, SampAB, minDepth=20, clonal=FALS
     return(list(licheeInput1, licheeInput2))
 
 }
-
 
 
 
