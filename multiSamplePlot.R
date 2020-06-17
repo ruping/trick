@@ -1772,7 +1772,7 @@ pubOrSub.simu <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samp
                                  names(mutVector) = coln
                                  cppres = pubOrSub.Calc.sim(mutVector, samples, rep(1,length(samples)), rep(1,length(samples)), pAF=pAF)
                                  cpstype = "unknown"
-                                 totalDepth = sum(as.numeric(mutVector[paste("depth",samples,sep="")]))
+                                 totalDepth = sum(as.numeric(mutVector[paste(samples, "d", sep="")]))
                                  if (totalDepth < minDepTotal) {
                                      cpstype = "unknown"
                                  } else if (cppres[1] >= 0.05 | cppres[3] == 1) {   #accept public
@@ -1783,8 +1783,8 @@ pubOrSub.simu <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samp
                                      foundSamples = ""
                                      for (i in 1:length(samples)) {                                     #get subclonal ones 2nd round: Refine
                                          sn = samples[i]
-                                         mafai = match(paste("maf", sn, sep=""), coln)
-                                         depthi = match(paste("depth", sn, sep=""), coln)
+                                         mafai = match(paste(sn, "maf", sep=""), coln)
+                                         depthi = match(paste(sn, "d", sep=""), coln)
                                          if (as.numeric(mutVector[mafai]) > minAF) {
                                              foundSamples = paste(foundSamples, sn, ",", sep="")
                                          }
@@ -1821,12 +1821,12 @@ pubOrSub.Calc.sim <- function(mutVector, samples, maxPa = vector(), maxsAGP = ve
     originalNames = names(mutVector)
 
     aboveContri = 0
-    VAFaboveQua = all(as.numeric(mutVector[match(paste("maf", samples, sep=""), originalNames)]) >= pAF)
+    VAFaboveQua = all(as.numeric(mutVector[match(paste(samples, "maf", sep=""), originalNames)]) >= pAF)
 
     cpop = sapply(samples, function(x, originalNames, mutVector) {
                       sn = x
-                      mafai = match(paste("maf", sn, sep=""), originalNames)
-                      depthi = match(paste("depth", sn, sep=""), originalNames)
+                      mafai = match(paste(sn, "maf", sep=""), originalNames)
+                      depthi = match(paste(sn, "d", sep=""), originalNames)
                       depth = as.numeric(mutVector[depthi])
                       maf = as.numeric(mutVector[mafai])
                       refc = round(depth * (1-maf))
@@ -2697,18 +2697,18 @@ bez <- function(x, y, t){
 
 #for plotting simulated vaf data
 
-plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plotType = "AF", snr="", sns=vector()) {
+plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plotType = "AF", snr="", sns=vector(), outdir="./") {
     combinations = combn(length(samples),2)
     nplots = dim(combinations)[2]
     ndims = length(samples)-1
 
     resStats = list()
-    outfile = paste(snr,"multi_hist.pdf",sep="")
+    outfile = paste(outdir,snr,"multi_hist.pdf",sep="")
     if (plotType == "Scatter") {
-        outfile = paste(snr,"multi_scatter.pdf",sep="")
+        outfile = paste(outdir,snr,"multi_scatter.pdf",sep="")
     }
     if (plotType == "Density") {
-        outfile = paste(snr,"multi_density.pdf",sep="")
+        outfile = paste(outdir,snr,"multi_density.pdf",sep="")
     }
     pdf(file = outfile, width=pdfsize, height=pdfsize)
     layout(matrix(seq(1,ndims^2), ndims, ndims, byrow = FALSE))
@@ -2747,12 +2747,12 @@ plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plo
         }
     }
     dev.off()
-    return(1)
+    return(resStats)
 }
 
 
 
-plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="B", sn1="maf1", sn2="maf2", dp1="depth1", dp2="depth2",minAF=0.05, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0, reportSSR=FALSE) {
+plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="B", sn1="maf1", sn2="maf2", dp1="depth1", dp2="depth2",minAF=0.05, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0, reportSSR=FALSE, pob="pubOrSub") {
 
   sn1s = sn1n     #name of sample 1
   sn2s = sn2n     #name of sample 2
@@ -2773,7 +2773,7 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
                                     }, maf1i=maf1Index,maf2i=maf2Index,dp1i=dp1i,dp2i=dp2i))
   sampAB = sampAB[depthPowerKeep,]
 
-  subMuts = subclonalMutSim(sampAB, sn1, sn2, dp1, dp2, minAF=minAF)
+  subMuts = subclonalMutSim(sampAB, sn1, sn2, dp1, dp2, minAF=minAF, pob=pob)
   
   allA_Rows = which(sampAB[,maf1Index] > minAF & sampAB[,maf1Index] <= 1)                                                       #all sample A rows
   subA_Rows = intersect(subMuts$subAi, which(sampAB[,maf1Index] > minAF & sampAB[,maf1Index] <= 1))                             #sample A sub rows

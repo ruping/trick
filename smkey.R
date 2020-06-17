@@ -1,4 +1,4 @@
-#Ruping Sun, regularhand@gmail.com
+#Ruping Sun, ruping@umn.edu
 
 library(KernSmooth)
 library(fields)
@@ -31,7 +31,7 @@ image.plot2 = function (..., add = FALSE, nlevel = 64, legend.shrink = 0.9,
     col = tim.colors(nlevel)) 
 {
     old.par <- par(no.readonly = TRUE)
-    info <- image.plot.info(...)
+    info <- imagePlotInfo(..., nlevel = nlevel)
     if (add) {
         big.plot <- old.par$plt
     }
@@ -41,7 +41,7 @@ image.plot2 = function (..., add = FALSE, nlevel = 64, legend.shrink = 0.9,
     if (is.null(legend.mar)) {
         legend.mar <- ifelse(horizontal, 3.1, 5.1)
     }
-    temp <- image.plot.plt(add = add, legend.shrink = legend.shrink, 
+    temp <- imageplot.setup(add = add, legend.shrink = legend.shrink, 
         legend.width = legend.width, legend.mar = legend.mar, 
         horizontal = horizontal, bigplot = bigplot, smallplot = smallplot)
     smallplot <- temp$smallplot
@@ -186,9 +186,12 @@ smkey <- function(x, y=NULL,
 }
 
 
-scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density", cex=1.5, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE, pch=19,
-                               drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(), colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
-                               legend=c("Public","Pvt-Shared","Pvt-Rgn Specific"), legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1, box=TRUE) {
+scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x", ylab="y", main="Scatter Density",
+                               cex=1.5, cex.axis=1.5, cex.lab=1.5, cex.main=1.7, abline=TRUE, pch=19,
+                               drx=c(), dry=c(), drlabels=c(), denscolor=vector(), groups=list(), groupColors=list(),
+                               colScaleLabel="# sSNV", xaxisat=vector(), xaxislb=vector(), yaxisat=vector(), yaxislb=vector(),
+                               legend=c("Public","Pvt-Shared","Pvt-Rgn Specific"),
+                               legendCol=c(rgb(0,0,0,1/4),rgb(178/255,223/255,138/255,1),rgb(31/255,120/255,180/255,1)), layout=TRUE, alpha=1, box=TRUE) {
 
     if (length(groups) > 0) {
         colLegends = list()
@@ -204,12 +207,12 @@ scatterDensityPlot <- function(x, y, xlim=c(0,1), ylim=c(0,1), div=0.02, xlab="x
             indexes = groups[[i]]
             nbinx = round((max(x[indexes]) - min(x[indexes]))/div)
             nbiny = round((max(y[indexes]) - min(y[indexes]))/div)
-            #if (nbinx < 20) {
-            #    nbinx = 20
-            #}
-            #if (nbiny < 20) {
-            #    nbiny = 20
-            #}
+            if (nbinx < 20) {
+                nbinx = 20
+            }
+            if (nbiny < 20) {
+                nbiny = 20
+            }
             message(nbinx)
             message(nbiny)
             denscolor = densCols(x[indexes], y[indexes], colramp = colorRampPalette(colpanel), nbin=c(nbinx,nbiny))
