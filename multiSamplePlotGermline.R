@@ -4,24 +4,25 @@ source(paste(script.dir, "smkey.R", sep="/"))
 library(caTools)
 library(KernSmooth)
 library(RColorBrewer)
-library(plyr)
 
-getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5) {
+getSampMutMultiGerm <- function(samples, normal, d, cmedianTh, original) {
     numsamples = length(samples)
     rindexTF = vector()
     cindex = vector()
     for (si in 1:length(samples)) {
         if (length(rindexTF) > 0) {
-            rindexTF = rindexTF | grepl(paste(samples[si],"\\[",sep=""), d$somatic)
+            rindexTF = rindexTF | grepl(samples[si], d$trace)
         } else {
-            rindexTF = grepl(paste(samples[si],"\\[",sep=""), d$somatic)
+            rindexTF = grepl(samples[si], d$trace)
         }
         cindex = append(cindex, match(paste(samples[si], "maf", sep=""), colnames(d)))
     }
     rindex = which(rindexTF)
     cindex = as.vector(sapply(cindex, function(x){c(x-1,x,x+1)}))
+    #message(paste(rindex,collapse=" "))
+    #message(paste(cindex,collapse=" "))
     
-    ncindex = match(paste(normal, "maf", sep=""), colnames(d))
+    ncindex = match(paste(normal, "maf", sep=""), colnames(d))   #normal maf index
     ncindex = as.vector(sapply(ncindex, function(x){c(x,x+1)}))  #normal samples maf and depth indexes
     
     dronindex = match("dron", colnames(d))
@@ -32,13 +33,14 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
     gerpindex = match("GERP_RS", colnames(d))
     siftindex = match("SIFT_score", colnames(d))
     polyphenindex = match("Polyphen2_HVAR_pred", colnames(d))
-    somindex = match("somatic", colnames(d))
-    repindex = match("rep",colnames(d))
+    somindex = match("trace", colnames(d))         #change it to trace
+    freqindex = match("freq", colnames(d))
+    #message(paste(c(dronindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,somindex),collapse=" "))
 
     if (! is.na(caddindex)) {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,repindex,somindex,ncindex)]
+        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,somindex,ncindex,freqindex)]
     } else {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,repindex,somindex,ncindex)]
+        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,somindex,ncindex,freqindex)]
     }
     
     resColnames = colnames(res)
@@ -56,8 +58,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   oriTlodTmp = 0
                   if ( grepl("\\|", as.character(x[j])) ) {
                       ori = strsplit(as.character(x[j]), "\\|")
-                      oriLod = strsplit(ori[[1]][3], ",")            
-                      oriTlodTmp = as.numeric(oriLod[[1]][1])
+                      #oriLod = strsplit(ori[[1]][3], ",")            
+                      oriTlodTmp = as.numeric(ori[[1]][2])    #change it to original samtools quality
                   }
                   if (mafTmp > maxMaf) {
                       maxMaf = mafTmp    #define max maf
@@ -76,12 +78,14 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   sampleNameTime = paste(sampleName, "time", sep="")
                   sampleNameAlt = paste(sampleName, "altc", sep="")
                   sampleNameRef = paste(sampleName, "refc", sep="")
-                  oriTlod = 0
+
+                  oriTlod = 0                                          #change it to original samtools quality
                   if ( grepl("\\|", as.character(x[j])) ) {
                       ori = strsplit(as.character(x[j]), "\\|")
-                      oriLod = strsplit(ori[[1]][3], ",")
-                      oriTlod = as.numeric(oriLod[[1]][1])
+                      #oriLod = strsplit(ori[[1]][1], ",")              #change it to original samtools quality
+                      oriTlod = as.numeric(ori[[1]][2])
                   }
+                  
                   ss = strsplit(as.character(x[j+1]), "\\|")
                   mafTmp = as.numeric(ss[[1]][1])
                   cmeme = strsplit(ss[[1]][3], ",")
@@ -102,6 +106,8 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   refnow = round(as.numeric(x[j+2])*(1-mafTmp))
                   altnow = round(as.numeric(x[j+2])*mafTmp)
 
+                  #message(paste(c(x[1],x[2],x[3],x[4],x[5],mafTmp,strandBias,strandBiasRef,strandBiasFisherP,refnow,altnow),collapse="  "))
+                  
                   if ( mafTmp > 0 ) {
                       ssb = ssb + strandBias*altnow
                       ssbp = ssbp + strandBiasFisherP*altnow
@@ -113,7 +119,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   #decide mafNow
                   if ( mafTmp == 0 ) {
                       mafNow = mafTmp
-                  } else if (endBias < 0.9 & ((strandBias != 0 & strandBias != 1) | (strandBiasFisherP > 0.7 & refnow >= 10 & altnow >= 5 & mafTmp >= 0.1)) & mappingBias < 0.8 & cmemeSum < cmemeTh & cmedianav < cmedianTh) {  
+                  } else if (endBias < 0.9 & ((strandBias != 0 & strandBias != 1) | (strandBiasFisherP > 0.7 & refnow >= 10 & altnow >= 5 & mafTmp >= 0.1)) & mappingBias < 0.8 & cmemeSum < 5.2 & cmedianav < cmedianTh) {  
                       mafNow = mafTmp
                       if (original > 0) {   #if oriLod
                           if (oriTlod < original) {
@@ -122,7 +128,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                               }
                           }
                       }
-                  } else {
+                  } else {            #save some low VAF ones
                       if (maxMaf > 0.2 & (original == 0 | (original > 0 & maxTlod >= original)) & mafTmp >= 0.01) {
                           if (cmedianav < 4) {
                               mafNow = mafTmp
@@ -145,12 +151,10 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
               
               ssb = ssb/altdav
               ssbp = ssbp/altdav
-              #message(paste(x[1],x[2], sep="  "))
-              #message(paste(ssb, ssbp, sep="  "))
               altdav = altdav/ssbc
               refdav = refdav/ssbc
               #if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1) | ssbp < 0.001) {                         #multiple sample strand bias
-              if (((ssb > 0.88 | ssb < 0.12) & numsamples > 1) | ((ssb > 0.9 | ssb < 0.1) & numsamples == 1)) {                         #multiple sample strand bias
+              if (is.nan(ssb) | (((ssb > 0.9 | ssb < 0.1) & numsamples > 1) | ((ssb > 0.9 | ssb < 0.1) & numsamples == 1))) {                         #multiple sample strand bias
               #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
                   for (j in seq(6,(3+length(cindex)), by=3)) {
                       sampleName = resColnames[j]
@@ -180,286 +184,10 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
 }
 
 
-getSampMutMultiIndel <- function(samples, normal, d) {
-    numsamples = length(samples)
-    rindexTF = vector()
-    cindex = vector()
-    for (si in 1:length(samples)) {
-        if (length(rindexTF) > 0) {
-            rindexTF = rindexTF | grepl(samples[si], d$traceSomatic)
-        } else {
-            rindexTF = grepl(samples[si], d$traceSomatic)
-        }
-        cindex = append(cindex, match(paste(samples[si], "maf", sep=""), colnames(d)))
-    }
-    rindex = which(rindexTF)
-    cindex = as.vector(sapply(cindex, function(x){c(x-1,x,x+1)}))
-    
-    ncindex = match(paste(normal, "maf", sep=""), colnames(d))
-    ncindex = as.vector(sapply(ncindex, function(x){c(x,x+1)}))  #normal samples maf and depth indexes
-    
-    #dronindex = match("dron", colnames(d))
-    gnindex = match("geneName", colnames(d))
-    glindex = match("geneLoc", colnames(d))
-    gfindex = match("functionalClass", colnames(d))
-    #caddindex = match("CADD_phred", colnames(d))
-    #gerpindex = match("GERP_RS", colnames(d))
-    #siftindex = match("SIFT_score", colnames(d))
-    #polyphenindex = match("Polyphen2_HVAR_pred", colnames(d))
-    somindex = match("traceSomatic", colnames(d))
-    germindex = match("traceGermline", colnames(d))
-    repindex = match("rep",colnames(d))
-    scindex = match("sc",colnames(d))
-
-    res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,repindex,scindex,somindex,germindex,ncindex)]
-    
-    resColnames = colnames(res)
-    resAdd = t(data.frame(apply(res, 1, function(x, cindex, resColnames) {     #x is every row
-              #ssb = 0                                                         #combined strand bias check
-              ssbc = 0
-              #ssbp = 0
-              refdav = 0
-              altdav = 0
-              resVector = vector()
-              for (j in seq(6,(3+length(cindex)), by=3)) {   #foreach sample
-                  sampleName = resColnames[j]
-                  sampleNameMaf = paste(sampleName, "mafc", sep="")
-                  sampleNameMafa = paste(sampleName, "mafa", sep="")
-                  sampleNameCcf = paste(sampleName, "ccf", sep="")
-                  sampleNameCcfSD = paste(sampleName, "ccfSD", sep="")
-                  sampleNameTime = paste(sampleName, "time", sep="")
-                  sampleNameAlt = paste(sampleName, "altc", sep="")
-                  sampleNameRef = paste(sampleName, "refc", sep="")
-
-                  altd = 0
-                  refd = 0
-                  tdep = 0
-                  mafTmp = 0
-                  cmeme = 0
-                  endBias = 0
-                  strandBias = 0
-                  mappingBias = 0
-                  if ( grepl("\\|", as.character(x[j])) ) {    #sample Name column
-                      ori = strsplit(as.character(x[j]), "\\|")
-                      oriDep = strsplit(ori[[1]][3], ",")
-                      mafTmp = as.numeric(ori[[1]][1])
-                      altd = as.numeric(oriDep[[1]][1])
-                      tdep = as.numeric(oriDep[[1]][2])
-                  } else if ( grepl("\\|", as.character(x[j+1])) ) { #samle Name maf column
-                      ss = strsplit(as.character(x[j+1]), "\\|")
-                      mafTmp = min(c(as.numeric(ss[[1]][1]),1))
-                      cmeme = strsplit(ss[[1]][3], ",")
-                      endBias = as.numeric(ss[[1]][2])
-                      strandBias = as.numeric(ss[[1]][4])
-                      mappingBias = as.numeric(ss[[1]][5])
-                      tdep = as.numeric(x[j+2])
-                      refd = max(c(round(tdep*(1-mafTmp)),0))
-                      altd = round(tdep*mafTmp)
-                  }
-                  
-                  #cmedianav = as.numeric(cmeme[[1]][2])
-                  #cmemeSum = sum(as.numeric(cmeme[[1]]))
-
-                  if ( mafTmp > 0 ) {
-                      #ssb = ssb + strandBias*altnow
-                      #ssbp = ssbp + strandBiasFisherP*altnow
-                      refdav = refdav + refd
-                      altdav = altdav + altd
-                      ssbc = ssbc + 1
-                  }
-                  
-                  #decide mafNow
-                  mafNow = mafTmp
-                  
-                  resVector = c(resVector, c(mafNow, 0, 0, 0, 0, refd, altd))
-                  names(resVector)[(length(resVector)-6):length(resVector)] = c(sampleNameMaf,sampleNameMafa,sampleNameCcf,sampleNameCcfSD,sampleNameTime,sampleNameRef,sampleNameAlt)   #time added
-              } #for each sample
-              
-              #ssb = ssb/altdav
-              #ssbp = ssbp/altdav
-              #message(paste(x[1],x[2], sep="  "))
-              #message(paste(ssb, ssbp, sep="  "))
-              altdav = altdav/ssbc
-              refdav = refdav/ssbc
-
-              #if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1) | ssbp < 0.001) {                         #multiple sample strand bias
-              #if (((ssb > 0.88 | ssb < 0.12) & numsamples > 1) | ((ssb > 0.9 | ssb < 0.1) & numsamples == 1)) {                         #multiple sample strand bias
-              #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
-              #    for (j in seq(6,(3+length(cindex)), by=3)) {
-              #        sampleName = resColnames[j]
-              #        sampleNameMaf = paste(sampleName, "mafc", sep="")
-              #        resVector[sampleNameMaf] = 0
-              #    }
-              #}
-
-              totalMaf = sum(as.numeric(resVector[grepl("mafc", names(resVector))]))
-              totalAlt = sum(as.numeric(resVector[grepl("altc", names(resVector))]))
-              totalRef = sum(as.numeric(resVector[grepl("refc", names(resVector))]))
-              mergeMAFC = round(totalAlt/(totalAlt+totalRef), 4)
-              mergeMAFA = mergeMAFC
-              mergedCCF = mergeMAFC
-              mergedCCFsd = mergeMAFC
-              resVector = c(resVector, totalMaf, totalAlt, totalRef, mergeMAFC, mergeMAFA, mergedCCF, mergedCCFsd)
-              names(resVector)[(length(resVector)-6):length(resVector)] = c("totalMaf", "totalAlt", "totalRef", "mergeMAFC", "mergeMAFA", "mergeCCF", "mergeCCFsd")
-
-              resVector                #return the result
-
-          }, cindex=cindex, resColnames=resColnames)))
-    
-
-    res = cbind(res, resAdd)
-    res = res[which(res$totalMaf != 0),]
-    return(res)
-}
-
-
 
 #adjust CCF titan for multi samples
-mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19) {
-    #prepare CNA
-    cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
-    cnvA = read.delim(cnv.inputA, as.is=T)
-    cnvA = cnvA[which(cnvA$num.mark > skipchunk),]                               #skip two few marks
-    cp2 <- c(which(cnvA$logcopynumberratio[-1] != cnvA$logcopynumberratio[-nrow(cnvA)] |
-                       cnvA$chrom[-1] != cnvA$chrom[-nrow(cnvA)] |
-                           cnvA$LOHcall[-1] != cnvA$LOHcall[-nrow(cnvA)]),
-             nrow(cnvA))
-    cp1 <- c(1,cp2[-length(cp2)]+1)
-    cnvA2 <- data.frame(chrom=cnvA$chrom[cp1],
-                        loc.start=cnvA$loc.start[cp1],
-                        loc.end=cnvA$loc.end[cp2],
-                        num.mark=cnvA$num.mark[cp1],         #recal later
-                        seg.mean=cnvA$seg.mean[cp1],         #recal later
-                        copynumber=cnvA$copynumber[cp1],
-                        minor_cn=cnvA$minor_cn[cp1],
-                        major_cn=cnvA$major_cn[cp1],
-                        allelicratio=cnvA$allelicratio[cp1], #recal later
-                        LOHcall=cnvA$LOHcall[cp1],
-                        cellularprevalence=cnvA$cellularprevalence[cp1],
-                        ploidy=cnvA$ploidy[cp1],
-                        normalproportion=cnvA$normalproportion[cp1],
-                        logcopynumberratio=cnvA$logcopynumberratio[cp1])
-    for (j in 1:length(cp1)) {
-        cnvA2$num.mark[j] <- sum(cnvA$num.mark[cp1[j]:cp2[j]])
-        cnvA2$seg.mean[j] <- mean(cnvA$seg.mean[cp1[j]:cp2[j]])
-        cnvA2$allelicratio[j] <- mean(cnvA$allelicratio[cp1[j]:cp2[j]])
-    }
-    return(cnvA2)
-}
 
-cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sampAB, public=FALSE, skipchunk = 19,
-                      mmut=10, method="fullMLE") {
-
-    #mergeCNA
-    cnvA2 = mergeCNA(titanPath=titanPath, sn=sn, skipchunk = skipchunk)
-
-    #sort tables
-    cnvA2 = arrange(cnvA2, chrom, loc.start, loc.end)
-    sampAB = arrange(sampAB, chr, pos)
-    
-    #overlap between CNA and SNV
-    cnvSeqNames = as.character(cnvA2$chrom)
-    if ( !grepl("chr", cnvA2$chrom[1]) ) {
-        cnvSeqNames = paste("chr", cnvA2$chrom, sep="")
-    }
-    message(cnvSeqNames[1])
-    snvSeqNames = sampAB$chr
-    if ( !grepl("chr", sampAB$chr[1]) ) {
-        snvSeqNames = paste("chr", sampAB$chr, sep="")
-    }
-    message(snvSeqNames[1])
-    cnvRangeA = GRanges(seqnames = cnvSeqNames, ranges = IRanges(cnvA2$loc.start, end=cnvA2$loc.end), strand=rep('+',dim(cnvA2)[1]))
-    snvRange = GRanges(seqnames = snvSeqNames, ranges = IRanges(sampAB$pos, end=sampAB$pos), strand=rep('+',dim(sampAB)[1]))
-    foA = findOverlaps(cnvRangeA, snvRange)
-    cnvHits = queryHits(foA)
-    snvHits = subjectHits(foA)
-
-    #produce results
-    result = list()
-    resultTable = vector()
-    li = 1
-    for (i in 1:dim(cnvA2)[1]) {
-        cnchrom = as.character(cnvA2$chrom[i])
-        cnstart = cnvA2$loc.start[i]
-        cnend = cnvA2$loc.end[i]
-        cnLOHcall = as.character(cnvA2$LOHcall[i])
-        cnminor = cnvA2$minor_cn[i]
-        cnmajor = cnvA2$major_cn[i]
-        cntotal = cnvA2$copynumber[i]
-        if (cntotal > 4 | cntotal < 2 | (cnminor == 1 & cnmajor == 1)){
-            message(paste("skip cnv", i, "due to cnv configuration", cnmajor, cnminor, sep=" "))
-            next
-        }
-        if (length(which(cnvHits == i)) < mmut) {
-            message(paste("skip cnv", i, sep=" "))
-            next     #skip too few mutations 1
-        }
-        
-        chopped = sampAB[snvHits[which(cnvHits == i)],]
-        if (public == TRUE) {
-            chopped = chopped[which(chopped$pubOrSub == "public"),]
-        } else {
-            chopped = chopped[which(chopped[,paste(sn,"ccf",sep="")] + 2.58*chopped[,paste(sn,"ccfSD",sep="")] >= 1),]
-        }
-        if (dim(chopped)[1] < mmut) {
-            message(paste("skip cnv", i, "second round", dim(chopped)[1], sep=" "))
-            next    #skip too few mutations 2
-        }
-        normCont = 1-chopped[,paste(sn,"pu",sep="")][1]
-        
-        onlyMuts = data.frame(chromosome=chopped$chr, position=chopped$pos, refbase=chopped$ref, mutbase=chopped$alt,
-            rsID=chopped$id, t_ref_count=chopped[,paste(sn,"refc",sep="")], t_alt_count=chopped[,paste(sn,"altc",sep="")],
-            allelefreq=chopped[,paste(sn,"mafc",sep="")],
-            t_depth=chopped[,paste(sn,"refc",sep="")] + chopped[,paste(sn,"altc",sep="")])
-        
-        if (cnmajor == 2 & cnminor == 0) {
-            hmatrix = makeEventHistory(type="LOH",copies=c(cnmajor,cnminor),onlyIdentifiable=F)[[1]]
-            cntype = "CNLOH"
-        } else if (cnmajor == 2 & cnminor == 2) {   #convert to CNLOH type
-            hmatrix = matrix(c(0,2,1,0),ncol=2,nrow=2,byrow=TRUE)
-            cntype = "CNLOH"
-            cntotal = 2
-            onlyMuts$allelefreq = sapply(onlyMuts$allelefreq, function(x){ min(1, 2*x)})
-            onlyMuts$t_alt_count = round(onlyMuts$allelefreq*onlyMuts$t_depth)
-            onlyMuts$t_ref_count = onlyMuts$t_depth - onlyMuts$t_alt_count
-        } else if (cnmajor == 3 & cnminor == 0) {
-            hmatrix = matrix(c(0,1,3,0,1,0,1,0,0), byrow=T, ncol=3)                  #revised
-            #cntype = "ALOH"
-            cntype = "CNLOH"
-        } else if (cnmajor == 4 & cnminor == 0) {
-            hmatrix = matrix(c(0,1,2,4,0,0,1,0,0,1,0,0,1,0,0,0), byrow=T, ncol=4)    #revised 
-            #cntype = "ALOH"
-            cntype = "CNLOH"
-        } else {
-            hmatrix = makeEventHistory(type="gain",copies=c(cnmajor,cnminor),onlyIdentifiable=F)[[1]]
-            cntype = "gain"
-        }
-        message(cntype)
-        x<-eventTiming(x=onlyMuts$t_alt_count, m=onlyMuts$t_depth, history=hmatrix, totalCopy=cntotal, minMutations=mmut,
-                       type=cntype,normCont=normCont, bootstrapCI="parametric",CILevel=0.9, method=method)
-        x = c(x, cnid=i, cnchrom=cnchrom, cnstart=cnstart, cnend=cnend, cnmajor=cnmajor, cnminor=cnminor, cnLOHcall=cnLOHcall)
-
-        result[[li]] = x
-        names(result)[[li]] = i
-        currentline = c(cnchrom, cnstart, cnend, cnmajor, cnminor, x$summaryTable[1],
-            as.numeric(x$pi[1]), x$piCI[1,1], x$piCI[1,2], as.numeric(x$pi[2]), x$piCI[2,1], x$piCI[2,2])
-        names(currentline) = c("chrom","loc.start","loc.end","major_cn","minor_cn","nmut",
-                 "p0","p0l","p0h","p1","p1l","p1h")
-        message(paste(currentline, collapse=" "))
-        if (length(resultTable) == 0) {
-            resultTable = currentline
-        } else {
-            resultTable = rbind(resultTable, currentline)
-        }
-        li=li+1
-    }
-    resultTable = data.frame(resultTable)
-    return(list(result, resultTable, cnvA2))    
-}
-
-
-
-adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6, sigTh=0.9, skipchunk=19) {
+adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", correctColname=FALSE, overadj=1.6, sigTh=0.9) {
     
     numsamples = length(samples)
     purities = vector()
@@ -468,17 +196,19 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
         sn = samples[i]
         message(sn)
         cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
+        #message(cnv.inputA)
         cnvA = read.delim(cnv.inputA)
-        cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                 #skip NA
-        cnvA = cnvA[which(cnvA$num.mark > 9),]                               #skip two few marks
+        cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                #skip NA
+        cnvA = cnvA[which(cnvA$num.mark > 9),]                              #skip two few marks
         cnvA$nt = cnvA$copynumber
-        if ("minor_cn" %in% colnames(cnvA)) {
+        if ("minor_cn" %in% colnames(cnv.inputA)) {
             cnvA$nb = cnvA$minor_cn
-        } else { 
+        } else {
             cnvA$nb = partialRound(cnvA$copynumber*(
                 1-((cnvA$allelicratio - cnvA$normalproportion*0.5)/(1-cnvA$normalproportion) - (1-cnvA$cellularprevalence)*0.5)
                 /cnvA$cellularprevalence))
         }
+        #cnvA$cellularprevalence = sapply(cnvA$cellularprevalence, function(x){if (x == 1){0.99} else {x}})
         
         cnvSeqNames = cnvA$chrom
         if (!grepl("chr",cnvA$chrom[1])){
@@ -645,7 +375,7 @@ adjust.ccf.titan.single <- function(sampAB, cnv.inputA, minAF=0.05) {    #may no
 
 # plot pair-wise multi sample plot
 
-plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotType = "AF", snr="", sns=vector(),ssAF=0, pobs=rep("pubOrSub",dim(combn(length(samples),2))[2]), png=FALSE) {
+plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotType = "AF", snr="", sns=vector(),ssAF=0, pobs=rep("pubOrSub",dim(combn(length(samples),2))[2])) {
     combinations = combn(length(samples),2)
     nplots = dim(combinations)[2]
     ndims = length(samples)-1
@@ -658,12 +388,8 @@ plotRes.multi.matrix.pdf <- function(sampAB, sroot, samples, pdfsize = 16, plotT
     if (plotType == "Density") {
         outfile = paste(sroot,"multi_density.pdf",sep="")
     }
-
-    if (png){
-        png(file = outfile, width=pdfsize*100, height=pdfsize*100)
-    } else {
-        pdf(file = outfile, width=pdfsize, height=pdfsize)
-    }
+    
+    pdf(file = outfile, width=pdfsize, height=pdfsize)
     layout(matrix(seq(1,ndims^2), ndims, ndims, byrow = FALSE))
     
     pindex = 0
@@ -1138,7 +864,7 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
     nc2 = nt * sAGP + 2 * (1 - sAGP)
 
     #message(nc)
-    #message(paste(c(f,A,S,pu,pa,sAGP,nt,nb,nc),collapse=" "))
+    #message(paste(c(f,A,S,pu,pa,sAGP,nt,nb),collapse=" "))
     if (nb == 1 & nt == 2) {   #normal diploid
         ccf = 2*(f/pu)
         ff = pu*cc/2
@@ -1160,27 +886,24 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
         pLate <- pbeta(fh.t, S+1, A+1)
         pEuploid <- pbeta(fh.e, S+1, A+1)
         Ptot <- pEarly.a + pLate + pEuploid
-        if (Ptot > 0) {
-            cp.A <- pEarly.a/Ptot
-            cp.CD <- 1 - cp.A
-            cp.C <- pLate/Ptot
-            cp.D <- pEuploid/Ptot
-            cp.AC <- 1 - cp.D
-            cp.AD <- 1 - cp.C
-                                        #message(paste(c(Ptot), collapse=" "))
-            if (cp.A >= sigTh) {
-                evoType <- "A1"
-            } else if (cp.CD >= sigTh & cp.C < sigTh & cp.D < sigTh) {
-                evoType <- "B/C"
-            } else if (cp.C >= sigTh) {
-                evoType <- "B"
-            } else if (cp.D >= sigTh) {
-                evoType <- "C"
-            } else if (cp.AC >= sigTh & cp.A < sigTh & cp.C < sigTh) {
-                evoType <- "A1/B"
-            } else if (cp.AD >= sigTh & cp.A < sigTh & cp.D < sigTh) {
-                evoType <- "A1/C"
-            }
+        cp.A <- pEarly.a/Ptot
+        cp.CD <- 1 - cp.A
+        cp.C <- pLate/Ptot
+        cp.D <- pEuploid/Ptot
+        cp.AC <- 1 - cp.D
+        cp.AD <- 1 - cp.C
+        if (cp.A >= sigTh) {
+            evoType <- "A1"
+        } else if (cp.CD >= sigTh & cp.C < sigTh & cp.D < sigTh) {
+            evoType <- "B/C"
+        } else if (cp.C >= sigTh) {
+            evoType <- "B"
+        } else if (cp.D >= sigTh) {
+            evoType <- "C"
+        } else if (cp.AC >= sigTh & cp.A < sigTh & cp.C < sigTh) {
+            evoType <- "A1/B"
+        } else if (cp.AD >= sigTh & cp.A < sigTh & cp.D < sigTh) {
+            evoType <- "A1/C"
         }
     } else if (nb == 0 & nt == 0) {        #homozygous deletion
         evoType <- "C"
@@ -1188,12 +911,10 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
         ff.C = cc[cc<=(1-sAGP)]/nc2
         Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=(1-sAGP)])
         if (sAGP > 0.98) {
-            ff.C = min(1, cc[cc<=0.02]/nc2)
+            ff.C = cc[cc<=0.02]/nc2
             Ms.C = computeSD(N, S, ff.C, cc=cc[cc<=0.02])
-            message(paste(ff.C, collapse="   "))
         }
         ccf2 <- (Ms.C$M1)/pu                    #dbinom
-        
         sd <- Ms.C$SD
         if (is.nan(sd)) {
             sd = 0.01
@@ -1241,20 +962,10 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
             sd <- Ms.C$SD
         }
     } else if (nb >= 1 & nt > 2) {
-        fh.ea <- (sAGP * (nt - nb) + 1 - sAGP)/nc2     #present in major
-        fl.ea <- (sAGP * (nt - nb))/nc2                
-        fh.eb <- (nb * sAGP + 1 - sAGP)/nc2            #present in minor
+        fh.ea <- (sAGP * (nt - nb) + 1 - sAGP)/nc2
+        fl.ea <- (sAGP * (nt - nb))/nc2
+        fh.eb <- (nb * sAGP + 1 - sAGP)/nc2
         fl.eb <- nb * sAGP/nc2
-
-        pEarly.ib = vector()
-        if ((nt-nb-1) > nb) {                 #present in between gains
-            for (ib in (nb+1):(nt-nb-1)) {    #for each state, low to high CN
-                fh.ebt = (ib * sAGP + 1 - sAGP)/nc2
-                fl.ebt = (ib * sAGP)/nc2
-                pEarly.ib = append(pEarly.ib, pbeta(fh.ebt, S+1, A+1) - pbeta(fl.ebt, S+1, A+1))
-            }
-        }
-        
         fh.t <- sAGP/nc2
         fh.e <- (1 - sAGP)/nc2
         pEarly.a <- pbeta(fh.ea, S+1, A+1) - pbeta(fl.ea, S+1, A+1)
@@ -1262,30 +973,21 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
         pLate <- pbeta(fh.t, S+1, A+1)
         pEuploid <- pbeta(fh.e, S+1, A+1)
         Ptot <- pEarly.a + pEarly.b + pLate + pEuploid
-
-        if (length(pEarly.ib) > 0) {         #some states in between
-            Ptot = Ptot + sum(pEarly.ib)
-        }
-        
         cp.A <- pEarly.a/Ptot
         cp.B <- pEarly.b/Ptot
         cp.C <- pLate/Ptot
         cp.D <- pEuploid/Ptot
-        cp.I <- 0
-        if (length(pEarly.ib) > 0) {
-           cp.I <- sum(pEarly.ib)/Ptot
-        }
         #message(paste(c(cp.A, cp.B, cp.C, cp.D), collapse=" "))
-        cp.AB <- 1 - cp.C - cp.D - cp.I
-        cp.AC <- 1 - cp.B - cp.D - cp.I
-        cp.AD <- 1 - cp.B - cp.D - cp.I
-        cp.BC <- 1 - cp.A - cp.D - cp.I
-        cp.BD <- 1 - cp.A - cp.C - cp.I
-        cp.CD <- 1 - cp.A - cp.B - cp.I
-        cp.ABC <- 1 - cp.D - cp.I
-        cp.ABD <- 1 - cp.C - cp.I
-        cp.ACD <- 1 - cp.B - cp.I
-        cp.BCD <- 1 - cp.A - cp.I
+        cp.AB <- 1 - cp.C - cp.D
+        cp.AC <- 1 - cp.B - cp.D
+        cp.AD <- 1 - cp.B - cp.D
+        cp.BC <- 1 - cp.A - cp.D
+        cp.BD <- 1 - cp.A - cp.C
+        cp.CD <- 1 - cp.A - cp.B
+        cp.ABC <- 1 - cp.D
+        cp.ABD <- 1 - cp.C
+        cp.ACD <- 1 - cp.B
+        cp.BCD <- 1 - cp.A
         if (Ptot > 0) {
             if (cp.A >= sigTh) {                   # earl A
                 evoType = "A1"
@@ -1295,8 +997,6 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
                 evoType <- "B"
             } else if (cp.D >= sigTh){
                 evoType <- "C"
-            } else if (cp.I >= sigTh){
-                evoType <- "I"
             } else if (cp.CD >= sigTh & cp.C < sigTh & cp.D < sigTh){
                 evoType <- "B/C"
             } else if (cp.AB >= sigTh & cp.A < sigTh & cp.B < sigTh){
@@ -1319,8 +1019,8 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
                 evoType <- "A1/B/C"
             }
         }
-        allprobs = c(pEarly.a, pEarly.b, pLate, pEuploid, sum(pEarly.ib))
-        names(allprobs) = c("pEarly.a", "pEarly.b", "pLate", "pEuploid", "pEarly.ib")
+        allprobs = c(pEarly.a, pEarly.b, pLate, pEuploid)
+        names(allprobs) = c("pEarly.a", "pEarly.b", "pLate", "pEuploid")
         maxType = names(allprobs[match(max(allprobs),allprobs)])
         #if (maxType == "pEarly.a" & prior != "late") {
         if (evoType == "A1" & prior != "late") {
@@ -1332,13 +1032,6 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
             #ccf2 = ccf2/pu
             sd <- Ms.A$SD
         #} else if (maxType == "pEarly.b" & prior != "late") {
-        } else if (evoType == "I") {                   # early intermediate
-            ibm = ((nb+1):(nt-nb-1))[which.max(pEarly.ib)]
-            ccf = (f/pu)*nc - (ibm - 1)*pa             #early IB
-            ff.I <- pu*(cc - pa +  ibm * pa)/nc        #dbinom
-            Ms.I <- computeSD(N, S, ff.I)              #dbinom
-            ccf2 <- Ms.I$M1                            #dbinom
-            sd <- Ms.I$SD
         } else if (evoType == "A2" & prior != "late") {    
             ccf = (f/pu)*nc - (nb - 1)* pa         #early A2
             ff.B <- pu*(cc - pa + nb * pa)/nc      #dbinom
@@ -1369,9 +1062,6 @@ computeCCF <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=1
     if ( f > 0.7 & ccf2 < 0.05 & is.nan(sd) ) {  #probably un-identified LOH
         ccf = f*2
         ccf2 = 1
-        sd = 0.01
-    }
-    if (is.nan(sd)) {
         sd = 0.01
     }
     return(c(ccf, evoType, ccf2, sd))
@@ -1585,9 +1275,6 @@ computeCCF2 <- function(f, A, S, pu, pa, sAGP, nt, nb, prior="unknown", overadj=
             ccf = f*2
         }
     }
-    if (is.nan(sd)) {
-        sd = 0.02
-    }
     return(c(ccf, evoType, ccf2, sd))
 }
 
@@ -1781,7 +1468,7 @@ pubOrSub.simu <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samp
                                  names(mutVector) = coln
                                  cppres = pubOrSub.Calc.sim(mutVector, samples, rep(1,length(samples)), rep(1,length(samples)), pAF=pAF)
                                  cpstype = "unknown"
-                                 totalDepth = sum(as.numeric(mutVector[paste(samples, "d", sep="")]))
+                                 totalDepth = sum(as.numeric(mutVector[paste("depth",samples,sep="")]))
                                  if (totalDepth < minDepTotal) {
                                      cpstype = "unknown"
                                  } else if (cppres[1] >= 0.05 | cppres[3] == 1) {   #accept public
@@ -1792,8 +1479,8 @@ pubOrSub.simu <- function(sampAB, samples, minAF=0.05, minDepTotal=5*length(samp
                                      foundSamples = ""
                                      for (i in 1:length(samples)) {                                     #get subclonal ones 2nd round: Refine
                                          sn = samples[i]
-                                         mafai = match(paste(sn, "maf", sep=""), coln)
-                                         depthi = match(paste(sn, "d", sep=""), coln)
+                                         mafai = match(paste("maf", sn, sep=""), coln)
+                                         depthi = match(paste("depth", sn, sep=""), coln)
                                          if (as.numeric(mutVector[mafai]) > minAF) {
                                              foundSamples = paste(foundSamples, sn, ",", sep="")
                                          }
@@ -1830,12 +1517,12 @@ pubOrSub.Calc.sim <- function(mutVector, samples, maxPa = vector(), maxsAGP = ve
     originalNames = names(mutVector)
 
     aboveContri = 0
-    VAFaboveQua = all(as.numeric(mutVector[match(paste(samples, "maf", sep=""), originalNames)]) >= pAF)
+    VAFaboveQua = all(as.numeric(mutVector[match(paste("maf", samples, sep=""), originalNames)]) >= pAF)
 
     cpop = sapply(samples, function(x, originalNames, mutVector) {
                       sn = x
-                      mafai = match(paste(sn, "maf", sep=""), originalNames)
-                      depthi = match(paste(sn, "d", sep=""), originalNames)
+                      mafai = match(paste("maf", sn, sep=""), originalNames)
+                      depthi = match(paste("depth", sn, sep=""), originalNames)
                       depth = as.numeric(mutVector[depthi])
                       maf = as.numeric(mutVector[mafai])
                       refc = round(depth * (1-maf))
@@ -1903,27 +1590,6 @@ pubOrSub.prob.binom <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {
 
     f.pub = min(1,f.pub)
     #p.pub = pbeta(fh.pub,S+1,A+1) - pbeta(fl.pub,S+1,A+1)
-    p.pub = pbinom(S, N, f.pub)       #p for pub (under pub vaf, the prob reaching S)
-    #p.abs = 1 - pbinom(S, N, f.abs)   #p for abs (under abs, the prob reaching S)
-    p.abs = pbeta(f.abs, S+1, A+1)
-    return(c(p.pub, p.abs))
-    
-}
-
-
-earlyMut.prob.binom <- function(A, S, pu, sAGP, nt, nb, pa=1, prior="unknown") {      #using binomial test
-    
-    N = A + S
-    
-    nc = nt * sAGP + 2 * (1 - sAGP)
-    f.abs <- 0.02
-    f.pub <- (pu * (nt - nb))/nc
-
-    f.pub = ifelse(nb == 0 & nt == 0, 0.5*pu,
-            ifelse(nb == 0 & prior == "pub", max((pu - sAGP)/nc, 0),
-            ifelse(nt >= 2, (pu * (nt - nb))/nc, (pu * (nt - nb))/nc)))     #as long as more than 2 copies
-
-    f.pub = min(1,f.pub)
     p.pub = pbinom(S, N, f.pub)       #p for pub (under pub vaf, the prob reaching S)
     #p.abs = 1 - pbinom(S, N, f.abs)   #p for abs (under abs, the prob reaching S)
     p.abs = pbeta(f.abs, S+1, A+1)
@@ -2226,100 +1892,24 @@ mergeVAF <- function(sampAB, samples) {
 
 
 
-prepareLichee <- function(samples, nmaf, SampAB, minDepth=20, clonal=FALSE, correctColname=FALSE, toPhylip=FALSE) {
+prepareLichee <- function(samples, nmaf, SampAB) {
     depthCols = paste(samples, "d", sep="")
-    ccfCols = paste(samples, "ccf", sep="")
-    ccfSDcols = paste(samples, "ccfSD", sep="")
-    licheeCol = c("chr","pos","ref","alt","geneName",nmaf,paste(samples,"mafc",sep=""))
-    #licheeRow = !is.na(SampAB$functionalClass)
-    licheeRow = rep(TRUE, dim(SampAB)[1])
+    licheeCol = c("chr","pos","ref","alt","geneName",nmaf,paste(samples,"mafa",sep=""))
+    licheeRow = !is.na(SampAB$functionalClass)
     for (i in 1:length(depthCols)) {  #Depth
-        licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= minDepth
+        licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= 20
     }
-    #message(length(which(licheeRow)))
-    #message(ccfCols)
     
-    if (clonal) {
-        licheeRow2 = rep(FALSE, dim(SampAB)[1])
-        for (i in 1:length(ccfCols)) {  #clonality
-            licheeRow2 = licheeRow2 | (SampAB[,match(ccfCols[i], colnames(SampAB))] + 1.96*SampAB[,match(ccfSDcols[i], colnames(SampAB))]) >= 1
-        }
-        licheeRow = licheeRow & licheeRow2
-    }
     licheeInput = SampAB[licheeRow,match(licheeCol,colnames(SampAB))]
-    
     licheeInput = data.frame(licheeInput, name=paste(licheeInput$geneName,
-                                              paste(licheeInput$chr,licheeInput$pos,licheeInput$ref,sep=":"), licheeInput$alt, sep="_"))
-    if ( correctColname == TRUE ) {
-        colnames(licheeInput) = gsub("\\.","-", colnames(licheeInput))
-    }
-    #message(paste(colnames(licheeInput), collapse="\t"))
-    #message(paste(dim(licheeInput), collapse="\t"))
-    licheeInput = licheeInput[,match(c("chr","pos","name",nmaf,paste(samples,"mafc",sep="")),colnames(licheeInput))]
+                  paste(licheeInput$chr,licheeInput$pos,licheeInput$ref,sep=":"), licheeInput$alt, sep="_"))
+    licheeInput = licheeInput[,match(c("chr","pos","name",nmaf,paste(samples,"mafa",sep="")),colnames(licheeInput))]
     licheeInput[,4] = 0
     
-    colnames(licheeInput) = gsub("mafc", "", colnames(licheeInput))
+    colnames(licheeInput) = gsub("mafa", "", colnames(licheeInput))
     colnames(licheeInput) = gsub("maf", "", colnames(licheeInput))
     return(licheeInput)
-
 }
-
-prepareTreeomics <- function(samples, nmaf, nd, SampAB, minDepth=20, clonal=FALSE, correctColname=FALSE) {
-    
-    depthCols = paste(samples, "d", sep="")
-    ccfCols = paste(samples, "ccf", sep="")
-    ccfSDcols = paste(samples, "ccfSD", sep="")
-    licheeCol = c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",nmaf,paste(samples,"altc",sep=""),depthCols,nd)
-
-    licheeRow = rep(TRUE, dim(SampAB)[1])
-    for (i in 1:length(depthCols)) {  #Depth
-        licheeRow = licheeRow & SampAB[,match(depthCols[i], colnames(SampAB))] >= minDepth
-    }
-    
-    if (clonal) {
-        licheeRow2 = rep(FALSE, dim(SampAB)[1])
-        for (i in 1:length(ccfCols)) {  #clonality
-            licheeRow2 = licheeRow2 | (SampAB[,match(ccfCols[i], colnames(SampAB))] + 1.96*SampAB[,match(ccfSDcols[i], colnames(SampAB))]) >= 1
-        }
-        licheeRow = licheeRow & licheeRow2
-    }
-    licheeInput = SampAB[licheeRow,match(licheeCol,colnames(SampAB))]
-
-    idxgeneName = match("geneName",colnames(licheeInput))
-    idxgeneLoc = match("geneLoc",colnames(licheeInput))
-    idxfunClass = match("functionalClass",colnames(licheeInput))
-    GeneNames = as.vector(apply(licheeInput, 1, function(x, ign, igl, ifc){
-                                    if (x[igl] == "intergenic" | x[igl] == "ncRNA_exonic" | x[igl] == "ncRNA_splicing" | x[igl] == "splicing") {
-                                        x[ign]
-                                    } else if (x[igl] == "exonic" & x[ifc] != "synonymous SNV") {
-                                        x[ign]
-                                    } else if (x[igl] == "exonic" & x[ifc] == "synonymous SNV") {
-                                        paste(x[ign],"[synonymous]",sep="")
-                                    } else {
-                                        paste(x[ign],"[",x[igl],"]",sep="")
-                                    }
-                                                            }, ign=idxgeneName, igl=idxgeneLoc, ifc=idxfunClass))
-    
-    licheeInput = data.frame(licheeInput, Change=paste(licheeInput$ref, licheeInput$alt, sep=">"), Gene=GeneNames)
-    if ( correctColname == TRUE ) {
-        colnames(licheeInput) = gsub("\\.","-", colnames(licheeInput))
-    }
-
-    licheeInput1 = licheeInput[,match(c("chr","pos","Change","Gene",nmaf,paste(samples,"altc",sep="")),colnames(licheeInput))]
-    licheeInput1[,5] = 0
-    colnames(licheeInput1)[1:4] = c("Chromosome","Position","Change","Gene")
-    colnames(licheeInput1) = gsub("altc", "", colnames(licheeInput1))
-    colnames(licheeInput1) = gsub("maf", "", colnames(licheeInput1))
-    colnames(licheeInput1) = gsub("SPCG-", "", colnames(licheeInput1))
-
-    licheeInput2 = licheeInput[,match(c("chr","pos","Change","Gene",nd,paste(samples,"d",sep="")),colnames(licheeInput))]
-    colnames(licheeInput2)[1:4] = c("Chromosome","Position","Change","Gene")
-    colnames(licheeInput2) = gsub("d$", "", colnames(licheeInput2))
-    colnames(licheeInput2) = gsub("SPCG-", "", colnames(licheeInput2))
-    return(list(licheeInput1, licheeInput2))
-
-}
-
 
 
 prepareLichee2 <- function(samples, sgSamples, nmaf, sampAB) {
@@ -2480,7 +2070,7 @@ generateUpSetList2 <- function(sampAB, sn1, sn2, samples) {
 }
 
 
-spruceInput <- function(samp, samples, minMaf, clonal=FALSE) {
+spruceInput <- function(samp, samples, minMaf) {
     depthCols = paste(samples, "d", sep="")
     licheeRow = !is.na(samp$functionalClass)
     for (i in 1:length(depthCols)) {
@@ -2489,45 +2079,19 @@ spruceInput <- function(samp, samples, minMaf, clonal=FALSE) {
     samp = samp[licheeRow,]
     result = data.frame()
     mutindex = 0
-    #maxnanbs = 2   #max nanb status
     for (r in 1:dim(samp)[1]) {    #each mutation
         maxMaf = 0
-        isClonal = FALSE
-        #ntnbs = vector()   #all nt nb stats
         for (i in 1:length(samples)) {
             sn = samples[i]
             mafi = match(paste(sn,"mafa",sep=""), colnames(samp))
             maf = as.numeric(samp[r,mafi])
-            ccfi = match(paste(sn,"ccf",sep=""), colnames(samp))
-            ccf = as.numeric(samp[r,ccfi])
-            ccfSDi = match(paste(sn,"ccfSD",sep=""), colnames(samp))
-            ccfSD = as.numeric(samp[r,ccfSDi])
-            #nti = match(paste(sn,"nt",sep=""), colnames(samp))
-            #nt = as.character(samp[r,nti])
-            #nbi = match(paste(sn,"nb",sep=""), colnames(samp))
-            #nb = as.character(round(as.numeric(samp[r,nbi])))
-            #na = nt-nb
-            #nanb = paste(na,nb,sep="_")
-            #nanbs = append(nanbs, nanb)
             if (maf > maxMaf) {
                 maxMaf = maf
-            }
-            if ((ccf + 1.96*ccfSD) >= 1) {
-                isClonal = TRUE
             }
         }
         if (maxMaf < minMaf)  {
             next
         }
-        if (clonal ==TRUE & isClonal == FALSE){
-            next
-        }
-
-        #nanbst = table(nanbs)
-        #nstatus = length(nanbst)
-        #if (nstatus > maxnanbs) {
-        #    maxnanbs = nstatus     #update max ntnb status
-        #}
         mutn = as.character(samp[r, match("geneName", colnames(samp))])   #mutation name
         for (i in 1:length(samples)) {   #each tumor
             sn = samples[i]
@@ -2547,7 +2111,7 @@ spruceInput <- function(samp, samples, minMaf, clonal=FALSE) {
             seg = as.numeric(samp[r,segi])
             maflb = quantile(rbinom(1000,depth,maf),prob=seq(0,1,0.01))["1%"]/depth
             mafub = quantile(rbinom(1000,depth,maf),prob=seq(0,1,0.01))["99%"]/depth
-            if (na == 1 & nb == 1){  #WT type diploid
+            if (na == 1 & nb == 1){
                 result = rbind(result, c(i-1, sn, mutindex, mutn, maflb, maf, mafub, 1, 1, 1, NA, NA, NA, seg),
                     stringsAsFactors=FALSE)
             } else {
@@ -2557,7 +2121,7 @@ spruceInput <- function(samp, samples, minMaf, clonal=FALSE) {
         } #each tumor
         mutindex = mutindex+1
     } #each mutation
-    colnames(result) = c("sample_index","sample_label","character_index","character_label",
+    colnames(result) = c("sample_index","sample_label","character_label","character_index",
                 "vaf_lb","vaf_mean","vaf_ub","x","y","mu","x","y","mu","seg")
     return(result)
 }
@@ -2706,18 +2270,18 @@ bez <- function(x, y, t){
 
 #for plotting simulated vaf data
 
-plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plotType = "AF", snr="", sns=vector(), outdir="./") {
+plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plotType = "AF", snr="", sns=vector()) {
     combinations = combn(length(samples),2)
     nplots = dim(combinations)[2]
     ndims = length(samples)-1
 
     resStats = list()
-    outfile = paste(outdir,snr,"multi_hist.pdf",sep="")
+    outfile = paste(snr,"multi_hist.pdf",sep="")
     if (plotType == "Scatter") {
-        outfile = paste(outdir,snr,"multi_scatter.pdf",sep="")
+        outfile = paste(snr,"multi_scatter.pdf",sep="")
     }
     if (plotType == "Density") {
-        outfile = paste(outdir,snr,"multi_density.pdf",sep="")
+        outfile = paste(snr,"multi_density.pdf",sep="")
     }
     pdf(file = outfile, width=pdfsize, height=pdfsize)
     layout(matrix(seq(1,ndims^2), ndims, ndims, byrow = FALSE))
@@ -2756,12 +2320,12 @@ plotRes.simVAF.matrix.pdf <- function(sampAB, samples, depths, pdfsize = 16, plo
         }
     }
     dev.off()
-    return(resStats)
+    return(1)
 }
 
 
 
-plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="B", sn1="maf1", sn2="maf2", dp1="depth1", dp2="depth2",minAF=0.05, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0, reportSSR=FALSE, pob="pubOrSub") {
+plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="B", sn1="maf1", sn2="maf2", dp1="depth1", dp2="depth2",minAF=0.05, ratio=1, plotAF=TRUE, plotDensity=TRUE, plotScatter=TRUE, pdf=TRUE, alpha=1, binw=0, reportSSR=FALSE) {
 
   sn1s = sn1n     #name of sample 1
   sn2s = sn2n     #name of sample 2
@@ -2782,7 +2346,7 @@ plotRes.simVAF.pdf <- function(sampAB, sampName, main=sampName, sn1n="A", sn2n="
                                     }, maf1i=maf1Index,maf2i=maf2Index,dp1i=dp1i,dp2i=dp2i))
   sampAB = sampAB[depthPowerKeep,]
 
-  subMuts = subclonalMutSim(sampAB, sn1, sn2, dp1, dp2, minAF=minAF, pob=pob)
+  subMuts = subclonalMutSim(sampAB, sn1, sn2, dp1, dp2, minAF=minAF)
   
   allA_Rows = which(sampAB[,maf1Index] > minAF & sampAB[,maf1Index] <= 1)                                                       #all sample A rows
   subA_Rows = intersect(subMuts$subAi, which(sampAB[,maf1Index] > minAF & sampAB[,maf1Index] <= 1))                             #sample A sub rows
@@ -3008,53 +2572,10 @@ samplemean <- function(x, d) {
 
 
 outMutTable <- function(data, samples) {
-    if (length(samples) == 1) {
-        keep = data[,paste(samples,"ccf",sep="")] > 0
-    } else {
-        keep = rowSums(data[,paste(samples,"ccf",sep="")]) > 0
-    }
-    data2 = data[keep,]
+    data2 = data
     #data2 = data[!(data$pubOrSub == "unknown"),]
-    #data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
-    #as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
-    #    colnames(data)[grepl("pubOrSub", colnames(data2))])]
     data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
-    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu"), paste, sep=""))))]
+    as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
+        colnames(data)[grepl("pubOrSub", colnames(data2))])]
     return(data2)
 }
-
-outTable.maf <- function(data, samples) {
-    outmaf = data.frame()
-    for(r in 1:dim(data)[1]) {                                          #each row
-        Hugo_Symbol = gsub("\\(dist=\\d+\\)", "", data[r,"geneName"])
-        Chromosome = data[r,"chr"]
-        Start_Position = data[r,"pos"]
-        End_Position = data[r,"pos"]
-        Variant_Classification = data[r,"functionalClass"]
-        if (is.na(Variant_Classification)) {
-            Variant_Classification = data[r,"geneLoc"]
-        }
-        Variant_Type = "DEL"
-        Reference_Allele = data[r,"ref"]
-        if (Reference_Allele == '-') {
-            Variant_Type = "INS"
-        }
-        Tumor_Seq_Allele2 = data[r,"alt"]
-        
-        for (i in 1:length(samples)) {
-            tmp = data.frame()
-            sn = samples[i]
-            Tumor_Sample_Barcode = sn
-            ccfindex = match(paste(sn, "ccf", sep=""), colnames(data))
-            ccfsdindex = match(paste(sn, "ccfSD", sep=""), colnames(data))
-            somindex = match("traceSomatic", colnames(data))
-            if ((data[r,ccfindex] + 1.96*data[r,ccfsdindex]) >= 1) {
-                tmp = rbind(tmp, c(Hugo_Symbol,Chromosome,Start_Position,End_Position,Variant_Classification,Variant_Type,Reference_Allele,Tumor_Seq_Allele2,Tumor_Sample_Barcode))
-                colnames(tmp) =  c("Hugo_Symbol","Chromosome","Start_Position","End_Position","Variant_Classification","Variant_Type","Reference_Allele","Tumor_Seq_Allele2","Tumor_Sample_Barcode")
-                outmaf = rbind(outmaf, tmp)
-            }
-        }
-    }
-    return(outmaf)
-}
-
