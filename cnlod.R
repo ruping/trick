@@ -55,8 +55,10 @@ cnlrbafprob <- function(data, params,
     prev1= sapply(as.numeric(data$CellularPrevalence),function(x){
                       if (is.na(x)){1} else {x}
                       })
-    N = as.numeric(data$RefCount) + as.numeric(data$NRefCount)
-    k = pmax(as.numeric(data$RefCount), as.numeric(data$NRefCount))
+    #N = as.numeric(data$RefCount) + as.numeric(data$NRefCount)
+    N = as.numeric(data$Depth)
+    k = pmax(as.numeric(data$RefCount), as.numeric(data$Depth)-as.numeric(data$RefCount))
+    #k = pmax(as.numeric(data$RefCount), as.numeric(data$NRefCount))
     bprob = sapply(1:length(k), function(x, k, N, prev) {
                        omega = balleleRatio(n=rep(norcon, 25), prev=rep(prev1[x],25),
                            Ct=major_cn_code+minor_cn_code, Cb=minor_cn_code)
