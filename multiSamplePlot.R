@@ -467,10 +467,12 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
     for (i in 1:length(samples)) {
         sn = samples[i]
         message(sn)
-        cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
-        cnvA = read.delim(cnv.inputA)
-        cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                 #skip NA
-        cnvA = cnvA[which(cnvA$num.mark > 9),]                               #skip two few marks
+        #cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
+        #cnvA = read.delim(cnv.inputA)
+        cnvA = mergeCNA(titanPath=titanPath, sn=sn, skipchunk = skipchunk)    #now through merging
+        #cnvA = cnvA[which(!is.na(cnvA$cellularprevalence)),]                 #skip NA (WT diploid)
+        cnvA$cellularprevalence[which(is.na(cnvA$cellularprevalence))] = 0    #keep WT diploid, setting cellularprevalence to zero 
+        #cnvA = cnvA[which(cnvA$num.mark > 9),]                               #skip two few marks
         cnvA$nt = cnvA$copynumber
         if ("minor_cn" %in% colnames(cnvA)) {
             cnvA$nb = cnvA$minor_cn
@@ -479,6 +481,8 @@ adjust.ccf.titan.multi <- function(sampAB, samples, t, titanPath="./titan/", cor
                 1-((cnvA$allelicratio - cnvA$normalproportion*0.5)/(1-cnvA$normalproportion) - (1-cnvA$cellularprevalence)*0.5)
                 /cnvA$cellularprevalence))
         }
+        cnvA = arrange(cnvA, chrom, loc.start, loc.end)                       #sort the cnv table
+        sampAB = arrange(sampAB, chr, pos)                                    #sort the mutation table
         
         cnvSeqNames = cnvA$chrom
         if (!grepl("chr",cnvA$chrom[1])){
@@ -3018,8 +3022,8 @@ outMutTable <- function(data, samples) {
     #data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
     #as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
     #    colnames(data)[grepl("pubOrSub", colnames(data2))])]
-    data2 = data2[,c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",
-    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu"), paste, sep=""))))]
+    data2 = data2[,c("chr","pos","id","ref","alt","geneName","geneLoc","functionalClass","CADD_phred","GERP_RS","SIFT_score","Polyphen2_HVAR_pred",
+    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))))]
     return(data2)
 }
 
