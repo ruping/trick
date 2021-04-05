@@ -3023,7 +3023,7 @@ outMutTable <- function(data, samples) {
     #as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
     #    colnames(data)[grepl("pubOrSub", colnames(data2))])]
     data2 = data2[,c("chr","pos","id","ref","alt","geneName","geneLoc","functionalClass","CADD_phred","GERP_RS","SIFT_score","Polyphen2_HVAR_pred",
-    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))))]
+    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu","pa","nt","nb","seg"), paste, sep=""))))]
     return(data2)
 }
 
