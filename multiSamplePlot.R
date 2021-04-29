@@ -347,7 +347,7 @@ mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19) {
     return(cnvA2)
 }
 
-cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sampAB, public=FALSE, skipchunk = 19,
+cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sampAB, public=FALSE, pubOrSub="pubOrSub", skipchunk = 19,
                       mmut=10, method="fullMLE") {
 
     #mergeCNA
@@ -397,9 +397,9 @@ cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sam
         
         chopped = sampAB[snvHits[which(cnvHits == i)],]
         if (public == TRUE) {
-            chopped = chopped[which(chopped$pubOrSub == "public"),]
+            chopped = chopped[which(chopped[,pubOrSub] == "public"),]                                                     #focus on the patient truncal ones
         } else {
-            chopped = chopped[which(chopped[,paste(sn,"ccf",sep="")] + 2.58*chopped[,paste(sn,"ccfSD",sep="")] >= 1),]
+            chopped = chopped[which(chopped[,paste(sn,"ccf",sep="")] + 2.58*chopped[,paste(sn,"ccfSD",sep="")] >= 1),]    #focus on the sample clonal ones
         }
         if (dim(chopped)[1] < mmut) {
             message(paste("skip cnv", i, "second round", dim(chopped)[1], sep=" "))
@@ -455,6 +455,25 @@ cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sam
     }
     resultTable = data.frame(resultTable)
     return(list(result, resultTable, cnvA2))    
+}
+
+
+
+vpEst <- function(nt, nb, vaf, minor=FALSE, single=FALSE) { #suppose the mutation occur in the major allele
+    p = (2*vaf)/((nt-nb)-vaf*(nt-2))
+    if (minor) {
+        p = (2*vaf)/(nb-vaf*(nt-2))
+    }
+    if (single) {
+        p = (2*vaf)/(1-vaf*(nt-2))
+    }
+    return(p)
+}
+
+bafEst <- function(nt,nb,pu) {
+    baf = ((nt-nb)*pu + 1*(1-pu))/(nt*pu + 2*(1-pu))
+    baf2 =  (nb*pu + 1*(1-pu))/(nt*pu + 2*(1-pu))
+    return(c(baf,baf2))               
 }
 
 
@@ -2272,6 +2291,7 @@ prepareTreeomics <- function(samples, nmaf, nd, SampAB, minDepth=20, clonal=FALS
     
     depthCols = paste(samples, "d", sep="")
     ccfCols = paste(samples, "ccf", sep="")
+    mafcCols = paste(samples, "mafc", sep="")
     ccfSDcols = paste(samples, "ccfSD", sep="")
     licheeCol = c("chr","pos","ref","alt","geneName","geneLoc","functionalClass",nmaf,paste(samples,"altc",sep=""),depthCols,nd)
 
@@ -2283,7 +2303,13 @@ prepareTreeomics <- function(samples, nmaf, nd, SampAB, minDepth=20, clonal=FALS
     if (clonal) {
         licheeRow2 = rep(FALSE, dim(SampAB)[1])
         for (i in 1:length(ccfCols)) {  #clonality
-            licheeRow2 = licheeRow2 | (SampAB[,match(ccfCols[i], colnames(SampAB))] + 1.96*SampAB[,match(ccfSDcols[i], colnames(SampAB))]) >= 1
+            licheeRow2 = licheeRow2 | (SampAB[,match(ccfCols[i], colnames(SampAB))] + 2.58*SampAB[,match(ccfSDcols[i], colnames(SampAB))]) >= 1
+        }
+        licheeRow = licheeRow & licheeRow2
+    } else {
+        licheeRow2 = rep(FALSE, dim(SampAB)[1])
+        for (i in 1:length(mafcCols)) {  #clonality
+            licheeRow2 = licheeRow2 | SampAB[,match(mafcCols[i], colnames(SampAB))] >= 0.08
         }
         licheeRow = licheeRow & licheeRow2
     }
@@ -3027,37 +3053,57 @@ outMutTable <- function(data, samples) {
     return(data2)
 }
 
-outTable.maf <- function(data, samples) {
+outTable.maf <- function(data, samples, indel=FALSE, clonality="clonal", minAF=0.04) {
     outmaf = data.frame()
     for(r in 1:dim(data)[1]) {                                          #each row
         Hugo_Symbol = gsub("\\(dist=\\d+\\)", "", data[r,"geneName"])
         Chromosome = data[r,"chr"]
         Start_Position = data[r,"pos"]
         End_Position = data[r,"pos"]
-        Variant_Classification = data[r,"functionalClass"]
+        Variant_Classification = as.character(data[r,"functionalClass"])
         if (is.na(Variant_Classification)) {
-            Variant_Classification = data[r,"geneLoc"]
+            Variant_Classification = as.character(data[r,"geneLoc"])
         }
-        Variant_Type = "DEL"
-        Reference_Allele = data[r,"ref"]
-        if (Reference_Allele == '-') {
-            Variant_Type = "INS"
-        }
-        Tumor_Seq_Allele2 = data[r,"alt"]
         
-        for (i in 1:length(samples)) {
+        Variant_Type = "SNP"
+        Reference_Allele = as.character(data[r,"ref"])
+        if (indel) {
+            Variant_Type = "DEL"
+            if (Reference_Allele == '-') {
+                Variant_Type = "INS"
+            }
+        }
+        Tumor_Seq_Allele2 = as.character(data[r,"alt"])
+        
+        for ( i in 1:length(samples) ) {                                # for each sample
             tmp = data.frame()
             sn = samples[i]
             Tumor_Sample_Barcode = sn
+            mafcindex = match(paste(sn, "mafc", sep=""), colnames(data))
             ccfindex = match(paste(sn, "ccf", sep=""), colnames(data))
             ccfsdindex = match(paste(sn, "ccfSD", sep=""), colnames(data))
             somindex = match("traceSomatic", colnames(data))
-            if ((data[r,ccfindex] + 1.96*data[r,ccfsdindex]) >= 1) {
-                tmp = rbind(tmp, c(Hugo_Symbol,Chromosome,Start_Position,End_Position,Variant_Classification,Variant_Type,Reference_Allele,Tumor_Seq_Allele2,Tumor_Sample_Barcode))
-                colnames(tmp) =  c("Hugo_Symbol","Chromosome","Start_Position","End_Position","Variant_Classification","Variant_Type","Reference_Allele","Tumor_Seq_Allele2","Tumor_Sample_Barcode")
-                outmaf = rbind(outmaf, tmp)
+
+            if (clonality == "clonal") {
+                if ( (data[r,ccfindex] + 1.96*data[r,ccfsdindex]) >= 1 & data[r,mafcindex] > minAF ) {
+                    tmp = rbind(tmp, c(Hugo_Symbol,Chromosome,Start_Position,End_Position,Variant_Classification,Variant_Type,Reference_Allele,Tumor_Seq_Allele2,Tumor_Sample_Barcode))
+                    colnames(tmp) = c("Hugo_Symbol","Chromosome","Start_Position","End_Position","Variant_Classification","Variant_Type","Reference_Allele","Tumor_Seq_Allele2","Tumor_Sample_Barcode")
+                    outmaf = rbind(outmaf, tmp)
+                }
+            } else if (clonality == "subclonal") {
+                if ( (data[r,ccfindex] + 1.96*data[r,ccfsdindex]) < 1 & data[r,mafcindex] > minAF ) {
+                    tmp = rbind(tmp, c(Hugo_Symbol,Chromosome,Start_Position,End_Position,Variant_Classification,Variant_Type,Reference_Allele,Tumor_Seq_Allele2,Tumor_Sample_Barcode))
+                    colnames(tmp) = c("Hugo_Symbol","Chromosome","Start_Position","End_Position","Variant_Classification","Variant_Type","Reference_Allele","Tumor_Seq_Allele2","Tumor_Sample_Barcode")
+                    outmaf = rbind(outmaf, tmp)
+                }
+            } else if (clonality == "all") {
+                if ( data[r,mafcindex] > minAF ) {
+                    tmp = rbind(tmp, c(Hugo_Symbol,Chromosome,Start_Position,End_Position,Variant_Classification,Variant_Type,Reference_Allele,Tumor_Seq_Allele2,Tumor_Sample_Barcode))
+                    colnames(tmp) = c("Hugo_Symbol","Chromosome","Start_Position","End_Position","Variant_Classification","Variant_Type","Reference_Allele","Tumor_Seq_Allele2","Tumor_Sample_Barcode")
+                    outmaf = rbind(outmaf, tmp)
+                }
             }
-        }
+        }  # for each sample
     }
     return(outmaf)
 }
