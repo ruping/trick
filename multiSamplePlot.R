@@ -6,23 +6,37 @@ library(KernSmooth)
 library(RColorBrewer)
 library(plyr)
 
-getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5) {
+getSampMutMulti <- function(samples, normal=NULL, d, cmedianTh, original, cmemeTh=6.5) {
     numsamples = length(samples)
     rindexTF = vector()
     cindex = vector()
     for (si in 1:length(samples)) {
-        if (length(rindexTF) > 0) {
-            rindexTF = rindexTF | grepl(paste(samples[si],"\\[",sep=""), d$somatic)
+        if (!is.null(normal)) {
+            if (length(rindexTF) > 0) {
+                rindexTF = rindexTF | grepl(paste(samples[si],"\\[",sep=""), d$somatic)
+            } else {
+                rindexTF = grepl(paste(samples[si],"\\[",sep=""), d$somatic)
+            }
+            cindex = append(cindex, match(paste(samples[si], "maf", sep=""), colnames(d)))
         } else {
-            rindexTF = grepl(paste(samples[si],"\\[",sep=""), d$somatic)
+            if (length(rindexTF) > 0) {
+                rindexTF = rindexTF | grepl("\\|", as.character(d[,paste(samples[si],"maf",sep="")]))
+            } else {
+                rindexTF = grepl("\\|", as.character(d[,paste(samples[si],"maf",sep="")]))
+            }
+            cindex = append(cindex, match(paste(samples[si], "maf", sep=""), colnames(d)))
         }
-        cindex = append(cindex, match(paste(samples[si], "maf", sep=""), colnames(d)))
     }
     rindex = which(rindexTF)
     cindex = as.vector(sapply(cindex, function(x){c(x-1,x,x+1)}))
+    message(paste0("cindex:", paste(cindex,collapse=" ")))
+    message(paste0("num rows: ", length(which(rindexTF))))
     
-    ncindex = match(paste(normal, "maf", sep=""), colnames(d))
-    ncindex = as.vector(sapply(ncindex, function(x){c(x,x+1)}))  #normal samples maf and depth indexes
+    ncindex = 0
+    if (!is.null(normal)){
+        ncindex = match(paste(normal, "maf", sep=""), colnames(d))
+        ncindex = as.vector(sapply(ncindex, function(x){c(x,x+1)}))  #normal samples maf and depth indexes
+    }
     
     dronindex = match("dron", colnames(d))
     gnindex = match("geneName", colnames(d))
@@ -32,13 +46,21 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
     gerpindex = match("GERP_RS", colnames(d))
     siftindex = match("SIFT_score", colnames(d))
     polyphenindex = match("Polyphen2_HVAR_pred", colnames(d))
-    somindex = match("somatic", colnames(d))
-    repindex = match("rep",colnames(d))
-
-    if (! is.na(caddindex)) {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,repindex,somindex,ncindex)]
+    somindex = 0
+    repindex = 0
+    if (!is.null(normal)){
+        somindex = match("somatic", colnames(d))
+        repindex = match("rep",colnames(d))
+    }
+    
+    if (!is.null(normal)){
+        if (! is.na(caddindex)) {
+            res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex,dronindex,repindex,somindex,ncindex)]
+        } else {
+            res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,repindex,somindex,ncindex)]
+        }
     } else {
-        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,dronindex,repindex,somindex,ncindex)]
+        res = d[rindex,c(1,2,3,4,5,cindex,gnindex,glindex,gfindex,caddindex,gerpindex,siftindex,polyphenindex)]
     }
     
     resColnames = colnames(res)
@@ -56,7 +78,10 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   oriTlodTmp = 0
                   if ( grepl("\\|", as.character(x[j])) ) {
                       ori = strsplit(as.character(x[j]), "\\|")
-                      oriLod = strsplit(ori[[1]][3], ",")            
+                      oriLod = strsplit(ori[[1]][3], ",")
+                      if (is.null(normal)){                           #no normal, samtools single calling, afx-ups
+                          oriLod = strsplit(ori[[1]][2], ",")         #no normal, samtools single calling, afx-ups
+                      }
                       oriTlodTmp = as.numeric(oriLod[[1]][1])
                   }
                   if (mafTmp > maxMaf) {
@@ -80,6 +105,9 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   if ( grepl("\\|", as.character(x[j])) ) {
                       ori = strsplit(as.character(x[j]), "\\|")
                       oriLod = strsplit(ori[[1]][3], ",")
+                      if (is.null(normal)){                           #no normal, samtools single calling, afx-ups
+                          oriLod = strsplit(ori[[1]][2], ",")         #no normal, samtools single calling, afx-ups
+                      }
                       oriTlod = as.numeric(oriLod[[1]][1])
                   }
                   ss = strsplit(as.character(x[j+1]), "\\|")
@@ -101,6 +129,12 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   #decide a b allele count
                   refnow = round(as.numeric(x[j+2])*(1-mafTmp))
                   altnow = round(as.numeric(x[j+2])*mafTmp)
+                  
+                  if (grepl(",", as.character(x[j+2]))) {        #RNA-seq, with gapped reads seperated by comma
+                      depthRNA = as.numeric(strsplit(as.character(x[j+2]), ",")[[1]][1])
+                      refnow = round(depthRNA*(1-mafTmp))
+                      altnow = round(depthRNA*mafTmp)
+                  }
 
                   if ( mafTmp > 0 ) {
                       ssb = ssb + strandBias*altnow
@@ -142,6 +176,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
                   resVector = c(resVector, c(mafNow, 0, 0, 0, 0, refnow, altnow))
                   names(resVector)[(length(resVector)-6):length(resVector)] = c(sampleNameMaf,sampleNameMafa,sampleNameCcf,sampleNameCcfSD,sampleNameTime,sampleNameRef,sampleNameAlt)   #time added
               } #for each sample
+
               
               ssb = ssb/altdav
               ssbp = ssbp/altdav
@@ -150,6 +185,7 @@ getSampMutMulti <- function(samples, normal, d, cmedianTh, original, cmemeTh=6.5
               altdav = altdav/ssbc
               refdav = refdav/ssbc
               #if (((ssb >= 0.95 | ssb <= 0.05) & ssbp < 0.1) | ssbp < 0.001) {                         #multiple sample strand bias
+              
               if (((ssb > 0.88 | ssb < 0.12) & numsamples > 1) | ((ssb > 0.9 | ssb < 0.1) & numsamples == 1)) {                         #multiple sample strand bias
               #if ((ssb >= 0.95 | ssb <= 0.05)| ssbp < 0.001) {                                        #multiple sample strand bias 
                   for (j in seq(6,(3+length(cindex)), by=3)) {
@@ -315,9 +351,16 @@ getSampMutMultiIndel <- function(samples, normal, d) {
 
 
 #adjust CCF titan for multi samples
-mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19) {
+mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19, correctMale = FALSE) {
     #prepare CNA
     cnv.inputA = paste(titanPath, sn, "_nclones1.TitanCNA.segments.txt", sep="")
+    if (! file.exists(cnv.inputA)) {
+        cnv.inputA = paste(titanPath, sn, "_nclones2.TitanCNA.segments.txt", sep="")
+    }
+    if (! file.exists(cnv.inputA)) {
+        message("titan segmentation file not found!")
+    }
+    message(cnv.inputA)
     cnvA = read.delim(cnv.inputA, as.is=T)
     cnvA = cnvA[which(cnvA$num.mark > skipchunk),]                               #skip two few marks
     cp2 <- c(which(cnvA$logcopynumberratio[-1] != cnvA$logcopynumberratio[-nrow(cnvA)] |
@@ -343,6 +386,12 @@ mergeCNA <- function(titanPath="../OS/titanresult/", sn, skipchunk = 19) {
         cnvA2$num.mark[j] <- sum(cnvA$num.mark[cp1[j]:cp2[j]])
         cnvA2$seg.mean[j] <- mean(cnvA$seg.mean[cp1[j]:cp2[j]])
         cnvA2$allelicratio[j] <- mean(cnvA$allelicratio[cp1[j]:cp2[j]])
+    }
+    if (correctMale) {
+        cnvA2[which(as.character(cnvA2$chrom == "X")), "copynumber"] =
+            cnvA2[which(as.character(cnvA2$chrom == "X")), "copynumber"]/2
+        cnvA2[which(as.character(cnvA2$chrom == "X")), "major_cn"] =
+            cnvA2[which(as.character(cnvA2$chrom == "X")), "major_cn"]/2
     }
     return(cnvA2)
 }
@@ -427,7 +476,7 @@ cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sam
             #cntype = "ALOH"
             cntype = "CNLOH"
         } else if (cnmajor == 4 & cnminor == 0) {
-            hmatrix = matrix(c(0,1,2,4,0,0,1,0,0,1,0,0,1,0,0,0), byrow=T, ncol=4)    #revised 
+            hmatrix = matrix(c(0,1,2,4,0,0,1,0,0,1,0,0,1,0,0,0), byrow=T, ncol=4)    #this one is not unique
             #cntype = "ALOH"
             cntype = "CNLOH"
         } else {
@@ -436,7 +485,7 @@ cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sam
         }
         message(cntype)
         x<-eventTiming(x=onlyMuts$t_alt_count, m=onlyMuts$t_depth, history=hmatrix, totalCopy=cntotal, minMutations=mmut,
-                       type=cntype,normCont=normCont, bootstrapCI="parametric",CILevel=0.9, method=method)
+                       type=cntype, normCont=normCont, bootstrapCI="parametric",CILevel=0.9, method=method)
         x = c(x, cnid=i, cnchrom=cnchrom, cnstart=cnstart, cnend=cnend, cnmajor=cnmajor, cnminor=cnminor, cnLOHcall=cnLOHcall)
 
         result[[li]] = x
@@ -457,6 +506,36 @@ cnaTiming <- function(sn="SPCG-OS052_11D", titanPath = "../OS/titanresult/", sam
     return(list(result, resultTable, cnvA2))    
 }
 
+patientMutTable <- function(d, pat, norm="_N", titanFolder="./titan/", multiMis=3, lod=4.3, adjv=0.05, correctSampleName=FALSE) {
+    samplesall = colnames(d)[grep("maf",colnames(d))]
+    samplesall = gsub("maf$", "", samplesall)
+    #samplesall = samplesall[grepl("genome", samplesall)]
+    
+    samples = samplesall[grepl(paste0(pat,"\\D"),samplesall)]
+    samplen = samples[grepl(norm,samples)]
+    message(paste(samplen, collapse=" "))
+    samples = samples[!grepl(norm,samples)]
+    message(paste(samples, collapse=" "))
+    
+    tmp = getSampMutMulti(samples, samplen, d, multiMis, lod)
+    tmp = adjust.ccf.titan.multi(tmp, samples, adjv, titanFolder, correctColname=correctSampleName)
+    return(tmp)
+}
+
+write.cnv <- function(samples, titan = "./titan/", outdir="./cnvres/") {
+    cnvres <- vector(mode = "list", length = length(samples))
+    for(i in 1:length(samples)) {
+        cnvresTmp = mergeCNA(titanPath=titan, sn=samples[i])
+        if (! dir.exists(outdir)) {
+            dir.create(outdir)
+        }
+        write.table(cnvresTmp, file=paste(outdir, samples[i], ".nclones1.cnv", sep=""),
+                    quote=F, row.names=F, sep="\t")
+        cnvres[[i]] = cnvresTmp
+        names(cnvres)[[i]] = samples[i]
+    }
+    return(cnvres)
+}
 
 
 vpEst <- function(nt, nb, vaf, minor=FALSE, single=FALSE) { #suppose the mutation occur in the major allele
@@ -3049,9 +3128,21 @@ outMutTable <- function(data, samples) {
     #as.vector(t(outer(samples,c("mafc","mafa","ccf","ccfSD","refc","altc","pu","pa","nt","nb"), paste, sep=""))),
     #    colnames(data)[grepl("pubOrSub", colnames(data2))])]
     data2 = data2[,c("chr","pos","id","ref","alt","geneName","geneLoc","functionalClass","CADD_phred","GERP_RS","SIFT_score","Polyphen2_HVAR_pred",
-    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu","pa","nt","nb","seg"), paste, sep=""))))]
+    as.vector(t(outer(samples,c("mafc","ccf","ccfSD","refc","altc","pu","pa","nt","nb","seg"), paste, sep=""))), colnames(data2)[grepl("pubOrSub", colnames(data2))])]
     return(data2)
 }
+
+
+outMutTable.rna <- function(data, samples) {
+    keep = (as.numeric(data[,paste(samples,"altc",sep="")]) + as.numeric(data[,paste(samples,"refc",sep="")])) > 10 & !grepl("intergenic|intronic|stream", as.character(data[,"geneLoc"]))
+    data2 = data[keep,]
+
+    data2 = data2[,c("chr","pos","id","ref","alt","geneName","geneLoc","functionalClass","CADD_phred","GERP_RS","SIFT_score","Polyphen2_HVAR_pred",
+    as.vector(t(outer(samples,c("mafc","refc","altc"), paste, sep=""))))]
+    return(data2)
+}
+
+
 
 outTable.maf <- function(data, samples, indel=FALSE, clonality="clonal", minAF=0.04) {
     outmaf = data.frame()
